@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "npp-load-factor-optimization"
+version = "0.1.0"
+description = ""
+authors = ["alex <melnikov1991@bk.ru>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+ruff = "^0.12.1"
+oemof-solph = "^0.6.0"
+numpy = "^2.3.1"
+pandas = "^2.3.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
