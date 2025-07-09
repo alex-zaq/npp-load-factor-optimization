@@ -1,40 +1,73 @@
 from src.npp_load_factor_calculator import Oemof_model, Result_grouper, Result_plotter
 
-base_settings = {
-    
-}
+base_settings = {}
 
+bel_npp_block_1_events = {}
+bel_npp_block_2_events = {}
+new_npp_block_1_events = {}
+
+
+repair_cost = {
+    "npp_light_repair": {"cost": 0.1, "duration_days": 7},
+    "nnp_heavy_repair": {"cost": 0.2, "duration_days": 14},
+    "npp_capital_repair": {"cost": 0.3, "duration_days": 21},
+}
 
 scen_1 = {
     "№": 1,
     "name": "experimental",
     "bel_npp": {
-        "block_1": {"pow": 1170, "allow_outage_months": ["june","dec"], "risk_per_hour": 0.01},
-        "block_2": {"pow": 1170, "allow_outage_months": ["june","dec"], "risk_per_hour": 0.01},
+        "block_1": {
+            "status": True,
+            "pow": 1170,
+            "allow_outage_months": ["june", "dec"],
+            "risk_per_hour": 0.01,
+            "events": bel_npp_block_1_events,
+        },
+        "block_2": {
+            "status": False,
+            "pow": 1170,
+            "allow_outage_months": ["june", "dec"],
+            "risk_per_hour": 0.01,
+            "events": bel_npp_block_2_events,
+        },
     },
-    "npp_light_repair": {"cost": 0.1, "duration_days": 7},
-    "nnp_heavy_repair": {"cost": 0.2, "duration_days": 14},
-    "npp_capital_repair": {"cost": 0.3, "duration_days": 21},
-    "date_events": {
-        "ligt_outage": {"date": "2025-01-01", "risk_increase": 0.1, "duration_hours": 1},
-        "melting_core": {"date": "2025-04-01", "risk_increase": 0.3, "duration_hours": 6},
+    "new_npp": {
+        "block_1": {
+            "status": False,
+            "pow": 1200,
+            "allow_outage_months": ["june", "dec"],
+            "risk_per_hour": 0.01,
+            "events": new_npp_block_1_events,
+        },
     },
-    "max_risk": 0.5,
+        "ligt_outage": {
+            "start_datetime": "2025-01-01 00:00:00",
+            "risk_increase": 0.1,
+            "duration_hours": 1,
+        },
+        "melting_core": {
+            "start_datetime": "2025-04-01 00:00:00",
+            "risk_increase": 0.3,
+            "duration_hours": 6,
+        },
+    "upper_bound_risk": 0.5,
 }
 
 
 
-scen_settings = scen_1 | base_settings
+scenario = scen_1 | base_settings | repair_cost
 
-all_year = slice(0, 8759)
+# all_year = slice(0, 8759)
 
 model = Oemof_model(
-    scen_settings = scen_settings,
+    scenario = scenario,
     model_settings = {
-        "custom_slice": all_year,
-        "solver": "cplex",
+        "start_year": 2025,
+        "end_year": 2026,
+        "solver_name": "cplex",
         "solver_verbose": True,
-        "mip_gap": 0.01
+        "solver_mip_gap": 0.01
     } 
 )
 
