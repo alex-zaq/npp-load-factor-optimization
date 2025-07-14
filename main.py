@@ -65,9 +65,9 @@ model = Oemof_model(
     model_settings = {
         "start_year": 2025,
         "end_year": 2026,
-        "solver_name": "cplex",
+        "solver": "cplex",
         "solver_verbose": True,
-        "solver_mip_gap": 0.01
+        "mip_gap": 0.01
     } 
 )
 

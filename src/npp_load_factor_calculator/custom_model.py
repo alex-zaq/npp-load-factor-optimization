@@ -1,6 +1,6 @@
 
 
-from npp_load_factor_calculator.generic_models import (
+from src.npp_load_factor_calculator.generic_models import (
     Generic_sink,
     Generic_source,
     Generic_storage,
@@ -24,6 +24,7 @@ class Custom_model:
         pass
     
     def add_electricity_demand(self):
+        pass
         
         
         # self.el_bus = self.sink_factory.create_sink("el_bus", "el_bus")
