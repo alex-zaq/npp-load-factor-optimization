@@ -1,4 +1,4 @@
-from src.npp_load_factor_calculator import Oemof_model, Result_grouper, Result_plotter
+from src.npp_load_factor_calculator import Block_grouper, Oemof_model, Result_plotter
 
 base_settings = {}
 
@@ -12,6 +12,8 @@ repair_cost = {
     "nnp_heavy_repair": {"cost": 0.2, "duration_days": 14},
     "npp_capital_repair": {"cost": 0.3, "duration_days": 21},
 }
+
+
 
 scen_1 = {
     "№": 1,
@@ -58,7 +60,6 @@ scen_1 = {
 
 scenario = scen_1 | base_settings | repair_cost
 
-# all_year = slice(0, 8759)
 
 model = Oemof_model(
     scenario = scenario,
@@ -71,32 +72,41 @@ model = Oemof_model(
     } 
 )
 
-
-
-
 model.calculate()
-
 
 custom_es = model.get_custom_es()
 results = model.get_results()
 
 
-npp_blocks = custom_es.get_npp_blocks()
+bel_npp_block_1 = custom_es.block_db.get_bel_npp_block_1()
+bel_npp_block_2 = custom_es.block_db.get_bel_npp_block_2()
+new_npp_block_1 = custom_es.block_db.get_new_npp_block_1()
+risk_storage_1 = custom_es.block_db.get_risk_storage_1()
 
 
-block_grouper = Result_grouper(results, custom_es)
+
+block_grouper = Block_grouper(results, custom_es)
 
 
 block_grouper.set_block_groups(
-    electricity = {},
-    risk_events = {},
+    electricity_bus = {
+        "Белорусская АЭС (блок 1)": {"order": [bel_npp_block_1], "color": "#2ca02c"},
+        "Белорусская АЭС (блок 2)": {"order": [bel_npp_block_2], "color": "#ff7f0e"},
+        "Новая АЭС (блок 1)": {"order": [new_npp_block_1], "color": "#1f77b4"},
+    },
+    risk_bus = {"риск (storage)": {"order": [risk_storage_1], "color": "#1ae0ff"}},
 )
 
 
-result_grouper = Result_grouper(results)
-result_plotter = Result_plotter(result_grouper)
+result_plotter = Result_plotter(block_grouper)
+result_plotter.plot_electricity_generation_profile()
 
-# result_plotter.plot_npp_loading_profile()
+
+
+print("done")
+
+
+
 # result_plotter.plot_risk_events_profile()
 # result_plotter.plot_cumulative_risk_profile()
 # result_plotter.plot_repair_cost_profile()
@@ -106,7 +116,7 @@ result_plotter = Result_plotter(result_grouper)
 # мин. фукц. класса oemof_model
 # мин. фукц. класса custom_model_builder (добавить два блока аэс, риски)
 # реализация фиксированного времени работы на ном. мощности
-# стоимость включения для учета стоиомсти ремонта
+# стоимость включения для учета стоимости ремонта
 # большой интервал времени 5 лет
 # ввод модели накопителя для учета накопления рисков
 # ограничения риска сверху

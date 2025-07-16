@@ -31,19 +31,41 @@ class Oemof_model:
         self.custom_es = Custom_model(scenario = self.scenario, oemof_es = self.oemof_es)
         self.custom_es.add_electricity_demand()
         self.custom_es.add_bel_npp()
-        self.custom_es.add_new_npp()
-        self.custom_es.add_risk_storage()
+        # self.custom_es.add_new_npp()
+        # self.custom_es.add_risk_storage()
     
     def _add_constraints(self, constraints_processor):
         constraints_provider = self.custom_es.get_constraints_provider()
         block_parallel_status_limit = constraints_provider.get_block_parallel_status_limit()
         constraints_processor.apply_block_parallel_status_limit(block_parallel_status_limit)
-            
+
+
+    def _launch_solver(self):
+        model = solph.Model(self.oemof_es)
+        # self._add_constraints(Constraint_processor(model))
+        print("модель сформирована")
+        start_time = datetime.now()
+        model.solve(
+            solver=self.solver,
+            cmdline_options={"mipgap": self.mipgap},
+            solve_kwargs={"tee": self.solver_verbose},
+        )
+        elapsed_solver_time = (datetime.now() - start_time).total_seconds()
+        print(
+            "работа " + self.solver + " завершена",
+            str(elapsed_solver_time) + " cек.",
+            sep=" ",
+        )
+        self.results = solph.processing.results(model)
+        self.meta_results = solph.processing.meta_results(model)
+        print("результаты извлечены")
+    
+    
     
     def calculate(self):
         self._init_oemof_model()
         self._init_custom_model()
-        # self._add_constraints(Constraint_processor())
+        self._launch_solver()
         
     def get_custom_es(self):
         return self.custom_es

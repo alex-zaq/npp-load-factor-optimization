@@ -11,6 +11,8 @@ ruff = "^0.12.1"
 oemof-solph = "^0.6.0"
 numpy = "^2.3.1"
 pandas = "^2.3.0"
+loguru = "^0.7.3"
+oemof-visio = "^0.0.2a2"
 
 
 [build-system]
