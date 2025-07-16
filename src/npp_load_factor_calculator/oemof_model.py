@@ -1,8 +1,9 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import oemof.solph as solph
 import pandas as pd
 
+from src.npp_load_factor_calculator.constraint_processor import Constraint_processor
 from src.npp_load_factor_calculator.custom_model import Custom_model
 
 
@@ -26,8 +27,8 @@ class Oemof_model:
         self.oemof_es = solph.EnergySystem(timeindex=date_time_index, infer_last_interval=True)
        
     
-    def _init_custom_model(self, oemof_es):
-        self.custom_es = Custom_model(scenario = self.scenario, oemof_es = oemof_es)
+    def _init_custom_model(self):
+        self.custom_es = Custom_model(scenario = self.scenario, oemof_es = self.oemof_es)
         self.custom_es.add_electricity_demand()
         self.custom_es.add_bel_npp()
         self.custom_es.add_new_npp()
@@ -41,9 +42,8 @@ class Oemof_model:
     
     def calculate(self):
         self._init_oemof_model()
-        oemof_model = self.get_oemof_es()
-        self._init_custom_model(oemof_model)
-        # self.add_constraints()
+        self._init_custom_model()
+        # self._add_constraints(Constraint_processor())
         
     def get_custom_es(self):
         return self.custom_es
