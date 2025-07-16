@@ -16,19 +16,17 @@ class Custom_model:
         self.sink_factory = Generic_sink(oemof_es)
         self.storage_factory = Generic_storage(oemof_es)
    
+    def add_electricity_demand(self):
+        # self.electricity_bus = 
+        pass
     
     def add_bel_npp(self):
         pass
     
     def add_new_npp(self):
         pass
-    
-    def add_electricity_demand(self):
-        pass
-        
-        
+            
         # self.el_bus = self.sink_factory.create_sink("el_bus", "el_bus")
-        
     
     def add_risk_storage(self):
         pass
