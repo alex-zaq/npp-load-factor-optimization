@@ -11,6 +11,7 @@ from src.npp_load_factor_calculator.utilites import (
     get_number,
 )
 
+
 logger = get_logger()
 
 class Solution_processor:

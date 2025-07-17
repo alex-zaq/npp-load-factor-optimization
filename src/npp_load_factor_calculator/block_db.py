@@ -4,7 +4,7 @@
 
 class Block_db:
     def __init__(self):
-        self.db = {"аэс": [], "потребитель ээ": [], "риск": []}
+        self.db = {"аэс": [], "потребитель ээ": []}
                 
     def add_block(self, block_type, block):
         
@@ -32,8 +32,4 @@ class Block_db:
     def get_new_npp_block_1(self):
         return self._get_block_by_label("аэс", "Новая АЭС (блок 1)")
     
-    
-    def get_risk_storage_1(self):
-        return self._get_block_by_label("риск", "риск-1")
-    
-            
+ 

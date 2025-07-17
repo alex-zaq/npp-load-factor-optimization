@@ -13,5 +13,5 @@ class Block_grouper:
         self.custom_es = custom_es
     
     
-    def set_block_groups(self, electricity_bus, risk_bus):
+    def set_block_groups(self, electricity_gen, risk_gen):
         pass

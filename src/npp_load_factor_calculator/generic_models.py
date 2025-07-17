@@ -40,8 +40,10 @@ class Generic_source:
 
     def __init__(self, oemof_es):
         self.oemof_es = oemof_es
-    
+        self.npp_constraints = {}
 
+    def get_npp_constraints(self):
+        return self.npp_constraints
     
     def create_npp_block(self, label, nominal_power, output_bus, lcoe):
         

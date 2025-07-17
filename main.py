@@ -43,7 +43,7 @@ scen_1 = {
             "events": new_npp_block_1_events,
         },
     },
-        "ligt_outage": {
+        "list_outage": {
             "start_datetime": "2025-01-01 00:00:00",
             "risk_increase": 0.1,
             "duration_hours": 1,
@@ -81,7 +81,10 @@ results = model.get_results()
 bel_npp_block_1 = custom_es.block_db.get_bel_npp_block_1()
 bel_npp_block_2 = custom_es.block_db.get_bel_npp_block_2()
 new_npp_block_1 = custom_es.block_db.get_new_npp_block_1()
-risk_storage_1 = custom_es.block_db.get_risk_storage_1()
+
+bel_npp_block_1_risk_storage = bel_npp_block_1.risk_storage
+bel_npp_block_2_risk_storage = bel_npp_block_2.risk_storage
+new_npp_block_1_risk_storage = new_npp_block_1.risk_storage
 
 
 
@@ -89,12 +92,16 @@ block_grouper = Block_grouper(results, custom_es)
 
 
 block_grouper.set_block_groups(
-    electricity_bus = {
-        "Белорусская АЭС (блок 1)": {"order": [bel_npp_block_1], "color": "#2ca02c"},
-        "Белорусская АЭС (блок 2)": {"order": [bel_npp_block_2], "color": "#ff7f0e"},
+    electricity_gen={
+        "БелАЭС (блок 1)": {"order": [bel_npp_block_1], "color": "#2ca02c"},
+        "БелАЭС (блок 2)": {"order": [bel_npp_block_2], "color": "#ff7f0e"},
         "Новая АЭС (блок 1)": {"order": [new_npp_block_1], "color": "#1f77b4"},
     },
-    risk_bus = {"риск (storage)": {"order": [risk_storage_1], "color": "#1ae0ff"}},
+    risk_gen={
+        "БелАЭС (блок 1) - риск": {"order": [bel_npp_block_1_risk_storage], "color": "#1ae0ff"},
+        "БелАЭС (блок 2) - риск": {"order": [bel_npp_block_2_risk_storage], "color": "#e8ff1a"},
+        "Новая АЭС (блок 1) - риск": {"order": [new_npp_block_1_risk_storage], "color": "#3d26a3"},
+    },
 )
 
 
