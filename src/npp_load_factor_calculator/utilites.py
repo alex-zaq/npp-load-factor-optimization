@@ -25,3 +25,11 @@ def get_next_number_file_name(folder):
     return res
 
 
+def set_label(*items, sep="_"):
+    if not items:
+        return ""
+    else:
+        items = list(filter(lambda x: x, items))
+
+    return sep.join(items)
+

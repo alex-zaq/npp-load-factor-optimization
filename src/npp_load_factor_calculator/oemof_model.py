@@ -43,6 +43,10 @@ class Oemof_model:
     def _launch_solver(self):
         model = solph.Model(self.oemof_es)
         # self._add_constraints(Constraint_processor(model))
+        # hours_count = len(model.timeincrement)
+        
+        
+        
         print("модель сформирована")
         start_time = datetime.now()
         model.solve(
