@@ -6,13 +6,14 @@ authors = ["alex <melnikov1991@bk.ru>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = ">=3.11,<3.14"
 ruff = "^0.12.1"
 oemof-solph = "^0.6.0"
 numpy = "^2.3.1"
 pandas = "^2.3.0"
 loguru = "^0.7.3"
 oemof-visio = "^0.0.2a2"
+tsam = "^2.3.9"
 
 
 [build-system]

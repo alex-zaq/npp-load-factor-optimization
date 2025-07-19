@@ -1,71 +1,107 @@
 from src.npp_load_factor_calculator import Block_grouper, Oemof_model, Result_plotter
+from src.npp_load_factor_calculator.utilites import all_months
 
-base_settings = {}
+bel_npp_block_1_events = {
+    "accident_1": {
+        "start_datetime": "2025-01-01 00:00:00",
+        "risk_increase": 0.1,
+        "duration_hours": 1,
+    },
+    "melting_core": {
+        "start_datetime": "2025-04-01 00:00:00",
+        "risk_increase": 0.3,
+        "duration_hours": 6,
+    },
+}
 
-bel_npp_block_1_events = {}
+events = {
+    "event_1": {
+        "start_datetime": "2025-02-01 00:00:00",
+        "risk_increase": 0.1,
+        "duration_hours": 1,
+    },
+    "event_3": {
+        "start_datetime": "2025-03-15 06:00:00",
+        "risk_increase": 0.2,
+        "duration_hours": 1,
+    },
+    "event_4": {
+        "start_datetime": "2025-04-22 18:00:00",
+        "risk_increase": 0.4,
+        "duration_hours": 1,
+    },
+    "event_2": {
+        "start_datetime": "2025-05-01 12:00:00",
+        "risk_increase": 0.3,
+        "duration_hours": 1,
+    },
+    "event_5": {
+        "start_datetime": "2025-06-11 09:00:00",
+        "risk_increase": 0.2,
+        "duration_hours": 1,
+    },
+}
+
+
 bel_npp_block_2_events = {}
 new_npp_block_1_events = {}
 
 
-repair_cost = {
-    "npp_light_repair": {"cost": 0.1, "duration_days": 7},
-    "nnp_heavy_repair": {"cost": 0.2, "duration_days": 14},
-    "npp_capital_repair": {"cost": 0.3, "duration_days": 21},
-}
 
+
+
+
+
+repair_options = {
+    "npp_light_repair": {"cost": 0.1, "duration_days": 7, "start_day": (1, 15), "allow_months": all_months},
+    "npp_heavy_repair": {"cost": 0.2, "duration_days": 14, "start_day": (1, 15), "allow_months": all_months},
+    "npp_capital_repair": {"cost": 0.3, "duration_days": 21, "start_day": (1, 15), "allow_months": all_months},
+}
 
 
 scen_1 = {
     "№": 1,
     "name": "experimental",
+    "start_year": 2025,
+    "end_year": 2026,
     "bel_npp": {
         "block_1": {
             "status": True,
             "pow": 1170,
-            "allow_outage_months": ["june", "dec"],
             "risk_per_hour": 0.01,
+            "upper_bound_risk": 0.5,
             "events": bel_npp_block_1_events,
+            "repair_options": repair_options,
         },
         "block_2": {
             "status": False,
             "pow": 1170,
-            "allow_outage_months": ["june", "dec"],
             "risk_per_hour": 0.01,
+            "upper_bound_risk": 0.5,
             "events": bel_npp_block_2_events,
+            "repair_options": repair_options,
         },
     },
     "new_npp": {
         "block_1": {
             "status": False,
             "pow": 1200,
-            "allow_outage_months": ["june", "dec"],
             "risk_per_hour": 0.01,
+            "upper_bound_risk": 0.5,
             "events": new_npp_block_1_events,
+            "repair_options": repair_options,
         },
     },
-        "list_outage": {
-            "start_datetime": "2025-01-01 00:00:00",
-            "risk_increase": 0.1,
-            "duration_hours": 1,
-        },
-        "melting_core": {
-            "start_datetime": "2025-04-01 00:00:00",
-            "risk_increase": 0.3,
-            "duration_hours": 6,
-        },
-    "upper_bound_risk": 0.5,
 }
 
 
 
-scenario = scen_1 | base_settings | repair_cost
+scenario = scen_1
 
 
 model = Oemof_model(
     scenario = scenario,
-    model_settings = {
-        "start_year": 2025,
-        "end_year": 2026,
+    solver_settings = {
         "solver": "cplex",
         "solver_verbose": True,
         "mip_gap": 0.01

@@ -9,13 +9,13 @@ from src.npp_load_factor_calculator.custom_model import Custom_model
 
 class Oemof_model:
     
-    def __init__(self, scenario, model_settings):
+    def __init__(self, scenario, solver_settings):
         self.scenario = scenario
-        self.start_year = model_settings["start_year"]
-        self.end_year = model_settings["end_year"]
-        self.solver = model_settings["solver"]
-        self.solver_verbose = model_settings["solver_verbose"]
-        self.mip_gap = model_settings["mip_gap"]
+        self.start_year = scenario["start_year"]
+        self.end_year = scenario["end_year"]
+        self.solver = solver_settings["solver"]
+        self.solver_verbose = solver_settings["solver_verbose"]
+        self.mip_gap = solver_settings["mip_gap"]
         self.oemof_es = None
             
     def _init_oemof_model(self):
@@ -31,8 +31,8 @@ class Oemof_model:
         self.custom_es = Custom_model(scenario = self.scenario, oemof_es = self.oemof_es)
         self.custom_es.add_electricity_demand()
         self.custom_es.add_bel_npp()
-        # self.custom_es.add_new_npp()
-        # self.custom_es.add_risk_storage()
+        self.custom_es.add_new_npp()
+    
     
     def _add_constraints(self, constraints_processor):
         constraints_provider = self.custom_es.get_constraints_provider()
