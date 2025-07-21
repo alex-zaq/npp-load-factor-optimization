@@ -48,22 +48,17 @@ new_npp_block_1_events = {}
 
 
 
-
-
-
-
 repair_options = {
-    "npp_light_repair": {"cost": 0.1, "duration_days": 7, "start_day": (1, 15), "allow_months": all_months},
-    "npp_heavy_repair": {"cost": 0.2, "duration_days": 14, "start_day": (1, 15), "allow_months": all_months},
-    "npp_capital_repair": {"cost": 0.3, "duration_days": 21, "start_day": (1, 15), "allow_months": all_months},
+    "npp_light_repair": {"cost": 0.1, "duration": 7, "risk_reducing": 0.1, "start_day": [1, 15], "avail_months": all_months},
+    "npp_heavy_repair": {"cost": 0.2, "duration": 14, "risk_reducing": 0.2, "start_day": [1, 15], "avail_months": all_months},
+    "npp_capital_repair": {"cost": 0.3, "duration": 21, "risk_reducing": 0.3, "start_day": [1, 15], "avail_months": all_months},
 }
 
 
 scen_1 = {
     "№": 1,
     "name": "experimental",
-    "start_year": 2025,
-    "end_year": 2026,
+    "years": [2025],
     "bel_npp": {
         "block_1": {
             "status": True,
@@ -154,7 +149,7 @@ print("done")
 # result_plotter.plot_cumulative_risk_profile()
 # result_plotter.plot_repair_cost_profile()
 
-
+# изменить начальный коенчный на [начальный, конечный]
 # добавить структуру методов классов
 # мин. фукц. класса oemof_model
 # мин. фукц. класса custom_model_builder (добавить два блока аэс, риски)
@@ -174,4 +169,4 @@ print("done")
 # разные типы ремонтов не пересекаются в одной АЭС
 # ремонты в разных аэс не совпадают во времени 
 # через определенные интервалы времени (например длина ремонта) добавить sink и source который будет в данные интервалы
-# заряжать storage, которая будет позволять работать sink для риска с учетом uptime равной длине ремента (можно произвольеные инетрвалы с выключения недопущения одновременной работы заряж. source и ремонтируюещего sink)
+# заряжать storage, которая будет позволять работать sink для риска с учетом uptime равной длине ремента (можно произвольеные инетрвалы с выключения недопущения одновременной # # работы заряж. source и ремонтируюещего sink)

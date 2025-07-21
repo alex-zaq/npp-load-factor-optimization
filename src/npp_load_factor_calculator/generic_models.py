@@ -1,6 +1,11 @@
 import oemof.solph as solph
 
-from src.npp_load_factor_calculator.utilites import set_label
+from src.npp_load_factor_calculator.utilites import (
+    get_profile_by_period_for_charger,
+    get_valid_profile_by_months,
+    plot_array,
+    set_label,
+)
 
 
 class Generic_bus:
@@ -43,16 +48,20 @@ class Generic_source:
     def __init__(self, oemof_es):
         self.oemof_es = oemof_es
         self.npp_constraints = {}
+                
+    def set_years(self, start_year, end_year):
+        self.start_year = start_year
+        self.end_year = end_year
 
     def get_npp_constraints(self):
         return self.npp_constraints
     
     
-    def create_source(self, label, output_bus):
+    def create_source_with_max_profile(self, label, output_bus, max_profile):
         
         source = solph.components.Source(
             label = label,
-            outputs = {output_bus: solph.Flow()}
+            outputs = {output_bus: solph.Flow(nominal_value=1e6, min=0, max=max_profile, nonconvex=solph.NonConvex())}
         )
         source.inputs_pair = None
         source.outputs_pair = [(source, output_bus)]
@@ -98,8 +107,8 @@ class Generic_source:
         nominal_power,
         output_bus,
         var_cost,
-        min_pow_lst,
-        max_pow_lst,
+        # min_pow_lst,
+        # max_pow_lst,
         risk_mode,
         risk_per_hour,
         max_risk_level,
@@ -124,7 +133,8 @@ class Generic_source:
                 )
             },
         )
-        # constraint (когда работает аэс то ремонт не происходит/или происходит/опционально) npp_block и c_sinks_repair_dict
+        # constraint (когда работает аэс то ремонт не происходит/или происходит/опционально) npp_block и c_sinks_repair_dict)
+        # constraint (если есть другие аэс то одновременно не чинить) 
                 
         npp_block.inputs_pair = None 
         npp_block.outputs_pair = [(npp_block, output_bus)]
@@ -141,7 +151,7 @@ class Generic_source:
                 default_risk_source = self.create_source_nonconvex(set_label(label, "default_risk_source"), risk_bus_in, risk_per_hour)
                 npp_block.default_risk_mode = True
                 npp_block.default_risk_source = default_risk_source
-                 # constraint когда работает аэс то есть дефотлный риск npp_block и default_risk_source 
+                 # constraint когда работает аэс то есть дефолтный риск npp_block и default_risk_source 
 
             risk_source = self.create_source_fixed(set_label(label, "risk_source"), risk_bus_in, fix_risk_lst)
             storage_factory = Generic_storage(self.oemof_es)
@@ -159,6 +169,8 @@ class Generic_source:
              c_sources_charge_dict,
              c_storages_repair_dict,
              c_converters_repair_dict)  = self._get_repair_nodes(label, repair_options, risk_bus_out)
+            # по типам элементов или по видам ремонта
+        
         
             npp_block.c_sinks_excess = c_sinks_excess_dict
             npp_block.c_sources_charge_dict = c_sources_charge_dict
@@ -169,7 +181,7 @@ class Generic_source:
         return npp_block
     
     
-    def _get_repair_nodes(self, label, repair_options, risk_bus_out):
+    def _get_repair_nodes(self, label, repair_options, converter_main_risk_in_bus):
        
         c_converters_repair_dict = {}
         c_sources_charge_dict = {}
@@ -179,12 +191,13 @@ class Generic_source:
         bus_factory = Generic_bus(self.oemof_es)   
         storage_factory = Generic_storage(self.oemof_es)
         converter_factory = Generic_converter(self.oemof_es)
+        sink_factory = Generic_sink(self.oemof_es)
            
         for name in repair_options:
             
             
-            risk_bus_out_2 = bus_factory.create_bus(set_label(label, name, "risk_bus_out_2"))
-            risk_bus_out_3 = bus_factory.create_bus(set_label(label, name, "risk_bus_out_3"))
+            converter_limit_in_bus = bus_factory.create_bus(set_label(label, name, "risk_bus_out_2"))
+            converter_out_bus = bus_factory.create_bus(set_label(label, name, "risk_bus_out_3"))
             
             
             c_source_label = set_label(label, name, "source_charge")
@@ -193,31 +206,63 @@ class Generic_source:
             c_storage_label = set_label(label, name, "storage_repair")
             
                         
-            c_sink_excess = self.create_sink(c_sink_label, risk_bus_out_3)
-            c_source_charge = self.create_source(c_source_label, risk_bus_out_3)
-            c_storage_repair = storage_factory.create_storage_for_npp(c_storage_label)
-            c_converter_repair = converter_factory.create_converter_double_input(c_converter_label, risk_bus_out, risk_bus_out_2, risk_bus_out_3)
+            
+            max_power_profile_source = get_profile_by_period_for_charger(self.start_year, self.end_year, repair_options[name]["start_day"])
 
 
 
 
+            max_power_profile_converter = get_valid_profile_by_months(self.start_year, self.end_year, repair_options[name]["avail_months"])
+            converter_power = repair_options[name]["risk_reducing"] / (repair_options[name]["duration"] * 24)
+            converter_startup_cost = repair_options[name]["cost"]
+            converter_minuptime = repair_options[name]["duration"] * 24
+
+
+            storage_capacity = converter_power * converter_minuptime
+
+
+
+            # plot_array(max_power_profile_source)
+            # plot_array(max_power_profile_converter)
+                        
+                        
+            c_sink = sink_factory.create_sink(
+                c_sink_label,
+                converter_out_bus
+                )
+            
+            c_source = self.create_source_with_max_profile(
+                c_source_label,
+                converter_out_bus,
+                max_power_profile_source
+                ) # доступные часы зарядки
+
+            c_storage = storage_factory.create_storage_for_npp(
+                c_storage_label,
+                converter_out_bus,
+                converter_limit_in_bus,
+                storage_capacity,
+
+
+                ) # constraint нельзя одновременно заряжать и разряжать рассчитать емкость
+
+
+            c_converter = converter_factory.create_converter_double_input(
+                    c_converter_label,
+                    converter_power,
+                    converter_main_risk_in_bus,
+                    converter_limit_in_bus,
+                    converter_out_bus,
+                    max_power_profile_converter,
+                    converter_minuptime,
+                    converter_startup_cost,
+                ) # constraint нельзя одновременно ремонтировать несколько аэс, доступные месяцы работы
+
+            # constraint converter и source работают одновременно на n и n + 1 (или нет если точное начало ремонта не важно)
 
 
 
 
-# for i in range(24):
-#     solph.constraints.equate_variables(
-#         model,
-#         model.NonConvexFlowBlock.status[cpp, el_bus, i],
-#         model.NonConvexFlowBlock.status[control_bus_npp, control_sink_npp, i],
-#     )
-
-# repair_options = {
-#     "npp_light_repair": {"cost": 0.1, "duration_days": 7, "start_day": (1, 15), "allow_months": all_months},
-#     "npp_heavy_repair": {"cost": 0.2, "duration_days": 14, "start_day": (1, 15), "allow_months": all_months},
-#     "npp_capital_repair": {"cost": 0.3, "duration_days": 21, "start_day": (1, 15), "allow_months": all_months},
-# }   
-        
     
 class Generic_storage:
 
@@ -237,11 +282,13 @@ class Generic_storage:
         in_max_pow_lst
         ):
 
+        # initial_content = 1
+
         storage = solph.components.GenericStorage(
             label=label,
             nominal_storage_capacity=capacity,
-            inputs={input_bus: solph.Flow()},
-            outputs={output_bus: solph.Flow()},
+            inputs={input_bus: solph.Flow(nominal_value=1e8, nonconvex=solph.NonConvex())},
+            outputs={output_bus: solph.Flow(nominal_value=1e8, nonconvex=solph.NonConvex())},
         )
         
         storage.inputs_pair = [(input_bus, storage)]
@@ -287,12 +334,20 @@ class Generic_converter:
         pass
     
     
-    def create_converter_double_input(self, label, input_bus_1, input_bus_2, output_bus):
+    def create_converter_double_input(self, label, pow, input_bus_1, input_bus_2, output_bus, max_power_profile, minimum_uptime, startup_costs):
+        
         
         converter = solph.components.Converter(
             label=label,
             inputs={input_bus_1: solph.Flow(), input_bus_2: solph.Flow()},
-            outputs={output_bus: solph.Flow()},
+            outputs={output_bus: solph.Flow(
+                nominal_value=pow,
+                max=max_power_profile,
+                min=1,
+                nonconvex=solph.NonConvex(
+                    minimum_uptime=minimum_uptime,
+                    startup_costs=startup_costs,
+                ))},
         )
         
         converter.inputs_pair = [(input_bus_1, converter), (input_bus_2, converter)]

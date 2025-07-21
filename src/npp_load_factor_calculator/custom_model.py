@@ -19,8 +19,9 @@ class Custom_model:
         self.scenario = scenario
         self.oemof_es = oemof_es
         self.bus_factory = Generic_bus(oemof_es)
-        self.source_factory = Generic_source(oemof_es)
         self.sink_factory = Generic_sink(oemof_es)
+        self.source_factory = Generic_source(oemof_es)
+        self.source_factory.set_years(scenario["start_year"], scenario["end_year"])
         self.block_db = Block_db()
    
     def add_electricity_demand(self):
@@ -35,16 +36,16 @@ class Custom_model:
         status_1 = self.scenario["bel_npp"]["block_1"]["status"]
         status_2 = self.scenario["bel_npp"]["block_2"]["status"]
         start_year, end_year = self.scenario["start_year"], self.scenario["end_year"]
-        allow_months_1 = self.scenario["bel_npp"]["block_1"]["repair_options"]["allow_months"]  
-        allow_months_2 = self.scenario["bel_npp"]["block_2"]["repair_options"]["allow_months"] 
+        # allow_months_1 = self.scenario["bel_npp"]["block_1"]["repair_options"]["allow_months"]  
+        # allow_months_2 = self.scenario["bel_npp"]["block_2"]["repair_options"]["allow_months"] 
         npp_block_1_events = self.scenario["bel_npp"]["block_1"]["events"]
         npp_block_2_events = self.scenario["bel_npp"]["block_2"]["events"]
         upper_bound_risk_1 = self.scenario["bel_npp"]["block_1"]["upper_bound_risk"]
         upper_bound_risk_2 = self.scenario["bel_npp"]["block_2"]["upper_bound_risk"]
         risk_per_hour_1 = self.scenario["bel_npp"]["block_1"]["risk_per_hour"]
         risk_per_hour_2 = self.scenario["bel_npp"]["block_2"]["risk_per_hour"]
-        min_pow_lst_1 = max_pow_lst_1 = get_valid_profile_by_months(start_year, end_year, allow_months_1)        
-        min_pow_lst_2 = max_pow_lst_2 = get_valid_profile_by_months(start_year, end_year, allow_months_2)        
+        # min_pow_lst_1 = max_pow_lst_1 = get_valid_profile_by_months(start_year, end_year, allow_months_1)        
+        # min_pow_lst_2 = max_pow_lst_2 = get_valid_profile_by_months(start_year, end_year, allow_months_2)        
         fix_risk_lst_1 = get_risk_events_profile(start_year, end_year, npp_block_1_events)
         fix_risk_lst_2 = get_risk_events_profile(start_year, end_year, npp_block_2_events)
         repair_options_1 = self.scenario["bel_npp"]["block_1"]["repair_cost_duration"]
@@ -93,11 +94,11 @@ class Custom_model:
         
         status_1 = self.scenario["new_npp"]["block_1"]["status"]
         start_year, end_year = self.scenario["start_year"], self.scenario["end_year"]
-        allow_months_1 = self.scenario["new_npp"]["block_1"]["repair_options"]["allow_months"]     
+        # allow_months_1 = self.scenario["new_npp"]["block_1"]["repair_options"]["allow_months"]     
         npp_block_1_events = self.scenario["new_npp"]["block_1"]["events"]
         upper_bound_risk_1 = self.scenario["new_npp"]["block_1"]["upper_bound_risk"]
         risk_per_hour_1 = self.scenario["new_npp"]["block_1"]["risk_per_hour"]
-        min_pow_lst_1 = max_pow_lst_1 = get_valid_profile_by_months(start_year, end_year, allow_months_1)        
+        # min_pow_lst_1 = max_pow_lst_1 = get_valid_profile_by_months(start_year, end_year, allow_months_1)        
         fix_risk_lst_1 = get_risk_events_profile(start_year, end_year, npp_block_1_events)
         repair_options_1 = self.scenario["new_npp"]["block_1"]["repair_cost_duration"]
                 

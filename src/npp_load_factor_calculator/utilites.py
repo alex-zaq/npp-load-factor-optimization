@@ -97,24 +97,55 @@ def get_valid_profile_by_months(start_year, end_year, months):
     return profile
 
 
-def get_valid_profile_by_day_numbers(start_year, end_year, day_numbers):
+
+def get_profile_by_month_day_dict(start_year, end_year, month_days):
+    
+    if list(month_days.keys()) != all_months:
+        raise Exception("Months are not the same")    
+    
+    res = {}
+    for month in month_days:
+        for order in month_days[month]:
+            date = pd.to_datetime(f"{start_year}-{month}-{order}")
+            date = date - pd.Timedelta(days=1)
+            if date.month not in res:
+                res[date.month] = []
+            if date.year == start_year:
+                res[date.month].append(date.day) if date.year == start_year else None
+
     t_delta = pd.to_datetime(f"{end_year}-01-01") - pd.to_datetime(f"{start_year}-01-01")
     num_hours = t_delta.days * 24
+    date_range = pd.date_range(start=f"{start_year}-01-01", end=f"{end_year}-01-01", freq="H", inclusive="left")
     profile = np.zeros(num_hours)
-    date_range = pd.date_range(start=f"{start_year}-01-01", end=f"{end_year}-01-01", freq="H", inclusive="left"
-    )
-    for day_number in day_numbers:
-            profile[(date_range.day == day_number) & (date_range.hour == 1)] = 1
-            # profile[(date_range.day == day_number)] = 1
-            
-      
-            
-            
-    count = np.count_nonzero(profile)
-    print(f"count = {count}")
-            
+    for month_order, day_number_series in res.items():
+        for day_number in day_number_series:
+            profile[(date_range.month == month_order) & (date_range.hour == 23) & (date_range.day == day_number)] = 1
+
     return profile
 
-l = get_valid_profile_by_day_numbers(2025,2026, (15,1))
-print(l)
-plot_array(l)
+
+def get_profile_by_month_day_dict_many_years(start_year, end_year, month_days):
+    year_seq = list(range(start_year, end_year))
+    if len(year_seq) < 2:
+        raise Exception("Too few years")
+    year_seq_res = {}
+    for year in year_seq:
+        year_seq_res[year] = get_profile_by_month_day_dict(year, year + 1, month_days)
+    profile = np.concatenate(list(year_seq_res.values()))
+    return profile 
+
+
+def get_profile_by_day(start_year, end_year, day_numbers):
+    day_numbers = {month: day_numbers for month in all_months}
+    profile = get_profile_by_month_day_dict(start_year, end_year, day_numbers)
+    return profile
+
+
+def get_profile_by_period_for_charger(start_year, end_year, day_numbers):
+    if isinstance(day_numbers, list):
+        return get_profile_by_day(start_year, end_year, day_numbers)
+    if isinstance(day_numbers, dict):
+        return get_profile_by_month_day_dict(start_year, end_year, day_numbers)
+    
+
+
