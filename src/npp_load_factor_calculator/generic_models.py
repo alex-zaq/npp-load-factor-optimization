@@ -102,21 +102,48 @@ class Generic_source:
         return source
         
     
-    def create_source_nonconvex(self, label, output_bus, power):
+    def create_source_nonconvex(self, label, output_bus, power, min_val, max_val):
         
         source = solph.components.Source(
             label = label,
             outputs = {output_bus: solph.Flow(
                 nominal_value=power,
-                min=0,
-                max=1,
+                min=min_val,
+                max=max_val,
                 nonconvex=solph.NonConvex()
             )}
         )
         source.inputs_pair = None
         source.outputs_pair = [(source, output_bus)]
         self.oemof_es.add(source)
+        return source    
+    
+    
+    
+    def create_source_nonconvex_with_keyword(self, label, output_bus, power, min_val, max_val, keyword_1):
+        
+        
+        keyword_2 = f"{label}_keyword_2"
+        
+        source = solph.components.Source(
+            label = label,
+            outputs = {output_bus: solph.Flow(
+                nominal_value=power,
+                min=min_val,
+                max=max_val,
+                nonconvex=solph.NonConvex(),
+                custom_attributes={keyword_1: True, keyword_2: True},
+            )}
+        )
+        source.inputs_pair = None
+        source.outputs_pair = [(source, output_bus)]
+        source.keyword_1 = keyword_1
+        source.keyword_2 = keyword_2
+        
+        
+        self.oemof_es.add(source)
         return source
+    
     
     
 
@@ -165,7 +192,7 @@ class Generic_source:
             
             
             if risk_per_hour:
-                default_risk_source = self.create_source_nonconvex(set_label(label, "default_risk_source"), risk_bus_in, risk_per_hour)
+                default_risk_source = self.create_source_nonconvex(set_label(label, "default_risk_source"), risk_bus_in, risk_per_hour, 0, 1)
                 npp_block.default_risk_mode = True
                 npp_block.default_risk_source = default_risk_source
                 self.constraints["default_risk_constr"]["constr_seq"].append(
@@ -199,7 +226,7 @@ class Generic_source:
         #    + "npp_default_risk_constr":{"status": False, "constraint_seq": []},
         #    + "storage_charge_discharge_constr":{"status": False, "constraint_seq": []},
         #    + "source_converter_n_n_plus_1_constr":{"status": False, "constraint_seq": []},
-        #    +-  "stop_npp_in_reparing_constr":{"status": False, "constr_seq": []},
+        #    +  "stop_npp_in_reparing_constr":{"status": False, "constr_seq": []},
         #     "different_npp_parallel_repairing_constr":{"status": False, "constraint_seq": []},
         #     "different_parralel_repairing_type_constr":{"status": False, "constraint_seq": []},
         # }
@@ -213,33 +240,34 @@ class Generic_source:
         storage_factory = Generic_storage(self.oemof_es)
         converter_factory = Generic_converter(self.oemof_es)
         sink_factory = Generic_sink(self.oemof_es)
+        
+           
+        general_bus = bus_factory.create_bus(set_label(label, "source_control_output_bus"))   
+        converter_out_bus = bus_factory.create_bus(set_label(label, "converter_out_bus"))
+           
+           
+        c_general_source = self.create_source_nonconvex_with_keyword(set_label(label, "general_source"), general_bus, 10e6, 1, 1, npp_block.keyword) 
+
+
+        c_sink_general = sink_factory.create_sink(set_label(label, "general_sink"), general_bus)
+        c_sink_for_converters = sink_factory.create_sink(set_label(label, "sink_for_converters"), converter_out_bus)   
+        
+        
+        repair_nodes = {"general_source": c_general_source, "general_sink": c_sink_general, "sink_for_converters": c_sink_for_converters}
            
         for name in repair_options:
             
-            
-            converter_limit_in_bus = bus_factory.create_bus(set_label(label, name, "converter_limit_in_bus"))
-            converter_out_bus = bus_factory.create_bus(set_label(label, name, "converter_out_bus"))
-            
-            
             c_source_label = set_label(label, name, "source_charge")
-            c_sink_label = set_label(label, name, "sink_excess")
             c_converter_label = set_label(label, name, "converter_repair")
             c_storage_label = set_label(label, name, "storage_repair")
             
             
             max_power_profile_source = get_profile_by_period_for_charger(self.start_year, self.end_year, repair_options[name]["start_day"])
-
-
-
             converter_max_power_profile = get_valid_profile_by_months(self.start_year, self.end_year, repair_options[name]["avail_months"])
             converter_power = repair_options[name]["risk_reducing"] / (repair_options[name]["duration"] * 24)
             converter_startup_cost = repair_options[name]["cost"]
             converter_minuptime = repair_options[name]["duration"] * 24
-
-
             storage_capacity = converter_power * converter_minuptime
-
-
 
             # plot_array(max_power_profile_source)
             # plot_array(max_power_profile_converter)
@@ -247,10 +275,8 @@ class Generic_source:
             # проверить и переименовать bus
                         
                         
-            c_sink = sink_factory.create_sink(
-                c_sink_label,
-                converter_out_bus,
-                )
+            converter_limit_in_bus = bus_factory.create_bus(set_label(label, name, "converter_limit_in_bus"))
+
             
             c_source = self.create_source_with_max_profile(
                 c_source_label,
@@ -265,10 +291,10 @@ class Generic_source:
                 storage_capacity,
                 ) # constraint нельзя одновременно заряжать и разряжать рассчитать емкость
 
-
             c_converter = converter_factory.create_converter_double_input(
                     c_converter_label,
                     converter_power,
+                    general_bus,
                     converter_main_risk_in_bus,
                     converter_limit_in_bus,
                     converter_out_bus,
@@ -278,23 +304,21 @@ class Generic_source:
                     npp_block.keyword,
                 ) # constraint нельзя одновременно ремонтировать несколько аэс, доступные месяцы работы
 
-            # constraint converter и source работают одновременно на n и n + 1 (или нет если точное начало ремонта не важно)
+            # constraint converter и source работают одновременно на n и n + 1 (или нет если точное начало ремонта не важно)(опция)
 
             self.constraints["storage_charge_discharge_constr"]["constr_seq"].append(c_storage.keyword)
-            self.constraints["source_converter_n_n_plus_1_constr"]["constr_seq"].append((c_source.outputs_pair[0], c_converter.outputs_pair[0]))
-            self.constraints["stop_npp_in_repairing_constr"]["constr_seq"].append(npp_block.keyword)
+            self.constraints["source_converter_n_n_plus_1_constr"]["constr_seq"].append((c_source.outputs_pair[0], c_converter.outputs_pair[0])) # начало ремонта в точные даты
+            self.constraints["stop_npp_in_repairing_constr"]["constr_seq"].append(npp_block.keyword) # запрещает все ремонты во время работы аэс
+                                                                                                     # запретить только некоторые ремонты во время работы аэс
             
-            
-            
-            
-            # возможно неправильно
+            self.constraints["different_parralel_repairing_type_constr"]["constr_seq"].append(c_general_source.keyword_2) # запрещает параллельные ремонты на разных аэс
 
-            repair_nodes[name] = {
-                "source": c_source,
-                "sink": c_sink,
-                "converter": c_converter,
-                "storage": c_storage,
-            }
+
+            self.constraints["different_parralel_repairing_type_constr"]["constr_seq"].append() # 
+  
+  
+  
+            repair_nodes[name] = {"sources": c_source,"converters": c_converter,"storages": c_storage}
                         
             
         return repair_nodes
@@ -386,14 +410,18 @@ class Generic_converter:
         pass
     
     
-    def create_converter_double_input(self, label, pow, input_bus_1, input_bus_2, output_bus, max_power_profile, minimum_uptime, startup_costs, keyword):
+    def create_converter_double_input(self, label, pow, main_source_bus, input_bus_1, input_bus_2, output_bus, max_power_profile, minimum_uptime, startup_costs, keyword):
         
         
   
         
         converter = solph.components.Converter(
             label=label,
-            inputs={input_bus_1: solph.Flow(), input_bus_2: solph.Flow()},
+            inputs={
+                input_bus_1: solph.Flow(),
+                input_bus_2: solph.Flow(),
+                main_source_bus: solph.Flow(),
+                },
             outputs={output_bus: solph.Flow(
                 nominal_value=pow,
                 max=max_power_profile,
