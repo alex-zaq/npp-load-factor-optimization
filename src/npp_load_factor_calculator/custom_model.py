@@ -21,7 +21,7 @@ class Custom_model:
         self.bus_factory = Generic_bus(oemof_es)
         self.sink_factory = Generic_sink(oemof_es)
         self.source_factory = Generic_source(oemof_es)
-        self.source_factory.set_years(scenario["start_year"], scenario["end_year"])
+        self.source_factory.set_years(scenario["years"])
         self.block_db = Block_db()
    
     def add_electricity_demand(self):

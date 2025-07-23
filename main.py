@@ -50,7 +50,7 @@ new_npp_block_1_events = {}
 
 repair_options = {
     "npp_light_repair": {"cost": 0.1, "duration": 7, "risk_reducing": 0.1, "start_day": [1, 15], "avail_months": all_months},
-    "npp_heavy_repair": {"cost": 0.2, "duration": 14, "risk_reducing": 0.2, "start_day": [1, 15], "avail_months": all_months},
+    "npp_avg_repair": {"cost": 0.2, "duration": 14, "risk_reducing": 0.2, "start_day": [1, 15], "avail_months": all_months},
     "npp_capital_repair": {"cost": 0.3, "duration": 21, "risk_reducing": 0.3, "start_day": [1, 15], "avail_months": all_months},
 }
 

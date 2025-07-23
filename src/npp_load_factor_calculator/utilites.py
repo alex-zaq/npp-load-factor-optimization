@@ -149,3 +149,9 @@ def get_profile_by_period_for_charger(start_year, end_year, day_numbers):
     
 
 
+def check_sequential_years(years):
+    return all(years[i] - years[i - 1] == 1 for i in range(1, len(years)))
+            
+ 
+ 
+ 
