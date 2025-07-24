@@ -56,11 +56,10 @@ repair_options = {
 
 
 scen_1 = {
-    "№": 1,
-    "name": "experimental",
-    "years": [2025],
-    "bel_npp": {
-        "block_1": {
+        "№": 1,
+        "name": "experimental",
+        "years": [2025],
+        "bel_npp_block_1": {
             "status": True,
             "nominal_power": 1170,
             "var_cost": -56.5,
@@ -69,7 +68,7 @@ scen_1 = {
             "events": bel_npp_block_1_events,
             "repair_options": repair_options,
         },
-        "block_2": {
+        "bel_npp_block_2": {
             "status": False,
             "nominal_power": 1170,
             "var_cost": -56.5,
@@ -78,9 +77,7 @@ scen_1 = {
             "events": bel_npp_block_2_events,
             "repair_options": repair_options,
         },
-    },
-    "new_npp": {
-        "block_1": {
+       "new_npp_block_1": {
             "status": False,
             "nominal_power": 1170,
             "var_cost": -56.5,
@@ -89,7 +86,6 @@ scen_1 = {
             "events": new_npp_block_1_events,
             "repair_options": repair_options,
         },
-    },
 }
 
 

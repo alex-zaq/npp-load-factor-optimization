@@ -23,6 +23,22 @@ class Custom_model:
         self.source_factory = Generic_source(oemof_es)
         self.source_factory.set_years(scenario["years"])
         self.block_db = Block_db()
+        
+        
+    def _initialize_repair_type_dict(self):
+
+        repair_options_lst = [
+            set(v["repair_options"].keys()) 
+            for k, v in self.scenario.items() if "block" in k
+        ]
+        
+        max_set = max(repair_options_lst, key=len)
+        
+        
+        if not all(max_set.issuperset(elem) for elem in repair_options_lst):
+            raise Exception("Repair options are not the same")
+        
+        self.source_factory.set_repair_type_dict(max_set)
    
     def add_electricity_demand(self):
         self.el_bus = self.bus_factory.create_bus("электроэнергия (bus)")
