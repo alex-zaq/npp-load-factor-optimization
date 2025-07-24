@@ -49,9 +49,9 @@ new_npp_block_1_events = {}
 
 
 repair_options = {
-    "npp_light_repair": {"cost": 0.1, "duration": 7, "risk_reducing": 0.1, "start_day": [1, 15], "avail_months": all_months},
-    "npp_avg_repair": {"cost": 0.2, "duration": 14, "risk_reducing": 0.2, "start_day": [1, 15], "avail_months": all_months},
-    "npp_capital_repair": {"cost": 0.3, "duration": 21, "risk_reducing": 0.3, "start_day": [1, 15], "avail_months": all_months},
+    "npp_light_repair": {"cost": 0.1, "duration": 7, "risk_reducing": 0.1, "start_day": [1, 15], "avail_months": all_months, "npp_stop": False},
+    "npp_avg_repair": {"cost": 0.2, "duration": 14, "risk_reducing": 0.2, "start_day": [1, 15], "avail_months": all_months, "npp_stop": True},
+    "npp_capital_repair": {"cost": 0.3, "duration": 21, "risk_reducing": 0.3, "start_day": [1, 15], "avail_months": all_months, "npp_stop": True},
 }
 
 
@@ -62,7 +62,8 @@ scen_1 = {
     "bel_npp": {
         "block_1": {
             "status": True,
-            "pow": 1170,
+            "nominal_power": 1170,
+            "var_cost": -56.5,
             "risk_per_hour": 0.01,
             "upper_bound_risk": 0.5,
             "events": bel_npp_block_1_events,
@@ -70,7 +71,8 @@ scen_1 = {
         },
         "block_2": {
             "status": False,
-            "pow": 1170,
+            "nominal_power": 1170,
+            "var_cost": -56.5,
             "risk_per_hour": 0.01,
             "upper_bound_risk": 0.5,
             "events": bel_npp_block_2_events,
@@ -80,7 +82,8 @@ scen_1 = {
     "new_npp": {
         "block_1": {
             "status": False,
-            "pow": 1200,
+            "nominal_power": 1170,
+            "var_cost": -56.5,
             "risk_per_hour": 0.01,
             "upper_bound_risk": 0.5,
             "events": new_npp_block_1_events,

@@ -172,7 +172,10 @@ class Generic_source:
                     min=0,
                     variable_costs=var_cost,
                     nonconvex=solph.NonConvex(),
-                    custom_attributes={keyword: True},
+                    custom_attributes={
+                        keyword: True,
+
+                        },
                 )
             },
         )
@@ -246,14 +249,14 @@ class Generic_source:
         converter_out_bus = bus_factory.create_bus(set_label(label, "converter_out_bus"))
            
            
-        c_general_source = self.create_source_nonconvex_with_keyword(set_label(label, "general_source"), general_bus, 10e6, 1, 1, npp_block.keyword) 
+        # c_general_source = self.create_source_nonconvex_with_keyword(set_label(label, "general_source"), general_bus, 10e6, 1, 1, npp_block.keyword) 
 
 
         c_sink_general = sink_factory.create_sink(set_label(label, "general_sink"), general_bus)
         c_sink_for_converters = sink_factory.create_sink(set_label(label, "sink_for_converters"), converter_out_bus)   
         
         
-        repair_nodes = {"general_source": c_general_source, "general_sink": c_sink_general, "sink_for_converters": c_sink_for_converters}
+        repair_nodes = {"general_sink": c_sink_general, "sink_for_converters": c_sink_for_converters}
            
         for name in repair_options:
             
@@ -294,7 +297,6 @@ class Generic_source:
             c_converter = converter_factory.create_converter_double_input(
                     c_converter_label,
                     converter_power,
-                    general_bus,
                     converter_main_risk_in_bus,
                     converter_limit_in_bus,
                     converter_out_bus,
@@ -311,7 +313,7 @@ class Generic_source:
             self.constraints["stop_npp_in_repairing_constr"]["constr_seq"].append(npp_block.keyword) # запрещает все ремонты во время работы аэс
                                                                                                      # запретить только некоторые ремонты во время работы аэс
             
-            self.constraints["different_parralel_repairing_type_constr"]["constr_seq"].append(c_general_source.keyword_2) # запрещает параллельные ремонты на разных аэс
+            # self.constraints["different_parralel_repairing_type_constr"]["constr_seq"].append(c_general_source.keyword_2) # запрещает параллельные ремонты на разных аэс
 
 
             self.constraints["different_parralel_repairing_type_constr"]["constr_seq"].append() # 
@@ -410,7 +412,7 @@ class Generic_converter:
         pass
     
     
-    def create_converter_double_input(self, label, pow, main_source_bus, input_bus_1, input_bus_2, output_bus, max_power_profile, minimum_uptime, startup_costs, keyword):
+    def create_converter_double_input(self, label, pow, input_bus_1, input_bus_2, output_bus, max_power_profile, minimum_uptime, startup_costs, keyword):
         
         
   
@@ -420,7 +422,6 @@ class Generic_converter:
             inputs={
                 input_bus_1: solph.Flow(),
                 input_bus_2: solph.Flow(),
-                main_source_bus: solph.Flow(),
                 },
             outputs={output_bus: solph.Flow(
                 nominal_value=pow,
@@ -430,7 +431,9 @@ class Generic_converter:
                     minimum_uptime=minimum_uptime,
                     startup_costs=startup_costs,
                 ),
-                custom_attributes={keyword: True},
+                custom_attributes={
+                    keyword: True
+                    },
                 
                 )},
         )
