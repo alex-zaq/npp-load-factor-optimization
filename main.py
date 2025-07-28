@@ -1,4 +1,5 @@
-from src.npp_load_factor_calculator import Block_grouper, Oemof_model, Result_plotter
+from src.npp_load_factor_calculator import Block_grouper, Oemof_model, Result_viewer
+from src.npp_load_factor_calculator.solution_processor import Solution_processor
 from src.npp_load_factor_calculator.utilites import all_months
 
 bel_npp_block_1_events = {
@@ -49,9 +50,36 @@ new_npp_block_1_events = {}
 
 
 repair_options = {
-    "npp_light_repair": {"cost": 0.1, "duration": 7, "risk_reducing": 0.1, "start_day": [1, 15], "avail_months": all_months, "npp_stop": False},
-    "npp_avg_repair": {"cost": 0.2, "duration": 14, "risk_reducing": 0.2, "start_day": [1, 15], "avail_months": all_months, "npp_stop": True},
-    "npp_capital_repair": {"cost": 0.3, "duration": 21, "risk_reducing": 0.3, "start_day": [1, 15], "avail_months": all_months, "npp_stop": True},
+    "npp_light_repair": {
+        "status": True,
+        "cost": 0.1,
+        "duration": 7,
+        "risk_reducing": 0.1,
+        "start_day": {"status": True, "days": [1, 15]},
+        "max_count_in_year": {"status": True, "count": 1},
+        "avail_months": all_months,
+        "npp_stop": False,
+    },
+    "npp_avg_repair": {
+        "status": False,
+        "cost": 0.2,
+        "duration": 14,
+        "risk_reducing": 0.2,
+        "start_day": {"status": True, "days": [1, 15]},
+        "max_count_in_year": {"status": True, "count": 1},
+        "avail_months": all_months,
+        "npp_stop": True,
+    },
+    "npp_capital_repair": {
+        "status": False,
+        "cost": 0.3,
+        "duration": 21,
+        "risk_reducing": 0.3,
+        "start_day": {"status": True, "days": [1, 15]},
+        "max_count_in_year": {"status": True, "count": 1},
+        "avail_months": all_months,
+        "npp_stop": True,
+    },
 }
 
 
@@ -93,7 +121,7 @@ scen_1 = {
 scenario = scen_1
 
 
-model = Oemof_model(
+oemof_model = Oemof_model(
     scenario = scenario,
     solver_settings = {
         "solver": "cplex",
@@ -102,20 +130,29 @@ model = Oemof_model(
     } 
 )
 
-model.calculate()
 
-custom_es = model.get_custom_es()
-results = model.get_results()
+solution_processor = Solution_processor(oemof_model)
+
+solution_processor.set_calc_mode(save_results=True)
+solution_processor.set_dumps_folder("./dumps")
+solution_processor.set_excel_folder("./excel_results")
+
+# solution_processor.set_restore_mode(file_number="00") 
+
+solution_processor.apply()
+
+
+
+custom_es = solution_processor.get_custom_es()
+oemof_es = solution_processor.get_oemof_es()
+custom_es = solution_processor.get_custom_es()
+results = solution_processor.get_results()
+
 
 
 bel_npp_block_1 = custom_es.block_db.get_bel_npp_block_1()
 bel_npp_block_2 = custom_es.block_db.get_bel_npp_block_2()
 new_npp_block_1 = custom_es.block_db.get_new_npp_block_1()
-
-bel_npp_block_1_risk_storage = bel_npp_block_1.risk_storage
-bel_npp_block_2_risk_storage = bel_npp_block_2.risk_storage
-new_npp_block_1_risk_storage = new_npp_block_1.risk_storage
-
 
 
 block_grouper = Block_grouper(results, custom_es)
@@ -127,18 +164,34 @@ block_grouper.set_block_groups(
         "БелАЭС (блок 2)": {"order": [bel_npp_block_2], "color": "#ff7f0e"},
         "Новая АЭС (блок 1)": {"order": [new_npp_block_1], "color": "#1f77b4"},
     },
-    risk_gen={
-        "БелАЭС (блок 1) - риск": {"order": [bel_npp_block_1_risk_storage], "color": "#1ae0ff"},
-        "БелАЭС (блок 2) - риск": {"order": [bel_npp_block_2_risk_storage], "color": "#e8ff1a"},
-        "Новая АЭС (блок 1) - риск": {"order": [new_npp_block_1_risk_storage], "color": "#3d26a3"},
+    main_risk_gen={
+        "БелАЭС (блок 1) - риск": {"order": [bel_npp_block_1], "color": "#1ae0ff"},
+        "БелАЭС (блок 2) - риск": {"order": [bel_npp_block_2], "color": "#e8ff1a"},
+        "Новая АЭС (блок 1) - риск": {"order": [new_npp_block_1], "color": "#3d26a3"},
     },
+    repair_events={
+        "БелАЭС (блок 1) - ремонт": {"order": [bel_npp_block_1], "color": "#c45c17"},
+        "БелАЭС (блок 2) - ремонт": {"order": [bel_npp_block_2], "color": "#24041D"},
+        "Новая АЭС (блок 1) - ремонт": {"order": [new_npp_block_1], "color": "#6144e4"},
+    },
+    repair_cost={
+        "БелАЭС (блок 1) - затраты": {"order": [bel_npp_block_1], "color": "#18be2f"},
+        "БелАЭС (блок 2) - затраты": {"order": [bel_npp_block_2], "color": "#F07706"},
+        "Новая АЭС (блок 1) - затраты": {"order": [new_npp_block_1], "color": "#4a3550"},
+    }
 )
 
 
-result_plotter = Result_plotter(block_grouper)
-result_plotter.plot_electricity_generation_profile()
+result_viewer = Result_viewer(block_grouper)
+result_viewer.plot_electricity_generation_profile()
+# result_viewer.plot_default_risk_profile()
+# result_viewer.plot_main_risk_events_profile()
+# result_viewer.plot_cost_profile()
+# result_viewer.plot_repair_profile()
+# result_viewer.plot_general_graph()
 
 
+# solution_processor.write_excel_file("test.xlsx")
 
 print("done")
 
@@ -148,7 +201,7 @@ print("done")
 # result_plotter.plot_cumulative_risk_profile()
 # result_plotter.plot_repair_cost_profile()
 
-# изменить начальный коенчный на [начальный, конечный]
+# изменить начальный и конечный год на [начальный, конечный]
 # добавить структуру методов классов
 # мин. фукц. класса oemof_model
 # мин. фукц. класса custom_model_builder (добавить два блока аэс, риски)
@@ -170,3 +223,5 @@ print("done")
 # через определенные интервалы времени (например длина ремонта) добавить sink и source который будет в данные интервалы
 # заряжать storage, которая будет позволять работать sink для риска с учетом uptime равной длине ремента (можно произвольеные инетрвалы с выключения недопущения одновременной # # работы заряж. source и ремонтируюещего sink)
 # проверить на малом примере: н и н+1 и два одновременных слова в custom_attributes и доп шаг для работы storage
+# запись в эксель - числа - графика- сценарий - настройки решателя
+# сохранение картинки через код plt.savefig('kartinka.png', dpi=300)

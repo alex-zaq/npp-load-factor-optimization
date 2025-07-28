@@ -25,20 +25,13 @@ class Custom_model:
         self.block_db = Block_db()
         
         
-    def _initialize_repair_type_dict(self):
+    # def _initialize_repair_type_dict(self):
 
-        repair_options_lst = [
-            set(v["repair_options"].keys()) 
-            for k, v in self.scenario.items() if "block" in k
-        ]
-        
-        max_set = max(repair_options_lst, key=len)
-        
-        
-        if not all(max_set.issuperset(elem) for elem in repair_options_lst):
-            raise Exception("Repair options are not the same")
-        
-        self.source_factory.set_repair_type_dict(max_set)
+    #     repair_type_set = set()
+    #     for k, v in self.scenario.items():
+    #         if "block" in k:
+    #             repair_type_set.update(v["repair_options"].keys())
+    #     self.source_factory.set_repair_type_dict(repair_type_set)
    
     def add_electricity_demand(self):
         self.el_bus = self.bus_factory.create_bus("электроэнергия (bus)")
@@ -49,23 +42,23 @@ class Custom_model:
     def add_bel_npp(self):
                                
                                
-        status_1 = self.scenario["bel_npp"]["block_1"]["status"]
-        status_2 = self.scenario["bel_npp"]["block_2"]["status"]
-        power_1 = self.scenario["bel_npp"]["block_1"]["nominal_power"]
-        power_2 = self.scenario["bel_npp"]["block_2"]["nominal_power"]
-        var_cost_1 = self.scenario["bel_npp"]["block_1"]["var_cost"]
-        var_cost_2 = self.scenario["bel_npp"]["block_2"]["var_cost"]
+        status_1 = self.scenario["bel_npp_block_1"]["status"]
+        status_2 = self.scenario["bel_npp_block_2"]["status"]
+        power_1 = self.scenario["bel_npp_block_1"]["nominal_power"]
+        power_2 = self.scenario["bel_npp_block_2"]["nominal_power"]
+        var_cost_1 = self.scenario["bel_npp_block_1"]["var_cost"]
+        var_cost_2 = self.scenario["bel_npp_block_2"]["var_cost"]
         start_year, end_year = self.scenario["start_year"], self.scenario["end_year"]
-        npp_block_1_events = self.scenario["bel_npp"]["block_1"]["events"]
-        npp_block_2_events = self.scenario["bel_npp"]["block_2"]["events"]
-        upper_bound_risk_1 = self.scenario["bel_npp"]["block_1"]["upper_bound_risk"]
-        upper_bound_risk_2 = self.scenario["bel_npp"]["block_2"]["upper_bound_risk"]
-        risk_per_hour_1 = self.scenario["bel_npp"]["block_1"]["risk_per_hour"]
-        risk_per_hour_2 = self.scenario["bel_npp"]["block_2"]["risk_per_hour"]
+        npp_block_1_events = self.scenario["bel_npp_block_1"]["events"]
+        npp_block_2_events = self.scenario["bel_npp_block_2"]["events"]
+        upper_bound_risk_1 = self.scenario["bel_npp_block_1"]["upper_bound_risk"]
+        upper_bound_risk_2 = self.scenario["bel_npp_block_2"]["upper_bound_risk"]
+        risk_per_hour_1 = self.scenario["bel_npp_block_1"]["risk_per_hour"]
+        risk_per_hour_2 = self.scenario["bel_npp_block_2"]["risk_per_hour"]
         fix_risk_lst_1 = get_risk_events_profile(start_year, end_year, npp_block_1_events)
         fix_risk_lst_2 = get_risk_events_profile(start_year, end_year, npp_block_2_events)
-        repair_options_1 = self.scenario["bel_npp"]["block_1"]
-        repair_options_2 = self.scenario["bel_npp"]["block_2"]
+        repair_options_1 = self.scenario["bel_npp_block_1"]
+        repair_options_2 = self.scenario["bel_npp_block_2"]
            
         # plot_array(fix_risk_lst_1)
         # plot_array(fix_risk_lst_2)
@@ -102,15 +95,15 @@ class Custom_model:
     
     def add_new_npp(self):
         
-        status_1 = self.scenario["new_npp"]["block_1"]["status"]
-        power_1 = self.scenario["new_npp"]["block_1"]["nominal_power"]
-        var_cost_1 = self.scenario["new_npp"]["block_1"]["var_cost"]
+        status_1 = self.scenario["new_npp_block_1"]["status"]
+        power_1 = self.scenario["new_npp_block_1"]["nominal_power"]
+        var_cost_1 = self.scenario["new_npp_block_1"]["var_cost"]
         start_year, end_year = self.scenario["start_year"], self.scenario["end_year"]
-        npp_block_1_events = self.scenario["new_npp"]["block_1"]["events"]
-        upper_bound_risk_1 = self.scenario["new_npp"]["block_1"]["upper_bound_risk"]
-        risk_per_hour_1 = self.scenario["new_npp"]["block_1"]["risk_per_hour"]
+        npp_block_1_events = self.scenario["new_npp_block_1"]["events"]
+        upper_bound_risk_1 = self.scenario["new_npp_block_1"]["upper_bound_risk"]
+        risk_per_hour_1 = self.scenario["new_npp_block_1"]["risk_per_hour"]
         fix_risk_lst_1 = get_risk_events_profile(start_year, end_year, npp_block_1_events)
-        repair_options_1 = self.scenario["new_npp"]["block_1"]
+        repair_options_1 = self.scenario["new_npp_block_1"]
                 
         # plot_array(fix_risk_lst_1)
                 
@@ -130,6 +123,6 @@ class Custom_model:
         
 
     def get_constraints(self):
-        npp_constraints = self.source_factory.get_npp_constraints()
+        npp_constraints = self.source_factory.get_constraints()
         return npp_constraints
         

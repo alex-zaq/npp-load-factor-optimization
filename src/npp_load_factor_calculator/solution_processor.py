@@ -11,13 +11,12 @@ from src.npp_load_factor_calculator.utilites import (
     get_number,
 )
 
-
 logger = get_logger()
 
 class Solution_processor:
 
-    def __init__(self, scen):
-        self.scen = scen
+    def __init__(self, oemof_model):
+        self.oemof_model = oemof_model
         self.calc_mode = False
         self.restore_mode = False
         self.save_results = False
@@ -33,8 +32,8 @@ class Solution_processor:
     def set_block_grouper(self, block_grouper):
         self.block_grouper = block_grouper
 
-    def set_alt_block_grouper(self, block_grouper):
-        self.alt_block_grouper = block_grouper
+    # def set_alt_block_grouper(self, block_grouper):
+    #     self.alt_block_grouper = block_grouper
 
     def set_excel_folder(self, folder):
         self.excel_folder = folder
@@ -51,19 +50,19 @@ class Solution_processor:
         
         
     def calculate(self):
-        self.scen.init_energy_system()
-        self.scen.add_excel_data_to_custom_es()
-        self.scen.construct_energy_system(self.group_options)
-        self.scen.launch_solver()
-        self.custom_es = self.scen.get_custom_es()
-        self.oemof_es = self.scen.get_oemof_es()
-        self.results = self.scen.get_results()
-        self.meta_results = self.scen.get_meta_results()
+        self.oemof_model.init_energy_system()
+        self.oemof_model.add_excel_data_to_custom_es()
+        self.oemof_model.construct_energy_system(self.group_options)
+        self.oemof_model.launch_solver()
+        self.custom_es = self.oemof_model.get_custom_es()
+        self.oemof_es = self.oemof_model.get_oemof_es()
+        self.results = self.oemof_model.get_results()
+        self.meta_results = self.oemof_model.get_meta_results()
 
     def save_solution(self):
         self.oemof_es.results["main"] = self.results
         self.oemof_es.results["meta"] = self.meta_results
-        self.oemof_es.results["group_options"] = self.scen.get_group_options()
+        self.oemof_es.results["group_options"] = self.oemof_model.get_group_options()
         file_name = self.get_dumps_file_name_with_auto_number()
         self.oemof_es.dump(dpath=self.dumps_folder, filename=file_name)
 
@@ -84,13 +83,13 @@ class Solution_processor:
     def restore_solution(self):
         self.oemof_es = solph.EnergySystem()
         self.custom_es = Custom_model(self.oemof_es)
-        self.scen.set_custom_es(self.custom_es)
+        self.oemof_model.set_custom_es(self.custom_es)
 
         self.oemof_es.restore(dpath=self.dumps_folder, filename=self.file_name)
         self.results = self.oemof_es.results["main"]
         self.meta_results = self.oemof_es.results["meta"]
         self.group_options = self.oemof_es.results["group_options"]
-        self.scen.construct_energy_system(self.group_options)
+        self.oemof_model.construct_energy_system(self.group_options)
 
     def write_excel_file(self, excel_file_name=None):
         if excel_file_name is None:
@@ -101,7 +100,7 @@ class Solution_processor:
         Excel_writer.set_options(self.excel_folder, self.excel_file_name)
         Excel_writer.set_group_options(self.group_options)
         Excel_writer.set_block_grouper(self.block_grouper)
-        Excel_writer.set_alt_block_grouper(self.alt_block_grouper)
+        # Excel_writer.set_alt_block_grouper(self.alt_block_grouper)
         Excel_writer.write_excel_data()
 
 

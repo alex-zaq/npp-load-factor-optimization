@@ -1,3 +1,4 @@
+import datetime
 import os
 import pprint
 
@@ -152,6 +153,13 @@ def get_profile_by_period_for_charger(start_year, end_year, day_numbers):
 def check_sequential_years(years):
     return all(years[i] - years[i - 1] == 1 for i in range(1, len(years)))
             
+            
+def hours_between_years(start_year, end_year):
+    start_date = datetime.datetime(start_year, 1, 1)
+    end_date = datetime.datetime(end_year + 1, 1, 1)
+    delta = end_date - start_date
+    hours = delta.total_seconds() / 3600
+    return hours
  
  
  

@@ -35,14 +35,15 @@ class Oemof_model:
     
     
     def _add_constraints(self, constraints_processor):
-        constraints_provider = self.custom_es.get_constraints_provider()
-        block_parallel_status_limit = constraints_provider.get_block_parallel_status_limit()
-        constraints_processor.apply_block_parallel_status_limit(block_parallel_status_limit)
+        constraints_processor.get_block_parallel_status_limit()
+        constraints_processor.apply_block_parallel_status_limit()
+
 
 
     def _launch_solver(self):
         model = solph.Model(self.oemof_es)
-        # self._add_constraints(Constraint_processor(model))
+        constraints = self.custom_es.get_constraints()
+        self._add_constraints(Constraint_processor(model, constraints))
         # hours_count = len(model.timeincrement)
         
         

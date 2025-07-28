@@ -1,15 +1,63 @@
-
+from oemof import solph
 
 
 class Constraint_processor:
-    def __init__(self, model):
+    def __init__(self, model, constraints):
         self.model = model
+        self.count = len(model.timeincrement)
+        self.constraints = constraints
 
-        # for i in range(24):
+
+    def apply_default_risk_constr(self):
+        constr = self.constraints["default_risk_constr"]
+        model = self.model
+        for elem in constr:
+            (npp_block, output_bus), (default_risk_block, risk_bus)  = elem
+            for i in range(self.count):
+                solph.constraints.equate_variables(
+                    model,
+                    model.NonConvexFlowBlock.status[npp_block, output_bus, i],
+                    model.NonConvexFlowBlock.status[default_risk_block, risk_bus, i],
+                )
+    
+    def apply_storage_charge_discharge_constr(self):
+        keywords = self.constraints["storage_charge_discharge_constr"]
+        model = self.model
+        for keyword in keywords:
+                solph.constraints.limit_active_flow_count_by_keyword(
+                model, keyword, lower_limit=0, upper_limit=1
+            )
+    
+    
+    def apply_source_converter_n_n_plus_1_constr(self):
+        constr = self.constraints["source_converter_n_n_plus_1_constr"]
+        model = self.model
+        for elem in constr:
+            (souce_block, bus_1), (converter_block, bus_2)  = elem
+            for i in range(self.count):
+                solph.constraints.equate_variables(
+                    model,
+                    model.NonConvexFlowBlock.status[souce_block, bus_1, i],
+                    model.NonConvexFlowBlock.status[converter_block, bus_2, i + 1],
+                )
+    
+    
+    def apply_repairing_in_single_npp(self):
+        keywords = self.constraints["repairing_in_single_npp"]
+        model = self.model
+        for keyword in keywords:
+                solph.constraints.limit_active_flow_count_by_keyword(
+                model, keyword, lower_limit=0, upper_limit=1
+            )
+    
+    
+    def apply_repairing_type_for_different_npp(self):
+        keywords = self.constraints["repairing_type_for_different_npp"]
+        model = self.model
+        for keyword in keywords:
+                solph.constraints.limit_active_flow_count_by_keyword(
+                model, keyword, lower_limit=0, upper_limit=1
+            )
+            
 
 
-#     solph.constraints.equate_variables(
-#         model,
-#         model.NonConvexFlowBlock.status[cpp, el_bus, i],
-#         model.NonConvexFlowBlock.status[control_bus_npp, control_sink_npp, i],
-#     )
