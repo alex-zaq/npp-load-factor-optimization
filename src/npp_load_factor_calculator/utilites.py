@@ -97,6 +97,14 @@ def get_valid_profile_by_months(start_year, end_year, months):
         profile[date_range.month == pd.to_datetime(month, format='%b').month] = 1
     return profile
 
+def get_profile_with_first_day(start_year, end_year):
+    t_delta = datetime.datetime(end_year, 1, 1) - datetime.datetime(start_year, 1, 1)
+    num_hours = int(t_delta.total_seconds() // 3600)
+    profile = np.zeros(num_hours)
+    for year in range(start_year, end_year):
+        start_of_year_idx = (datetime.datetime(year, 1, 1) - datetime.datetime(start_year, 1, 1)).days * 24
+        profile[start_of_year_idx] = 1
+    return profile
 
 
 def get_profile_by_month_day_dict(start_year, end_year, month_days):

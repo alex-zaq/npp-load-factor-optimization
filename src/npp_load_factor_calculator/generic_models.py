@@ -4,6 +4,7 @@ import oemof.solph as solph
 from src.npp_load_factor_calculator.utilites import (
     check_sequential_years,
     get_profile_by_period_for_charger,
+    get_profile_with_first_day,
     get_valid_profile_by_months,
     hours_between_years,
     plot_array,
@@ -208,11 +209,14 @@ class Generic_source:
            
         for name in repair_options:
             
+            repair_nodes[name] = {}
+            
             c_source_label = set_label(label, name, "source_charge")
             c_converter_label = set_label(label, name, "converter_repair")
             c_storage_label = set_label(label, name, "storage_repair")
             converter_keyword = f"{name}_converter_keyword"
             
+            max_count_status = repair_options[name]["max_count_in_year"]["status"]
             
             max_power_profile_source = self._get_source_profile(s, e, repair_options[name])
             converter_max_power_profile = get_valid_profile_by_months(s, e, repair_options[name]["avail_months"])
@@ -243,13 +247,34 @@ class Generic_source:
                 ) # constraint нельзя одновременно заряжать и разряжать рассчитать емкость
 
                 
-            c_storage_period_level, storage_period_bus_out, c_source_period_level = (
-                self._get_storage_period_level(s, e, set_label(label, name, "storage_period"), repair_options[name])
-            )
+            if max_count_status:
+                
+                c_storage_period_label = set_label(label, name, "storage_period")
+                c_source_period_label = set_label(label, name, "source_period")
+
+                c_storage_period_level = storage_factory.create_storage_period_level(c_storage_period_label, repair_options[name])
+                
+                storage_perios_bus_in = c_storage_period_level.inputs_pair[0][0]
+                storage_period_bus_out = c_storage_period_level.outputs_pair[0][1]
+
+                max_power_profile_source_period = get_profile_with_first_day(s, e)
+
+                c_source_period_level = self.create_source_with_max_profile(c_source_period_label, storage_perios_bus_in, max_power_profile_source_period)
+
+                repair_nodes[name] |= {
+                    "storage_period": c_storage_period_level,
+                    "source_period": c_source_period_level,
+                }
+                
+                self.constraints["storage_charge_discharge_constr"].add(c_storage_period_level.keyword)
+
+            else: 
+                storage_period_bus_out = None
 
 
             npp_keyword, converter_keyword = self._get_npp_converter_keywords(name, npp_keyword_dict)
 
+            # переделать на source.output_bus
             c_converter = converter_factory.create_converter_double_input(
                 c_converter_label,
                 converter_power,
@@ -266,12 +291,10 @@ class Generic_source:
 
 
             # переделать
-            repair_nodes[name] = {
-                "source_npp": c_source_npp_level,
-                "converter_npp": c_converter,
+            repair_nodes[name] |= {
                 "storage_npp": c_storage_npp_level,
-                "source_period": c_source_period_level,
-                "storage_period": c_storage_period_level,
+                "converter_npp": c_converter,
+                "source_npp": c_source_npp_level,
             }
 
             # constraint converter и source работают одновременно на n и n + 1 (или нет если точное начало ремонта не важно)(опция)
@@ -280,7 +303,8 @@ class Generic_source:
             self.constraints["source_converter_n_n_plus_1_constr"].add((c_source_npp_level.outputs_pair[0], c_converter.outputs_pair[0])) 
             self.constraints["repairing_in_single_npp"].add(npp_keyword)
             self.constraints["repairing_type_for_different_npp"].add(converter_keyword)
-                        
+            self.constraints["storage_charge_discharge_constr"].add(c_storage_npp_level.keyword)
+            
             
         return repair_nodes
     
@@ -299,8 +323,7 @@ class Generic_source:
 
         if name in npp_keyword_dict:
             npp_keyword = npp_keyword_dict[name]
-            # bad
-            converter_keyword = {(name,"converter_keyword"): True}
+            converter_keyword = {set_label(name,"converter_keyword"): True}
         else:
             npp_keyword = converter_keyword = None
 
@@ -314,6 +337,45 @@ class Generic_storage:
         self.oemof_es = oemof_es
         self.constraints = {}
     
+    
+    def create_storage_period_level(self, label, repair_options_name):
+
+        bus_factory = Generic_bus(self.oemof_es)
+        
+        input_bus = bus_factory.create_bus(set_label(label, "input_bus"))
+        output_bus = bus_factory.create_bus(set_label(label, "output_bus"))
+        
+        capacity = repair_options_name["duration"] * repair_options_name["max_count_in_year"]["count"] * 24
+        
+        keyword = f"{label}_keyword"
+
+        storage = solph.components.GenericStorage(
+            label=label,
+            nominal_storage_capacity=capacity,
+            inputs={
+                input_bus: solph.Flow(
+                    nominal_value=1e8,
+                    nonconvex=solph.NonConvex(),
+                    custom_attributes={keyword: True},
+                )
+            },
+            outputs={
+                output_bus: solph.Flow(
+                    nominal_value=1e8,
+                    nonconvex=solph.NonConvex(),
+                    custom_attributes={keyword: True},
+                )
+            },
+            balanced=False,
+        )
+    
+        storage.inputs_pair = [(input_bus, storage)]
+        storage.outputs_pair = [(storage, output_bus)]
+        storage.keyword = keyword
+    
+        return storage
+    
+    
  
     def create_storage_for_npp(
         self,
@@ -321,16 +383,14 @@ class Generic_storage:
         input_bus,
         output_bus,
         capacity,
-        max_storage_level,
         ):
 
-        # initial_content = 1
+
 
         keyword = f"{label}_keyword"
 
         storage = solph.components.GenericStorage(
             label=label,
-            # initial_storage_level=
             nominal_storage_capacity=capacity,
             inputs={
                 input_bus: solph.Flow(

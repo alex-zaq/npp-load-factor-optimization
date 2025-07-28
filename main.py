@@ -92,7 +92,7 @@ scen_1 = {
             "nominal_power": 1170,
             "var_cost": -56.5,
             "risk_per_hour": 0.01,
-            "upper_bound_risk": 0.5,
+            "upper_bound_risk": 0,
             "events": bel_npp_block_1_events,
             "repair_options": repair_options,
         },
