@@ -8,6 +8,7 @@ from src.npp_load_factor_calculator.logging_options import get_logger
 from src.npp_load_factor_calculator.utilites import (
     get_full_filename,
     get_next_number_file_name,
+    get_npp_block_active_count_by_scen,
     get_number,
 )
 
@@ -17,10 +18,13 @@ class Solution_processor:
 
     def __init__(self, oemof_model):
         self.oemof_model = oemof_model
+
         self.calc_mode = False
         self.restore_mode = False
         self.save_results = False
-        self.file_name = None
+
+        self.load_file_name = None
+        
         self.excel_file_name = None
         self.dumps_folder = None
         self.excel_folder = None
@@ -32,8 +36,6 @@ class Solution_processor:
     def set_block_grouper(self, block_grouper):
         self.block_grouper = block_grouper
 
-    # def set_alt_block_grouper(self, block_grouper):
-    #     self.alt_block_grouper = block_grouper
 
     def set_excel_folder(self, folder):
         self.excel_folder = folder
@@ -44,15 +46,14 @@ class Solution_processor:
         self.save_results = save_results
 
     def set_restore_mode(self, *, file_number):
-        self.file_name = get_full_filename(self.dumps_folder, file_number)
+        self.load_file_name = get_full_filename(self.dumps_folder, file_number)
         self.restore_mode = True
         self.calc_mode = False
         
         
     def calculate(self):
         self.oemof_model.init_energy_system()
-        self.oemof_model.add_excel_data_to_custom_es()
-        self.oemof_model.construct_energy_system(self.group_options)
+        self.oemof_model.init_custom_model(self.scenario)
         self.oemof_model.launch_solver()
         self.custom_es = self.oemof_model.get_custom_es()
         self.oemof_es = self.oemof_model.get_oemof_es()
@@ -62,19 +63,24 @@ class Solution_processor:
     def save_solution(self):
         self.oemof_es.results["main"] = self.results
         self.oemof_es.results["meta"] = self.meta_results
-        self.oemof_es.results["group_options"] = self.oemof_model.get_group_options()
+        self.oemof_es.results["scenario"] = self.oemof_model.get_group_options()
         file_name = self.get_dumps_file_name_with_auto_number()
         self.oemof_es.dump(dpath=self.dumps_folder, filename=file_name)
 
 
-    def get_dumps_file_name(self):
-        file_name = ""
+    def get_dumps_file_name(self, scenario):
+        scen_number = scenario["№"]
+        scen_name = scenario["name"]
+        start_year = scenario["years"][0]
+        end_year = scenario["end_year"][-1] 
+        active_npp_count = get_npp_block_active_count_by_scen(scenario)
+        file_name = "_".join([scen_number, scen_name, start_year, end_year, active_npp_count])
         return file_name
 
 
     def get_dumps_file_name_with_auto_number(self):
         next_number = get_number(get_next_number_file_name(self.dumps_folder))
-        file_name = f"{self.get_dumps_file_name()}.oemof"
+        file_name = f"{self.get_dumps_file_name(self.scenario)}.oemof"
         res = [next_number, file_name]
         res = "_".join(res)
         return res
@@ -82,26 +88,15 @@ class Solution_processor:
 
     def restore_solution(self):
         self.oemof_es = solph.EnergySystem()
-        self.custom_es = Custom_model(self.oemof_es)
-        self.oemof_model.set_custom_es(self.custom_es)
-
-        self.oemof_es.restore(dpath=self.dumps_folder, filename=self.file_name)
+        self.oemof_es.restore(dpath=self.dumps_folder, filename=self.load_file_name)
         self.results = self.oemof_es.results["main"]
         self.meta_results = self.oemof_es.results["meta"]
-        self.group_options = self.oemof_es.results["group_options"]
-        self.oemof_model.construct_energy_system(self.group_options)
+        self.scenario = self.oemof_es.results["scenario"]
+        self.oemof_model.init_custom_model(self.scenario)
 
-    def write_excel_file(self, excel_file_name=None):
-        if excel_file_name is None:
-            self.excel_file_name = f"{self.get_dumps_file_name()}.xlsx"
-        else:
-            self.excel_file_name = excel_file_name
+        # self.custom_es = Custom_model(self.scenario, self.oemof_es)
+        # self.oemof_model.set_custom_es(self.custom_es)
 
-        Excel_writer.set_options(self.excel_folder, self.excel_file_name)
-        Excel_writer.set_group_options(self.group_options)
-        Excel_writer.set_block_grouper(self.block_grouper)
-        # Excel_writer.set_alt_block_grouper(self.alt_block_grouper)
-        Excel_writer.write_excel_data()
 
 
     def get_message(self):
@@ -112,6 +107,41 @@ class Solution_processor:
         elif self.restore_mode:
             mess = "выполнение восстановления решения"
         return mess
+
+
+    def apply(self):
+        mess = self.get_message()
+        if self.calc_mode:
+            logger.info(mess)
+            self.calculate()
+            if self.save_results:
+                self.save_solution()
+        elif self.restore_mode:
+            logger.info(mess)
+            self.restore_solution()
+            
+            
+    def get_custom_model(self):
+        return self.custom_es
+    
+    def get_oemof_es(self):
+        return self.oemof_es
+    
+    def get_results(self):
+        return self.results
+
+    # def write_excel_file(self, excel_file_name=None):
+
+    #     if excel_file_name is None:
+    #         self.excel_file_name = f"{self.get_dumps_file_name()}.xlsx"
+    #     else:
+    #         self.excel_file_name = excel_file_name
+
+    #     Excel_writer.set_options(self.excel_folder, self.excel_file_name)
+    #     Excel_writer.set_group_options(self.group_options)
+    #     Excel_writer.set_block_grouper(self.block_grouper)
+    #     # Excel_writer.set_alt_block_grouper(self.alt_block_grouper)
+    #     Excel_writer.write_excel_data()
 
     # def create_block_scheme(self, file, **kwargs):
     #     image_format = kwargs.get("image_format", "png")
@@ -126,24 +156,3 @@ class Solution_processor:
     #         legend=False,
     #     )
     #     gr.view()
-
-    def apply(self):
-        mess = self.get_message()
-
-        if self.calc_mode:
-            logger.info(mess)
-
-            self.calculate()
-
-            if self.save_results:
-                self.save_solution()
-
-        elif self.restore_mode:
-            logger.info(mess)
-            self.restore_solution()
-
-        
-        
-        
-    
-    

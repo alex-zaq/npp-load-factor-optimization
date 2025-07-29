@@ -24,15 +24,7 @@ class Custom_model:
         self.source_factory.set_years(scenario["years"])
         self.block_db = Block_db()
         
-        
-    # def _initialize_repair_type_dict(self):
 
-    #     repair_type_set = set()
-    #     for k, v in self.scenario.items():
-    #         if "block" in k:
-    #             repair_type_set.update(v["repair_options"].keys())
-    #     self.source_factory.set_repair_type_dict(repair_type_set)
-   
     def add_electricity_demand(self):
         self.el_bus = self.bus_factory.create_bus("электроэнергия (bus)")
         self.el_sink = self.sink_factory.create_sink("электроэнергия (sink)", self.el_bus) 
@@ -40,7 +32,6 @@ class Custom_model:
         
         
     def add_bel_npp(self):
-                               
                                
         status_1 = self.scenario["bel_npp_block_1"]["status"]
         status_2 = self.scenario["bel_npp_block_2"]["status"]

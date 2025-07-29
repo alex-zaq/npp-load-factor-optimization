@@ -85,7 +85,7 @@ repair_options = {
 
 scen_1 = {
         "№": 1,
-        "name": "experimental",
+        "name": "test",
         "years": [2025],
         "bel_npp_block_1": {
             "status": True,
@@ -132,12 +132,15 @@ oemof_model = Oemof_model(
 
 
 solution_processor = Solution_processor(oemof_model)
-
-solution_processor.set_calc_mode(save_results=True)
+solution_processor.set_calc_mode(save_results=False)
+# solution_processor.set_calc_mode(save_results=True)
 solution_processor.set_dumps_folder("./dumps")
 solution_processor.set_excel_folder("./excel_results")
 
 # solution_processor.set_restore_mode(file_number="00") 
+# solution_processor.set_restore_mode(file_number="01") 
+# solution_processor.set_restore_mode(file_number="02") 
+# solution_processor.set_restore_mode(file_number="03") 
 
 solution_processor.apply()
 
@@ -145,7 +148,6 @@ solution_processor.apply()
 
 custom_es = solution_processor.get_custom_es()
 oemof_es = solution_processor.get_oemof_es()
-custom_es = solution_processor.get_custom_es()
 results = solution_processor.get_results()
 
 
@@ -181,8 +183,13 @@ block_grouper.set_block_groups(
     }
 )
 
-
+solution_processor.set_block_grouper(block_grouper)
 result_viewer = Result_viewer(block_grouper)
+
+result_viewer.set_save_image_flag(False)
+result_viewer.set_image_folder("./images")
+# result_viewer.set_save_image_flag(True)
+
 result_viewer.plot_electricity_generation_profile()
 # result_viewer.plot_default_risk_profile()
 # result_viewer.plot_main_risk_events_profile()
@@ -201,25 +208,15 @@ print("done")
 # result_plotter.plot_cumulative_risk_profile()
 # result_plotter.plot_repair_cost_profile()
 
-# изменить начальный и конечный год на [начальный, конечный]
-# добавить структуру методов классов
 # мин. фукц. класса oemof_model
-# мин. фукц. класса custom_model_builder (добавить два блока аэс, риски)
 # реализация фиксированного времени работы на ном. мощности
-# стоимость включения для учета стоимости ремонта
 # большой интервал времени 5 лет
-# ввод модели накопителя для учета накопления рисков
-# ограничения риска сверху
-# снижение риска от ремонта 
 # увеличение рисков по определенным во времени событием и штатной работы аэс
 # добавить 3-4 сценария
 # блок-схема
 # 4 года, много событий, кокурирующие ремонты, 1 блок, 2 блока, 3 блока
 # взять реальные значения из двух источников
 # вывод в эксель
-# sink ремонта c updown 17 дней и var_cost или start_up_cost и gradient для старта в опр. часы
-# разные типы ремонтов не пересекаются в одной АЭС
-# ремонты в разных аэс не совпадают во времени 
 # через определенные интервалы времени (например длина ремонта) добавить sink и source который будет в данные интервалы
 # заряжать storage, которая будет позволять работать sink для риска с учетом uptime равной длине ремента (можно произвольеные инетрвалы с выключения недопущения одновременной # # работы заряж. source и ремонтируюещего sink)
 # проверить на малом примере: н и н+1 и два одновременных слова в custom_attributes и доп шаг для работы storage

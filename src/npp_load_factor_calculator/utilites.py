@@ -170,4 +170,7 @@ def hours_between_years(start_year, end_year):
     return hours
  
  
+def get_npp_block_active_count_by_scen(scen):
+    return sum(1 for k, v in scen.items() if "block" in k and v["active"])
+ 
  

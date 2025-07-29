@@ -6,6 +6,13 @@ class Result_viewer:
     def __init__(self, block_grouper):
         pass
         
+        
+    def set_save_image_flag(self, flag):
+        pass
+    
+    def set_image_folder(self, folder):
+        pass
+        
     def plot_electricity_generation_profile(self):
         pass
     

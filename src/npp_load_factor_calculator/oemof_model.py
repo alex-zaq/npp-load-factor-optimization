@@ -18,8 +18,7 @@ class Oemof_model:
         self.mip_gap = solver_settings["mip_gap"]
         self.oemof_es = None
             
-    def _init_oemof_model(self):
-        
+    def init_oemof_model(self):
         t_delta = datetime(self.end_year, 1, 1, 0, 0, 0) - datetime(self.start_year, 1, 1, 0, 0, 0)
         first_time_step = datetime(self.start_year, 1, 1, 0, 0, 0)
         periods_count = t_delta.days * 24
@@ -27,27 +26,26 @@ class Oemof_model:
         self.oemof_es = solph.EnergySystem(timeindex=date_time_index, infer_last_interval=True)
        
     
-    def _init_custom_model(self):
-        self.custom_es = Custom_model(scenario = self.scenario, oemof_es = self.oemof_es)
+    def init_custom_model(self, scenario):
+        self.custom_es = Custom_model(scenario = scenario, oemof_es = self.oemof_es)
         self.custom_es.add_electricity_demand()
         self.custom_es.add_bel_npp()
         self.custom_es.add_new_npp()
     
     
-    def _add_constraints(self, constraints_processor):
-        constraints_processor.get_block_parallel_status_limit()
-        constraints_processor.apply_block_parallel_status_limit()
+    def add_constraints(self, constraints_processor):
+        constraints_processor.apply_default_risk_constr()
+        # constraints_processor.apply_storage_charge_discharge_constr()
+        # constraints_processor.apply_source_converter_n_n_plus_1_constr()
+        # constraints_processor.apply_repairing_in_single_npp()
+        # constraints_processor.apply_repairing_type_for_different_npp()
 
 
 
-    def _launch_solver(self):
+    def launch_solver(self):
         model = solph.Model(self.oemof_es)
         constraints = self.custom_es.get_constraints()
-        self._add_constraints(Constraint_processor(model, constraints))
-        # hours_count = len(model.timeincrement)
-        
-        
-        
+        self.add_constraints(Constraint_processor(model, constraints))
         print("модель сформирована")
         start_time = datetime.now()
         model.solve(
@@ -68,12 +66,26 @@ class Oemof_model:
     
     
     def calculate(self):
-        self._init_oemof_model()
-        self._init_custom_model()
-        self._launch_solver()
+        self.init_oemof_model()
+        self.init_custom_model()
+        self.launch_solver()
+        
+    def set_custom_es(self, custom_es):
+        self.custom_es = custom_es
+        
         
     def get_custom_es(self):
         return self.custom_es
 
     def get_oemof_es(self):
         return self.oemof_es
+    
+    def get_scenario(self):
+        return self.scenario
+    
+    def get_results(self):
+        return self.results
+    
+    def get_meta_results(self):
+        return self.meta_results
+    

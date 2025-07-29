@@ -18,7 +18,8 @@ class Block_db:
         for block in self.db[block_type]:
             if block.label == label:
                 return block
-        raise ValueError(f"Block with label {label} not found in {block_type}")
+        return None
+        # raise ValueError(f"Block with label {label} not found in {block_type}")
     
     
     def get_bel_npp_block_1(self):

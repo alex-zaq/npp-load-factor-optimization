@@ -261,10 +261,7 @@ class Generic_source:
 
                 c_source_period_level = self.create_source_with_max_profile(c_source_period_label, storage_perios_bus_in, max_power_profile_source_period)
 
-                repair_nodes[name] |= {
-                    "storage_period": c_storage_period_level,
-                    "source_period": c_source_period_level,
-                }
+                repair_nodes[name] |= {"storage_period": c_storage_period_level,"source_period": c_source_period_level}
                 
                 self.constraints["storage_charge_discharge_constr"].add(c_storage_period_level.keyword)
 
