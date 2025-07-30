@@ -170,16 +170,16 @@ class Generic_source:
                 self.constraints["default_risk_constr"].add(((npp_block, output_bus),(default_risk_source, risk_bus_in)))
 
 
-            risk_source = self.create_source_fixed(set_label(label, "risk_source"), risk_bus_in, fix_risk_lst)
+            main_risk_source = self.create_source_fixed(set_label(label, "risk_source"), risk_bus_in, fix_risk_lst)
             storage_factory = Generic_storage(self.oemof_es)
-            risk_storage_block = storage_factory.create_storage(
+            main_risk_storage = storage_factory.create_storage(
                 input_bus=risk_bus_in,
                 output_bus=main_risk_bus,
                 capacity=max_risk_level,
             )
             npp_block.risk_mode = risk_mode
-            npp_block.risk_source = risk_source
-            npp_block.risk_storage = risk_storage_block
+            npp_block.risk_source = main_risk_source
+            npp_block.risk_storage = main_risk_storage
             
             repair_nodes = self._get_repair_nodes(label, npp_block, repair_options, main_risk_bus)
             npp_block.repair_nodes = repair_nodes

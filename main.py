@@ -171,17 +171,35 @@ block_grouper.set_block_groups(
         "БелАЭС (блок 2) - риск": {"order": [bel_npp_block_2], "color": "#e8ff1a"},
         "Новая АЭС (блок 1) - риск": {"order": [new_npp_block_1], "color": "#3d26a3"},
     },
-    repair_events={
-        "БелАЭС (блок 1) - ремонт": {"order": [bel_npp_block_1], "color": "#c45c17"},
-        "БелАЭС (блок 2) - ремонт": {"order": [bel_npp_block_2], "color": "#24041D"},
-        "Новая АЭС (блок 1) - ремонт": {"order": [new_npp_block_1], "color": "#6144e4"},
+    risk_events={
+        "БелАЭС (блок 1) - аварии": {"order": [bel_npp_block_1], "color": "#7b235a"},
+        "БелАЭС (блок 2) - аварии": {"order": [bel_npp_block_2], "color": "#968091"},
+        "Новая АЭС (блок 1) - аварии": {"order": [new_npp_block_1], "color": "#412d9b"},
     },
     repair_cost={
         "БелАЭС (блок 1) - затраты": {"order": [bel_npp_block_1], "color": "#18be2f"},
         "БелАЭС (блок 2) - затраты": {"order": [bel_npp_block_2], "color": "#F07706"},
-        "Новая АЭС (блок 1) - затраты": {"order": [new_npp_block_1], "color": "#4a3550"},
+        "Новая АЭС (блок 1) - затраты": {"order": [new_npp_block_1],"color": "#4a3550"},
     }
 )
+
+block_grouper.set_repair_plot_options(
+    repair_events={
+        "БелАЭС (блок 1) - ремонт": {
+            "order": [bel_npp_block_1],
+            "colors": {"легкий": "#14e729", "средний": "#f9f10b", "тяжелый": "#f11111"},
+        },
+        "БелАЭС (блок 2) - ремонт": {
+            "order": [bel_npp_block_2],
+            "colors": {"легкий": "#14e729", "средний": "#f9f10b", "тяжелый": "#f11111"},
+        },
+        "Новая АЭС (блок 1) - ремонт": {
+            "order": [new_npp_block_1],
+            "colors": {"легкий": "#14e729", "средний": "#f9f10b", "тяжелый": "#f11111"},
+        },
+    }
+)
+
 
 solution_processor.set_block_grouper(block_grouper)
 result_viewer = Result_viewer(block_grouper)
@@ -208,6 +226,10 @@ print("done")
 # result_plotter.plot_cumulative_risk_profile()
 # result_plotter.plot_repair_cost_profile()
 
+
+
+# сделать block_grouper
+# сделать result_viewer
 # мин. фукц. класса oemof_model
 # реализация фиксированного времени работы на ном. мощности
 # большой интервал времени 5 лет
