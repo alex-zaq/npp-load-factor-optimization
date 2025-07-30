@@ -7,10 +7,32 @@ class Custom_block:
         self.npp_block = npp_block
     
     
-class Block_item:
-
-    def __init__(self):
+    def get_electricity_profile(self):
         pass
+    
+    def get_risk_events_profile(self):
+        pass
+    
+    def get_main_risk_profile(self):
+        pass
+    
+    def get_default_risk_profile(self):
+        pass
+    
+    def get_cost_profile(self):
+        pass
+    
+    def get_repair_profile(self):
+        pass
+    
+    def get_cumulative_cost_profile(self):
+        pass
+    
+    def get_cumulative_risk_profile(self):
+        pass
+    
+
+    
 
 
 class Block_grouper:
@@ -22,10 +44,8 @@ class Block_grouper:
     def set_block_groups(self, electricity_gen, risk_gen, repair_events, repair_cost):
         pass
     
-    
     def get_electricity_profile(self):
         pass
-    
     
     def get_risk_events_profile(self):
         pass
@@ -46,6 +66,9 @@ class Block_grouper:
         pass
     
     def get_cumulative_cost_profile(self):
+        pass
+    
+    def get_helper_block_profiles_dict(self):
         pass
     
     

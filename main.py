@@ -186,8 +186,8 @@ block_grouper.set_block_groups(
 solution_processor.set_block_grouper(block_grouper)
 result_viewer = Result_viewer(block_grouper)
 
-result_viewer.set_save_image_flag(False)
 result_viewer.set_image_folder("./images")
+result_viewer.set_save_image_flag(False)
 # result_viewer.set_save_image_flag(True)
 
 result_viewer.plot_electricity_generation_profile()
