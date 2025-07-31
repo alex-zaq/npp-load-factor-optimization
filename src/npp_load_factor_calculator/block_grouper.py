@@ -1,6 +1,7 @@
 
 
 
+import numpy as np
 import pandas as pd
 from oemof import solph
 
@@ -67,21 +68,62 @@ class Custom_block:
         res = res.clip(lower=0)
         return res
     
-    def get_repair_profile(self):
+    def get_repair_active_status_profile_dict(self, *, mode):
         if self.npp_block.risk_mode is False:
             raise ValueError("The block is not in risk mode, no repair profile can be extracted")
-            
+        after_label = mode if mode in {"status", "flow"} else ValueError("mode must be status or flow")
+        res = {}
+        repair_nodes = self.npp_block.repair_nodes
+        for repair_name in repair_nodes:
+            label = f"{repair_name.label}_{after_label}"
+            repair_block = repair_nodes[repair_name]["converter_npp"]
+            output_bus = repair_block.output_pair[0][1]
+            results = solph.views.node(self.results, output_bus.label)["sequences"].dropna()
+            res[label] = results[((repair_block.label, output_bus.label), mode)]
+        return res
+    
+    def get_cost_profile_dict(self):
+        repair_active_profile_dict = self.get_repair_active_status_profile_dict(mode="status")
+        res = {}
+        for repair_name in repair_active_profile_dict:
+            startup_cost = self.npp_block.repair_nodes[repair_name]["converter_npp"]["startup_cost"]
+            repair_active_profile_dict[repair_name].to_numpy()
+            res[repair_name] = np.where(repair_active_profile_dict[repair_name] == 1, startup_cost, 0)
+        return res
+        
+    
+    def get_cumulative_cost_profile_dict(self):
+        cost_profile_dict = self.get_cost_profile_dict()
+        res = {}
+        for repair_name in cost_profile_dict:
+            res[repair_name] = cost_profile_dict[repair_name].cumsum()
+            # bad?
+        return res
+    
+    def get_cost_abs_value_dict(self):
+        res = self.get_cost_profile_dict()
+        res = {k: v.sum() for k, v in res.items()}
+        return res
+    
+    def get_global_abs_value(self):
+        res = self.get_cost_abs_value_dict()
+        res = sum(res.values())
+        return res
     
     
-    def get_cost_profile(self):
+    def get_global_cost_profile(self):
+        
+        return res
+    
+    
+    def get_global_cumulative_cost_profile(self):
+        res = self.get_cumulative_cost_profile_dict()
+        res = sum(res.values())
+        return res
+
+
+    def get_helper_profiles(self, mode):
         pass
-    
-    def get_cumulative_cost_profile(self):
-        pass
-    
-    def get_cumulative_risk_profile(self):
-        pass
-    
 
   
 
@@ -107,10 +149,8 @@ class Block_grouper:
                     v.risk_events_plot = {"order": i, "label": accident_k, "color": accident_v["color"]}
     
     def set_repair_plot_options(self, repair_events):
-
         if not hasattr(self, "electr_groups"):
             raise ValueError("The block groups have not been set yet")
-
         for _, v in self.electr_groups.items():
             for i, (repair_events_k, repair_events_v) in enumerate(repair_events.items()):
                 info_dict = repair_events_v["colors"]
@@ -119,30 +159,65 @@ class Block_grouper:
     
     
     def get_electricity_profile(self):
-        pass
+        res = pd.DataFrame()
+        for _, v in self.electr_groups.items():
+            res[v.name] = v.get_electricity_profile()[v.name]
+        return res
     
     def get_risk_events_profile(self):
-        pass
+        res = pd.DataFrame()
+        for _, v in self.electr_groups.items():
+            res[v.name] = v.get_risk_events_profile()
+        return res
     
     def get_main_risk_profile(self):
-        pass
+        res = pd.DataFrame()
+        for _, v in self.electr_groups.items():
+            res[v.name] = v.get_main_risk_profile()
+        return res
     
     def get_default_risk_profile(self):
-        pass
+        res = pd.DataFrame()
+        for _, v in self.electr_groups.items():
+            res[v.name] = v.get_default_risk_profile()
+        return res
     
-    def get_cumulative_risk_profile(self):
-        pass
-    
-    def get_repair_profile(self):
-        pass
+    def get_repair_profile(self, mode):
+        if mode not in {"status", "flow"}:
+            raise ValueError(f"Invalid mode: {mode}")
+        res = pd.DataFrame()
+        for _, v in self.electr_groups.items():
+            buf = v.get_repair_active_status_profile(mode=mode)
+            for kk, vv in buf.items():
+                res[kk] = vv
+        return res
+        
+        
+    def get_global_abs_cost_by_block(self):
+        res = pd.DataFrame()
+        for _, v in self.electr_groups.items():
+            res[v.name] = v.get_global_abs_cost()
+        return res
+        
+    def get_global_abs_cost(self):
+        res = 0
+        for _, v in self.electr_groups.items():
+            res += v.get_global_abs_cost()
+        return res
         
     def get_cost_profile(self):
-        pass
+        res = pd.DataFrame()
+        for _, v in self.electr_groups.items():
+            res[v.name] = v.get_cost_profile()
+        return res
+    
+    
     
     def get_cumulative_cost_profile(self):
         pass
     
-    def get_helper_block_profiles_dict(self):
+    
+    def get_helper_block_profiles_dict(self, block_name, mode):
         pass
     
     

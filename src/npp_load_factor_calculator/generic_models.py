@@ -342,7 +342,10 @@ class Generic_storage:
         input_bus = bus_factory.create_bus(set_label(label, "input_bus"))
         output_bus = bus_factory.create_bus(set_label(label, "output_bus"))
         
-        capacity = repair_options_name["duration"] * repair_options_name["max_count_in_year"]["count"] * 24
+        converter_power = repair_options_name["risk_reducing"] / (repair_options_name["duration"] * 24)
+        capacity = (converter_power * repair_options_name["duration"] * repair_options_name["max_count_in_year"]["count"] * 24) * converter_power
+        
+        
         
         keyword = f"{label}_keyword"
 
@@ -489,6 +492,7 @@ class Generic_converter:
         converter.outputs_pair = [(converter, output_bus)]
         converter.keyword_npp = keyword_npp
         converter.keyword_converter = keyword_converter
+        converter.startup_costs = startup_costs
 
         self.oemof_es.add(converter)
         return converter, keyword_npp
