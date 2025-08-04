@@ -8,10 +8,10 @@ from oemof import solph
 
 class Custom_block:
 
-    def __init__(self, npp_block, name, color):
+    def __init__(self, npp_block, name):
         self.npp_block = npp_block
         self.name = name
-        self.color = color
+        # self.color = color
         self.results = self.__class__.results
         self.main_risk_plot = None
         self.risk_events_plot = None
@@ -55,22 +55,23 @@ class Custom_block:
         res_df = res_df.clip(lower=0)
         return res_df
             
-        
-
     
     def get_repair_active_status_profile_dict(self, *, mode):
         if self.npp_block.risk_mode is False:
             raise ValueError("The block is not in risk mode, no repair profile can be extracted")
-        after_label = mode if mode in {"status", "flow"} else ValueError("mode must be status or flow")
+        # after_label = mode if mode in {"status", "flow"} else ValueError("mode must be status or flow")
+        # tag? afterflow
         res_dict = {}
         repair_nodes = self.npp_block.repair_nodes
         for repair_name in repair_nodes:
-            label = f"{repair_name.label}_{after_label}"
+            # label = f"{repair_name.label}_{after_label}"
+            label = f"{repair_name.label}"
             repair_block = repair_nodes[repair_name]["converter_npp"]
             output_bus = repair_block.output_pair[0][1]
             results = solph.views.node(self.results, output_bus.label)["sequences"].dropna()
             res_dict[label] = results[((repair_block.label, output_bus.label), mode)]
         return res_dict
+    
     
     def get_cost_profile_dict(self):
         repair_active_profile_dict = self.get_repair_active_status_profile_dict(mode="status")
@@ -80,6 +81,7 @@ class Custom_block:
             repair_active_profile_dict[repair_name].to_numpy()
             res_dict[repair_name] = np.where(repair_active_profile_dict[repair_name] == 1, startup_cost, 0)
         return res_dict
+    
     
     def get_cumulative_cost_profile_dict(self):
         cost_profile_dict = self.get_cost_profile_dict()
@@ -316,9 +318,15 @@ class Block_grouper:
         self.custom_es = custom_es
         Custom_block.results = self.results
     
+    
     def set_block_groups(self, electricity_gen, main_risk_gen, risk_events, repair_cost):
-        self.electr_groups = {k: Custom_block(v["order"][0], k, v["color"]) for k, v in electricity_gen.items() if v["order"][0]}
+
+        self.electr_groups = {k: Custom_block(v["order"][0], k) for k, v in electricity_gen.items() if v["order"][0]}
+        
         for _, v in self.electr_groups.items():
+            for i, (es_k, es_v) in enumerate(self.custom_es.items()):
+                if v.npp_block is es_v["order"][0]:
+                    v.electr_plot = {"order": i, "label": es_k, "color": es_v["color"]}
             for i, (main_risk_k, main_risk_v) in enumerate(main_risk_gen.items()):
                 if v.npp_block is main_risk_v["order"][0]:
                     v.main_risk_plot = {"order": i, "label": main_risk_k, "color": main_risk_v["color"]}
@@ -329,65 +337,63 @@ class Block_grouper:
                 if v.npp_block is accident_v["order"][0]:
                     v.risk_events_plot = {"order": i, "label": accident_k, "color": accident_v["color"]}
     
+    
     def set_repair_plot_options(self, repair_events):
         if not hasattr(self, "electr_groups"):
             raise ValueError("The block groups have not been set yet")
-        for _, v in self.electr_groups.items():
+        for v in self.electr_groups.values():
             for i, (repair_events_k, repair_events_v) in enumerate(repair_events.items()):
-                info_dict = repair_events_v["colors"]
-                repair_names, colors = list(info_dict.keys()), list(info_dict.values())
-                v.repair_events_plot = {"order": i, "label": repair_events_k, "colors": colors, "repair_names": repair_names}
+                if v.npp_block is repair_events_v["order"][0]:
+                    repair_id_lst =[v[1] for v in repair_events_v["color"].values()]  
+                    colors_lst = [v[0] for v in repair_events_v["color"].values()]
+                    repair_names = list(repair_events_v["color"].keys())
+                    repair_names = [f"{repair_events_k}_{v}" for v in repair_names]
+                    v.repair_events_plot = {"order": i, "repair_id_lst": repair_id_lst , "colors": colors_lst, "repair_names": repair_names}
     
     
     def get_electricity_profile(self):
         res = pd.DataFrame()
-        custom_colors = []
-        for _, custom_block in self.electr_groups.items():
-            res[custom_block.name] = custom_block.get_electricity_profile()[custom_block.name]
-            custom_colors.append(custom_block.color)
-        res.custom_colors = custom_colors
+        sorted_by_order = sorted(self.electr_groups.values(), key=lambda x: x.electr_plot["order"])
+        colors = []
+        for custom_block in sorted_by_order:
+            res[custom_block.electr_plot["label"]] = custom_block.get_electricity_profile()
+            colors.append(custom_block.electr_plot["color"])
+        res.colors = colors
         return res
+    
     
     def get_risk_events_profile(self):
         res = pd.DataFrame()
-        for _, custom_block in self.electr_groups.items():
-            res[custom_block.name] = custom_block.get_risk_events_profile()
+        sorted_by_order = sorted(self.electr_groups.values(), key=lambda x: x.risk_events_plot["order"])
+        colors = []
+        for custom_block in sorted_by_order:
+            res[custom_block.risk_events_plot["label"]] = custom_block.get_risk_events_profile()
+            colors.append(custom_block.risk_events_plot["color"])
+        res.colors = colors
         return res
+    
     
     def get_main_risk_profile(self):
         res = pd.DataFrame()
-        for _, custom_block in self.electr_groups.items():
-            res[custom_block.name] = custom_block.get_main_risk_profile()
+        sorted_by_order = sorted(self.electr_groups.values(), key=lambda x: x.main_risk_plot["order"])
+        colors = []       
+        for custom_block in sorted_by_order:
+            res[custom_block.main_risk_plot["label"]] = custom_block.get_main_risk_profile()
+            colors.append(custom_block.main_risk_plot["color"])
+        res.colors = colors
         return res
     
-    # def get_default_risk_profile(self):
-    #     res = pd.DataFrame()
-    #     for _, custom_block in self.electr_groups.items():
-    #         res[custom_block.name] = custom_block.get_default_risk_profile()
-    #     return res
     
-    def get_repair_profile(self, mode):
-        if mode not in {"status", "flow"}:
-            raise ValueError(f"Invalid mode: {mode}")
+    def get_cost_profile_by_block(self):
         res = pd.DataFrame()
-        for _, custom_block in self.electr_groups.items():
-            repair_types_dict = custom_block.get_repair_active_status_profile(mode=mode)
-            for repair_name, repair_type in repair_types_dict.items():
-                res[repair_name] = repair_type
+        sorted_by_order = sorted(self.electr_groups.values(), key=lambda x: x.electr_plot["order"])
+        colors = []
+        for custom_block in sorted_by_order:
+            res[custom_block.electr_plot["label"]] = custom_block.get_cost_profile()
+            colors.append(custom_block.electr_plot["color"])
+        res.colors = colors
         return res
-        
-        
-    def get_global_abs_cost_by_block(self):
-        res = pd.DataFrame()
-        for _, custom_block in self.electr_groups.items():
-            res[custom_block.name] = custom_block.get_global_abs_cost()
-        return res
-        
-    def get_global_abs_cost(self):
-        res = 0
-        for _, custom_block in self.electr_groups.items():
-            res += custom_block.get_global_abs_cost_by_block()
-        return res
+    
     
     def get_cost_profile(self):
         res = pd.DataFrame()
@@ -397,6 +403,39 @@ class Block_grouper:
         res.name = "cost"
         return res
     
+    
+    def get_repair_profile(self, mode):
+        #  v.repair_events_plot = {"order": i, "repair_id_lst": repair_id_lst , "colors": colors_lst, "repair_names": repair_names}
+        if mode not in {"status", "flow"}:
+            raise ValueError(f"Invalid mode: {mode}")
+        res = pd.DataFrame()
+        colors = []
+        for custom_block in self.electr_groups.values():
+            repair_df = custom_block.get_repair_active_status_profile_dict(mode=mode)
+            columns = repair_df.columns.to_list()
+            columns_sorted = [columns[i] for i in custom_block.repair_events_plot["repair_id_lst"]] 
+            repair_df = repair_df.reindex(columns_sorted)
+            repair_df.columns = custom_block.repair_events_plot["repair_names"]
+            colors.extend(custom_block.repair_events_plot["colors"])
+            res = pd.concat([res, repair_df], axis=1)
+        res.colors = colors
+        return res
+
+        
+    def get_global_abs_cost_by_block(self):
+        res = pd.DataFrame()
+        for _, custom_block in self.electr_groups.items():
+            res[custom_block.name] = custom_block.get_global_abs_cost()
+        return res
+        
+        
+    def get_global_abs_cost(self):
+        res = 0
+        for _, custom_block in self.electr_groups.items():
+            res += custom_block.get_global_abs_cost_by_block()
+        return res
+
+
     def get_cumulative_cost_profile(self):
         res = self.get_cost_profile()
         cum_sum = res.cumsum()

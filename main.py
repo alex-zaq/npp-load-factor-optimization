@@ -51,7 +51,8 @@ new_npp_block_1_events = {}
 
 
 repair_options = {
-    "npp_light_repair": {
+    "light_repair": {
+        "id": 0,
         "status": True,
         "cost": 0.1,
         "duration": 7,
@@ -61,7 +62,8 @@ repair_options = {
         "avail_months": all_months,
         "npp_stop": False,
     },
-    "npp_avg_repair": {
+    "avg_repair": {
+        "id": 1,
         "status": False,
         "cost": 0.2,
         "duration": 14,
@@ -71,7 +73,8 @@ repair_options = {
         "avail_months": all_months,
         "npp_stop": True,
     },
-    "npp_capital_repair": {
+    "capital_repair": {
+        "id": 2,
         "status": False,
         "cost": 0.3,
         "duration": 21,
@@ -188,15 +191,15 @@ block_grouper.set_repair_plot_options(
     repair_events={
         "БелАЭС (блок 1) - ремонт": {
             "order": [bel_npp_block_1],
-            "colors": {"легкий": "#14e729", "средний": "#f9f10b", "тяжелый": "#f11111"},
+            "colors": {"легкий": (0, "#14e729"), "средний": (1, "#f9f10b"), "тяжелый": (2, "#f11111")},
         },
         "БелАЭС (блок 2) - ремонт": {
             "order": [bel_npp_block_2],
-            "colors": {"легкий": "#14e729", "средний": "#f9f10b", "тяжелый": "#f11111"},
+            "colors": {"легкий": (0, "#14e729"), "средний": (1, "#f9f10b"), "тяжелый": (2, "#f11111")},
         },
         "Новая АЭС (блок 1) - ремонт": {
             "order": [new_npp_block_1],
-            "colors": {"легкий": "#14e729", "средний": "#f9f10b", "тяжелый": "#f11111"},
+            "colors": {"легкий": (0, "#14e729"), "средний": (1, "#f9f10b"), "тяжелый": (2, "#f11111")},
         },
     }
 )
@@ -222,40 +225,13 @@ result_viewer.plot_electricity_generation_profile()
 control_block_viewer.plot_default_risk_profile()
 
 
+
 print("done")
 
 
 
 
 
-        # res = {}
-        # res["source_period"] = {"output": helper_node_calculator.get_source_period_output_profile()}
-        # res["source_repair"] = {"output": helper_node_calculator.get_source_repair_output_profile()}
-
-        # res["source_default_risk"] = {"output": helper_node_calculator.get_default_output_profile()}
-
-        # res["converter_repair"] = {
-        #     "input_main_risk": helper_node_calculator.get_converter_input_main_risk_profile(),
-        #     "input_period_control": helper_node_calculator.get_converter_input_period_control_profile(),
-        #     "input_repair_control": helper_node_calculator.get_converter_input_repair_control_profile(),
-        #     "output": helper_node_calculator.get_converter_output_profile(),
-        # }
-
-        # res["storage_period"] = {
-        #     "input": helper_node_calculator.get_storage_profiles("storage_period", "input"),
-        #     "output": helper_node_calculator.get_storage_profiles("storage_period", "output"),
-        #     "content": helper_node_calculator.get_storage_profiles("storage_period", "content"),
-        # }
-        # res["storage_main_risk"] = {
-        #     "input": helper_node_calculator.get_storage_profiles("storage_main_risk", "input"),
-        #     "output": helper_node_calculator.get_storage_profiles("storage_main_risk", "output"),
-        #     "content": helper_node_calculator.get_storage_profiles("storage_main_risk", "content"),
-        # }
-        # res["storage_repair"] = {
-        #     "input": helper_node_calculator.get_storage_profiles("storage_repair", "input"),
-        #     "output": helper_node_calculator.get_storage_profiles("storage_repair", "output"),
-        #     "content": helper_node_calculator.get_storage_profiles("storage_repair", "content"),
-        # }
         
 
 
