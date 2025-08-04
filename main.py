@@ -1,3 +1,4 @@
+from npp_load_factor_calculator.result_viewer import Control_block_viewer
 from src.npp_load_factor_calculator import Block_grouper, Oemof_model, Result_viewer
 from src.npp_load_factor_calculator.solution_processor import Solution_processor
 from src.npp_load_factor_calculator.utilites import all_months
@@ -203,32 +204,97 @@ block_grouper.set_repair_plot_options(
 
 solution_processor.set_block_grouper(block_grouper)
 result_viewer = Result_viewer(block_grouper)
+control_block_viewer = Control_block_viewer(block_grouper)
+control_block_viewer.select_block(bel_npp_block_1)
+
 
 result_viewer.set_image_folder("./images")
 result_viewer.set_save_image_flag(False)
 # result_viewer.set_save_image_flag(True)
 
 result_viewer.plot_electricity_generation_profile()
-# result_viewer.plot_default_risk_profile()
 # result_viewer.plot_main_risk_events_profile()
 # result_viewer.plot_cost_profile()
 # result_viewer.plot_repair_profile()
 # result_viewer.plot_general_graph()
 
 
-# solution_processor.write_excel_file("test.xlsx")
+control_block_viewer.plot_default_risk_profile()
+
 
 print("done")
 
 
 
+
+
+        # res = {}
+        # res["source_period"] = {"output": helper_node_calculator.get_source_period_output_profile()}
+        # res["source_repair"] = {"output": helper_node_calculator.get_source_repair_output_profile()}
+
+        # res["source_default_risk"] = {"output": helper_node_calculator.get_default_output_profile()}
+
+        # res["converter_repair"] = {
+        #     "input_main_risk": helper_node_calculator.get_converter_input_main_risk_profile(),
+        #     "input_period_control": helper_node_calculator.get_converter_input_period_control_profile(),
+        #     "input_repair_control": helper_node_calculator.get_converter_input_repair_control_profile(),
+        #     "output": helper_node_calculator.get_converter_output_profile(),
+        # }
+
+        # res["storage_period"] = {
+        #     "input": helper_node_calculator.get_storage_profiles("storage_period", "input"),
+        #     "output": helper_node_calculator.get_storage_profiles("storage_period", "output"),
+        #     "content": helper_node_calculator.get_storage_profiles("storage_period", "content"),
+        # }
+        # res["storage_main_risk"] = {
+        #     "input": helper_node_calculator.get_storage_profiles("storage_main_risk", "input"),
+        #     "output": helper_node_calculator.get_storage_profiles("storage_main_risk", "output"),
+        #     "content": helper_node_calculator.get_storage_profiles("storage_main_risk", "content"),
+        # }
+        # res["storage_repair"] = {
+        #     "input": helper_node_calculator.get_storage_profiles("storage_repair", "input"),
+        #     "output": helper_node_calculator.get_storage_profiles("storage_repair", "output"),
+        #     "content": helper_node_calculator.get_storage_profiles("storage_repair", "content"),
+        # }
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# solution_processor.write_excel_file("test.xlsx")
+
 # result_plotter.plot_risk_events_profile()
 # result_plotter.plot_cumulative_risk_profile()
 # result_plotter.plot_repair_cost_profile()
 
+# сделать минимальный расчет рабочий
+# записать и восстановить решение
 
-
-# сделать block_grouper
+# как работает втроенный обзор результатов
+# как работает results(block)
+# +-сделать block_grouper
 # сделать result_viewer
 # мин. фукц. класса oemof_model
 # реализация фиксированного времени работы на ном. мощности

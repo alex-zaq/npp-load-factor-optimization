@@ -6,10 +6,8 @@ from src.npp_load_factor_calculator.custom_model import Custom_model
 from src.npp_load_factor_calculator.excel_writer import Excel_writer
 from src.npp_load_factor_calculator.logging_options import get_logger
 from src.npp_load_factor_calculator.utilites import (
+    get_file_name_with_auto_number,
     get_full_filename,
-    get_next_number_file_name,
-    get_npp_block_active_count_by_scen,
-    get_number,
 )
 
 logger = get_logger()
@@ -18,13 +16,10 @@ class Solution_processor:
 
     def __init__(self, oemof_model):
         self.oemof_model = oemof_model
-
         self.calc_mode = False
         self.restore_mode = False
         self.save_results = False
-
         self.load_file_name = None
-        
         self.excel_file_name = None
         self.dumps_folder = None
         self.excel_folder = None
@@ -40,10 +35,12 @@ class Solution_processor:
     def set_excel_folder(self, folder):
         self.excel_folder = folder
 
+
     def set_calc_mode(self, *, save_results):
         self.calc_mode = True
         self.restore_mode = False
         self.save_results = save_results
+
 
     def set_restore_mode(self, *, file_number):
         self.load_file_name = get_full_filename(self.dumps_folder, file_number)
@@ -60,30 +57,13 @@ class Solution_processor:
         self.results = self.oemof_model.get_results()
         self.meta_results = self.oemof_model.get_meta_results()
 
+
     def save_solution(self):
         self.oemof_es.results["main"] = self.results
         self.oemof_es.results["meta"] = self.meta_results
         self.oemof_es.results["scenario"] = self.oemof_model.get_group_options()
-        file_name = self.get_dumps_file_name_with_auto_number()
+        file_name = get_file_name_with_auto_number(self.dumps_folder, self.scenario, "oemof")
         self.oemof_es.dump(dpath=self.dumps_folder, filename=file_name)
-
-
-    def get_dumps_file_name(self, scenario):
-        scen_number = scenario["№"]
-        scen_name = scenario["name"]
-        start_year = scenario["years"][0]
-        end_year = scenario["end_year"][-1] 
-        active_npp_count = get_npp_block_active_count_by_scen(scenario)
-        file_name = "_".join([scen_number, scen_name, start_year, end_year, active_npp_count])
-        return file_name
-
-
-    def get_dumps_file_name_with_auto_number(self):
-        next_number = get_number(get_next_number_file_name(self.dumps_folder))
-        file_name = f"{self.get_dumps_file_name(self.scenario)}.oemof"
-        res = [next_number, file_name]
-        res = "_".join(res)
-        return res
 
 
     def restore_solution(self):

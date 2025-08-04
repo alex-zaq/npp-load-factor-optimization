@@ -24,10 +24,10 @@ class Custom_block:
     def get_electricity_profile(self):
         block,output_bus = self.npp_block.output_pair[0]     
         block_results = solph.views.node(self.results, output_bus.label)["sequences"].dropna()
-        res = pd.DataFrame()
-        res[block.label] = block_results[((block.label, output_bus.label), "flow")]
-        res = res.clip(lower=0)
-        return res
+        res_df = pd.DataFrame()
+        res_df[block.label] = block_results[((block.label, output_bus.label), "flow")]
+        res_df = res_df.clip(lower=0)
+        return res_df
 
 
     def get_main_risk_profile(self):
@@ -36,10 +36,10 @@ class Custom_block:
         main_risk_label = self.main_risk_plot["label"]        
         main_risk_storage = self.npp_block.main_risk_storage
         results = solph.views.node(self.results, main_risk_storage.label)["sequences"].dropna()
-        res = pd.DataFrame()
-        res[main_risk_label] = results[(main_risk_storage.label, "None"), "storage_content"]
-        res = res.clip(lower=0)
-        return res
+        res_df = pd.DataFrame()
+        res_df[main_risk_label] = results[(main_risk_storage.label, "None"), "storage_content"]
+        res_df = res_df.clip(lower=0)
+        return res_df
         
 
 
@@ -50,82 +50,263 @@ class Custom_block:
         main_risk_source = self.npp_block.main_risk_source
         output_bus = main_risk_source.output_pair[0][1]
         results = solph.views.node(self.results, output_bus.label)["sequences"].dropna()
-        res = pd.DataFrame()
-        res[risk_events_label] = results[((main_risk_source.label, output_bus.label), "flow")]
-        res = res.clip(lower=0)
-        return res
+        res_df = pd.DataFrame()
+        res_df[risk_events_label] = results[((main_risk_source.label, output_bus.label), "flow")]
+        res_df = res_df.clip(lower=0)
+        return res_df
             
         
-    def get_default_risk_profile(self):
-        if self.npp_block.risk_mode is False:
-            raise ValueError("The block is not in risk mode, no default risk profile can be extracted")
-        default_risk_source = self.npp_block.default_risk_source
-        label = f"{self.npp_block.label}_default_risk"
-        output_bus = default_risk_source.output_pair[0][1]
-        results = solph.views.node(self.results, output_bus.label)["sequences"].dropna()
-        res = pd.DataFrame()
-        res[label] = results[((default_risk_source.label, output_bus.label), "flow")]
-        res = res.clip(lower=0)
-        return res
+
     
     def get_repair_active_status_profile_dict(self, *, mode):
         if self.npp_block.risk_mode is False:
             raise ValueError("The block is not in risk mode, no repair profile can be extracted")
         after_label = mode if mode in {"status", "flow"} else ValueError("mode must be status or flow")
-        res = {}
+        res_dict = {}
         repair_nodes = self.npp_block.repair_nodes
         for repair_name in repair_nodes:
             label = f"{repair_name.label}_{after_label}"
             repair_block = repair_nodes[repair_name]["converter_npp"]
             output_bus = repair_block.output_pair[0][1]
             results = solph.views.node(self.results, output_bus.label)["sequences"].dropna()
-            res[label] = results[((repair_block.label, output_bus.label), mode)]
-        return res
+            res_dict[label] = results[((repair_block.label, output_bus.label), mode)]
+        return res_dict
     
     def get_cost_profile_dict(self):
         repair_active_profile_dict = self.get_repair_active_status_profile_dict(mode="status")
-        res = {}
+        res_dict = {}
         for repair_name in repair_active_profile_dict:
             startup_cost = self.npp_block.repair_nodes[repair_name]["converter_npp"]["startup_cost"]
             repair_active_profile_dict[repair_name].to_numpy()
-            res[repair_name] = np.where(repair_active_profile_dict[repair_name] == 1, startup_cost, 0)
-        return res
-        
+            res_dict[repair_name] = np.where(repair_active_profile_dict[repair_name] == 1, startup_cost, 0)
+        return res_dict
     
     def get_cumulative_cost_profile_dict(self):
         cost_profile_dict = self.get_cost_profile_dict()
         res = {}
         for repair_name in cost_profile_dict:
             res[repair_name] = cost_profile_dict[repair_name].cumsum()
-            # bad?
         return res
     
     def get_cost_abs_value_dict(self):
         res = self.get_cost_profile_dict()
-        res = {k: v.sum() for k, v in res.items()}
+        res = {repair_name: repair_array.sum() for repair_name, repair_array in res.items()}
         return res
     
-    def get_global_abs_value(self):
+    def get_global_abs_cost(self):
         res = self.get_cost_abs_value_dict()
         res = sum(res.values())
         return res
     
-    
     def get_global_cost_profile(self):
+        cost_profile_dict = self.get_cost_profile_dict()
+        res = pd.DataFrame({k:v for k,v in cost_profile_dict.items()})
+        res = res.sum(axis=1)
+        res.name = "cost"
+        return res
+    
+    def get_cumulative_cost_profile(self):
+        res = self.get_global_cost_profile()
+        res = res.sum(axis=1)
+        res.name = "cumulative_cost"
+        return res
+
+    def get_helper_profiles_dict(self, repair_part_name):
+        
+        repair_nodes_dict = self.npp_block.repair_nodes
+        selected_repair_node = next(k for k in repair_nodes_dict if repair_part_name in k)
+        
+        if not selected_repair_node:
+            raise ValueError(f"Repair part {repair_part_name} not found")
+
+        helper_node_calculator = Helper_node_calculator(self, repair_part_name)
+
+        res = {}
+        res["source_period"] = {"output": helper_node_calculator.get_source_period_output_profile()}
+        res["source_repair"] = {"output": helper_node_calculator.get_source_repair_output_profile()}
+
+        res["source_default_risk"] = {"output": helper_node_calculator.get_default_output_profile()}
+
+        res["converter_repair"] = {
+            "input_main_risk": helper_node_calculator.get_converter_input_main_risk_profile(),
+            "input_period_control": helper_node_calculator.get_converter_input_period_control_profile(),
+            "input_repair_control": helper_node_calculator.get_converter_input_repair_control_profile(),
+            "output": helper_node_calculator.get_converter_output_profile(),
+        }
+
+        res["storage_period"] = {
+            "input": helper_node_calculator.get_storage_profiles("storage_period", "input"),
+            "output": helper_node_calculator.get_storage_profiles("storage_period", "output"),
+            "content": helper_node_calculator.get_storage_profiles("storage_period", "content"),
+        }
+        res["storage_main_risk"] = {
+            "input": helper_node_calculator.get_storage_profiles("storage_main_risk", "input"),
+            "output": helper_node_calculator.get_storage_profiles("storage_main_risk", "output"),
+            "content": helper_node_calculator.get_storage_profiles("storage_main_risk", "content"),
+        }
+        res["storage_repair"] = {
+            "input": helper_node_calculator.get_storage_profiles("storage_repair", "input"),
+            "output": helper_node_calculator.get_storage_profiles("storage_repair", "output"),
+            "content": helper_node_calculator.get_storage_profiles("storage_repair", "content"),
+        }
         
         return res
+     
+     
+     
+  
+class Helper_node_calculator:
+
+    def __init__(self, custom_block, repair_part_name):
+        self.custom_block = custom_block
+        self.repair_dict = custom_block.repair_nodes[repair_part_name]
+        self.results = custom_block.results
+
+    def get_default_risk_profile(self):
+        if self.custom_block.npp_block.risk_mode is False:
+            raise ValueError(
+                "The block is not in risk mode, no default risk profile can be extracted"
+            )
+        default_risk_source = self.npp_block.default_risk_source
+        label = f"{self.npp_block.label}_default_risk"
+        output_bus = default_risk_source.output_pair[0][1]
+        results = solph.views.node(self.results, output_bus.label)["sequences"].dropna()
+        res_df = pd.DataFrame()
+        res_df[label] = results[((default_risk_source.label, output_bus.label), "flow")]
+        res_df = res_df.clip(lower=0)
+        return res_df
+        
+
+    def get_storage_profiles(self, storage_type, profile_type):
+        
+        # укоротить после изучение results(block)
+        
+        if storage_type not in {"storage_period", "storage_main_risk", "storage_repair"}:
+            raise ValueError("storage_type must be storage_period or main_risk_storage")
+        
+        if profile_type not in {"input", "output", "content"}:
+            raise ValueError("profile_type must be input, output or content")
+        
+        res = pd.DataFrame()
+
+        if profile_type == "input":
+            
+            match storage_type:
+                case "storage_period":
+                    input_bus, storage  = self.repair_dict[storage_type].input_pair[0]
+                    results = solph.views.node(self.results, input_bus.label)["sequences"].dropna()
+                    res = results[((storage.label, storage.label), "flow")]
+                
+                case "storage_main_risk":
+                    input_bus, storage = self.repair_dict[storage_type].input_pair[0]
+                    results = solph.views.node(self.results, input_bus.label)["sequences"].dropna()
+                    res = results[((storage.label, storage.label), "flow")]
+                
+                case "storage_repair":
+                    input_bus, storage = self.repair_dict[storage_type].input_pair[0]
+                    results = solph.views.node(self.results, input_bus.label)["sequences"].dropna()
+                    res = results[((storage.label, storage.label), "flow")]
+
+        elif profile_type == "output":
+            
+            match storage_type:
+                case "storage_period":
+                    storage, output_bus = self.repair_dict[storage_type].output_pair[0]
+                    results = solph.views.node(self.results, output_bus.label)["sequences"].dropna()
+                    res = results[((storage.label, "None"), "flow")]
+                
+                case "storage_main_risk":
+                    storage, output_bus = self.repair_dict[storage_type].output_pair[0]
+                    results = solph.views.node(self.results, output_bus.label)["sequences"].dropna()
+                    res = results[((storage.label, "None"), "flow")]
+                
+                case "storage_repair":
+                    storage, output_bus = self.repair_dict[storage_type].output_pair[0]
+                    results = solph.views.node(self.results, output_bus.label)["sequences"].dropna()
+                    res = results[((storage.label, "None"), "flow")]
+        elif profile_type == "content":
+            
+            storage = self.repair_dict[storage_type]
+            
+            match storage_type:
+                case "storage_period":
+                    results = solph.views.node(self.results, storage.label )["sequences"].dropna()
+                    res = results[(output_bus.label, "None"), "storage_content"]
+                case "storage_main_risk":
+                    results = solph.views.node(self.results, storage.label)["sequences"].dropna()
+                    res = results[(output_bus.label, "None"), "storage_content"]
+                case "storage_repair":
+                    results = solph.views.node(self.results, storage.label)["sequences"].dropna()
+                    res = results[(output_bus.label, "None"), "storage_content"]
+        else:
+            raise ValueError("profile_type must be input, output or content")
     
-    
-    def get_global_cumulative_cost_profile(self):
-        res = self.get_cumulative_cost_profile_dict()
-        res = sum(res.values())
+
         return res
 
 
-    def get_helper_profiles(self, mode):
-        pass
 
-  
+    def get_source_period_output_profile(self):
+        res = pd.DataFrame()
+        # проверить необходимость dataframe
+        source_period, output_bus = self.repair_dict["source_period"].output_pair[0]
+        results = solph.views.node(self.results, output_bus.label)["sequences"].dropna()
+        res = results[((source_period.label, output_bus.label), "flow")]
+        return res
+
+
+    def get_source_repair_output_profile(self):
+        res = pd.DataFrame()
+        source_repair, output_bus = self.repair_dict["source_repair"].output_pair[0]
+        results = solph.views.node(self.results, output_bus.label)["sequences"].dropna()
+        res = results[((source_repair.label, output_bus.label), "flow")]
+        return res
+
+
+    def get_converter_repair_output_profile(self):
+        res = pd.DataFrame()
+        block = self.repair_dict["converter_repair"]
+        converter, output_bus = block.output_pair[0]
+        results = solph.views.node(self.results, output_bus.label)["sequences"].dropna()
+        res = results[((converter.label, output_bus.label), "flow")]
+        return res
+    
+    def get_converter_repair_input_main_risk_profile(self):
+        res = pd.DataFrame()
+        block = self.repair_dict["converter_repair"]
+        converter, input_bus = block.input_pair[0]
+        results = solph.views.node(self.results, input_bus.label)["sequences"].dropna()
+        res = results[((input_bus.label, converter.label), "flow")]
+        return res
+    
+    def get_converter_repair_input_repair_control_profile(self):
+        res = pd.DataFrame()
+        block = self.repair_dict["converter_repair"]
+        converter, input_bus = block.input_pair[1]
+        results = solph.views.node(self.results, input_bus.label)["sequences"].dropna()
+        res = results[((input_bus.label, converter.label), "flow")]
+        return res
+    
+    def get_converter_repair_input_period_control_profile(self):
+        res = pd.DataFrame()
+        block = self.repair_dict["converter_repair"]
+        converter, input_bus = block.input_pair[2]
+        results = solph.views.node(self.results, input_bus.label)["sequences"].dropna()
+        res = results[((input_bus.label, converter.label), "flow")]
+        return res
+    
+
+
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
 
 class Block_grouper:
@@ -160,65 +341,74 @@ class Block_grouper:
     
     def get_electricity_profile(self):
         res = pd.DataFrame()
-        for _, v in self.electr_groups.items():
-            res[v.name] = v.get_electricity_profile()[v.name]
+        custom_colors = []
+        for _, custom_block in self.electr_groups.items():
+            res[custom_block.name] = custom_block.get_electricity_profile()[custom_block.name]
+            custom_colors.append(custom_block.color)
+        res.custom_colors = custom_colors
         return res
     
     def get_risk_events_profile(self):
         res = pd.DataFrame()
-        for _, v in self.electr_groups.items():
-            res[v.name] = v.get_risk_events_profile()
+        for _, custom_block in self.electr_groups.items():
+            res[custom_block.name] = custom_block.get_risk_events_profile()
         return res
     
     def get_main_risk_profile(self):
         res = pd.DataFrame()
-        for _, v in self.electr_groups.items():
-            res[v.name] = v.get_main_risk_profile()
+        for _, custom_block in self.electr_groups.items():
+            res[custom_block.name] = custom_block.get_main_risk_profile()
         return res
     
-    def get_default_risk_profile(self):
-        res = pd.DataFrame()
-        for _, v in self.electr_groups.items():
-            res[v.name] = v.get_default_risk_profile()
-        return res
+    # def get_default_risk_profile(self):
+    #     res = pd.DataFrame()
+    #     for _, custom_block in self.electr_groups.items():
+    #         res[custom_block.name] = custom_block.get_default_risk_profile()
+    #     return res
     
     def get_repair_profile(self, mode):
         if mode not in {"status", "flow"}:
             raise ValueError(f"Invalid mode: {mode}")
         res = pd.DataFrame()
-        for _, v in self.electr_groups.items():
-            buf = v.get_repair_active_status_profile(mode=mode)
-            for kk, vv in buf.items():
-                res[kk] = vv
+        for _, custom_block in self.electr_groups.items():
+            repair_types_dict = custom_block.get_repair_active_status_profile(mode=mode)
+            for repair_name, repair_type in repair_types_dict.items():
+                res[repair_name] = repair_type
         return res
         
         
     def get_global_abs_cost_by_block(self):
         res = pd.DataFrame()
-        for _, v in self.electr_groups.items():
-            res[v.name] = v.get_global_abs_cost()
+        for _, custom_block in self.electr_groups.items():
+            res[custom_block.name] = custom_block.get_global_abs_cost()
         return res
         
     def get_global_abs_cost(self):
         res = 0
-        for _, v in self.electr_groups.items():
-            res += v.get_global_abs_cost()
+        for _, custom_block in self.electr_groups.items():
+            res += custom_block.get_global_abs_cost_by_block()
         return res
-        
+    
     def get_cost_profile(self):
         res = pd.DataFrame()
-        for _, v in self.electr_groups.items():
-            res[v.name] = v.get_cost_profile()
+        for _, custom_block in self.electr_groups.items():
+            res[custom_block.name] = custom_block.get_cost_profile()
+        res = res.sum(axis=1)
+        res.name = "cost"
+        return res
+    
+    def get_cumulative_cost_profile(self):
+        res = self.get_cost_profile()
+        cum_sum = res.cumsum()
+        cum_sum.name = "cumulative_cost"
         return res
     
     
-    
-    def get_cumulative_cost_profile(self):
-        pass
-    
-    
-    def get_helper_block_profiles_dict(self, block_name, mode):
-        pass
+    def get_helper_block_profiles(self, block_name):
+        for _, custom_block in self.electr_groups.items():
+            if custom_block is block_name:
+                return custom_block.get_helper_profiles_dict()
+        return None
     
     
     

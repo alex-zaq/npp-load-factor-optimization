@@ -61,6 +61,23 @@ def get_next_number_file_name(folder):
     res = max(number_files) + 1
     return res
 
+def get_dumps_file_name(self, scenario):
+    scen_number = scenario["№"]
+    scen_name = scenario["name"]
+    start_year = scenario["years"][0]
+    end_year = scenario["end_year"][-1]
+    active_npp_count = get_npp_block_active_count_by_scen(scenario)
+    file_name = "_".join(
+        [scen_number, scen_name, start_year, end_year, active_npp_count]
+    )
+    return file_name
+
+def get_file_name_with_auto_number(dumps_folder, scenario, ext):
+    next_number = get_number(get_next_number_file_name(dumps_folder))
+    file_name = f"{get_dumps_file_name(scenario)}.{ext}"
+    res = [next_number, file_name]
+    res = "_".join(res)
+    return res
 
 def set_label(*items, sep="_"):
     if not items:
