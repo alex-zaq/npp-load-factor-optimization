@@ -212,7 +212,7 @@ control_block_viewer.select_block(bel_npp_block_1)
 
 
 result_viewer.set_image_folder("./images")
-result_viewer.set_save_image_flag(False)
+result_viewer.save_image_flag(False)
 # result_viewer.set_save_image_flag(True)
 
 result_viewer.plot_electricity_generation_profile()

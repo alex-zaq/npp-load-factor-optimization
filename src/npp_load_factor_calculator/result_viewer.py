@@ -12,7 +12,7 @@ class Result_viewer:
         self.image_folder = None
         
         
-    def set_save_image_flag(self, flag):
+    def save_image_flag(self, flag):
         self.save_image_flag = flag
     
     
@@ -23,9 +23,7 @@ class Result_viewer:
     def plot_electricity_generation_profile(self):
         
         el_gen_df = self.block_grouper.get_electricity_profile()
-
         custom_colors = el_gen_df.custom_colors
-                
         font_size = 8
         max_y = 5000
         
@@ -39,8 +37,14 @@ class Result_viewer:
             fontsize=font_size,
         )
         
+        fig = plt.gcf()
         ax_el_gen_df.tick_params(axis="both", which="major", labelsize=font_size - 2)
         ax_el_gen_df.tick_params(axis="both", which="minor", labelsize=font_size - 2)
+        plt.xlabel("Время, часы", labelpad=0, fontsize=6)
+        plt.ylabel("Производство электроэнергии, МВт$\cdot$ч", labelpad=5, fontsize=6)
+        fig.canvas.manager.set_window_title("Почасовая генерация электроэнергии")
+        fig.set_dpi(250)
+        
         
         plt.legend(
             loc="upper center",
@@ -54,64 +58,98 @@ class Result_viewer:
             facecolor="none",
         )
     
-        # full_scen_name = self.scen_name_builder.full_scen_name
-        # plt.title(full_scen_name, fontsize=8, y=1.03, x=0.50)
-        fig = plt.gcf()
-        fig.set_dpi(250)
-        fig.canvas.manager.set_window_title("Почасовая генерация электроэнергии")
-
-        plt.xlabel("Время, часы", labelpad=0, fontsize=6)
-        plt.ylabel("Производство электроэнергии, МВт$\cdot$ч", labelpad=5, fontsize=6)
-
         plt.show(block=True)
         
-        if self.set_save_image_flag:
-            fname = get_file_name_with_auto_number(self.image_folder, self.scenario, "png"),
-            fig.savefig(
-                fname=fname,
-                bbox_inches="tight",
-                dpi=600,
-                transparent=True,
-            )
+        
+        if self.save_image_flag:
+            self._save_image(fig) 
+
+
     
     def plot_main_risk_profile(self):
         
         main_risk_df = self.block_grouper.get_main_risk_profile()
+        colors = main_risk_df.custom_colors
+        font_size = 8
+        max_y = 5000
     
     
-    
-    
+        ax_main_risk_df = main_risk_df.plot(
+            kind="area",
+            ylim=(0, max_y),
+            legend="reverse",
+            color=colors,
+            linewidth=0.01,
+            figsize=(7, 5),
+            fontsize=font_size,
+        )
+        
         fig = plt.gcf()
-        fig.set_dpi(250)
+        ax_main_risk_df.tick_params(axis="both", which="major", labelsize=font_size - 2)
+        ax_main_risk_df.tick_params(axis="both", which="minor", labelsize=font_size - 2)
+        plt.xlabel("Время, часы", labelpad=0, fontsize=6)
+        plt.ylabel("Производство электроэнергии, МВт$\cdot$ч", labelpad=5, fontsize=6)
         fig.canvas.manager.set_window_title("Обзор величины риска")
-        if self.set_save_image_flag:
-            fname = get_file_name_with_auto_number(self.image_folder, self.scenario, "png"),
-            fig.savefig(
-                fname=fname,
-                bbox_inches="tight",
-                dpi=600,
-                transparent=True,
-            )
+        fig.set_dpi(250)
+        
+        
+        plt.legend(
+            loc="upper center",
+            # bbox_to_anchor=(0.5, 1),
+            fontsize=font_size - 2,
+            # ncols=4,
+            # ncol=2,
+            reverse=True,
+            labelspacing=2,
+            edgecolor="None",
+            facecolor="none",
+        )
+
+        if self.save_image_flag:
+            self._save_image(fig) 
 
     
     def plot_risk_events_profile(self):
-        
     
         risk_events_df = self.block_grouper.get_risk_events_profile()
 
         colors = risk_events_df.colors
 
+        font_size = 8
+        max_y = 5000
+            
+        ax_main_risk_df = risk_events_df.plot(
+            kind="area",
+            ylim=(0, max_y),
+            legend="reverse",
+            color=colors,
+            linewidth=0.01,
+            figsize=(7, 5),
+            fontsize=font_size,
+        )
+        
         fig = plt.gcf()
-        fig.set_dpi(250)
+        ax_main_risk_df.tick_params(axis="both", which="major", labelsize=font_size - 2)
+        ax_main_risk_df.tick_params(axis="both", which="minor", labelsize=font_size - 2)
+        plt.xlabel("Время, часы", labelpad=0, fontsize=6)
+        plt.ylabel("Производство электроэнергии, МВт$\cdot$ч", labelpad=5, fontsize=6)
         fig.canvas.manager.set_window_title("Обзор событий риска")
-        if self.set_save_image_flag:
-            fname = get_file_name_with_auto_number(self.image_folder, self.scenario, "png"),
-            fig.savefig(
-                fname=fname,
-                bbox_inches="tight",
-                dpi=600,
-                transparent=True,
-            )
+        fig.set_dpi(250)
+        
+        plt.legend(
+            loc="upper center",
+            # bbox_to_anchor=(0.5, 1),
+            fontsize=font_size - 2,
+            # ncols=4,
+            # ncol=2,
+            reverse=True,
+            labelspacing=2,
+            edgecolor="None",
+            facecolor="none",
+        )
+            
+        if self.save_image_flag:
+            self._save_image(fig) 
 
 
     def plot_repair_profile(self, *, mode):
@@ -120,19 +158,46 @@ class Result_viewer:
 
         repair_df = self.block_grouper.get_repair_profile(mode=mode)
         colors = repair_df.colors
+
+        font_size = 8
+        max_y = 5000
+
+        ax_main_risk_df = repair_df.plot(
+            kind="area",
+            ylim=(0, max_y),
+            legend="reverse",
+            color=colors,
+            linewidth=0.01,
+            figsize=(7, 5),
+            fontsize=font_size,
+        )
         
         fig = plt.gcf()
-        fig.set_dpi(250)
+        ax_main_risk_df.tick_params(axis="both", which="major", labelsize=font_size - 2)
+        ax_main_risk_df.tick_params(axis="both", which="minor", labelsize=font_size - 2)
+        plt.xlabel("Время, часы", labelpad=0, fontsize=6)
+        plt.ylabel("Обзор ремонтов, МВт$\cdot$ч", labelpad=5, fontsize=6)
         title = "Обзор ремонтов (по статусу)" if mode == "status" else "Обзор ремонтов (по потоку)"
         fig.canvas.manager.set_window_title(title)
-        if self.set_save_image_flag:
-            fname = get_file_name_with_auto_number(self.image_folder, self.scenario, "png"),
-            fig.savefig(
-                fname=fname,
-                bbox_inches="tight",
-                dpi=600,
-                transparent=True,
-            )
+        fig.set_dpi(250)
+        
+        plt.legend(
+            loc="upper center",
+            # bbox_to_anchor=(0.5, 1),
+            fontsize=font_size - 2,
+            # ncols=4,
+            # ncol=2,
+            reverse=True,
+            labelspacing=2,
+            edgecolor="None",
+            facecolor="none",
+        )
+            
+            
+        if self.save_image_flag:
+            self._save_image(fig) 
+
+
 
 
     def plot_cost_profile_by_blocks(self, *, cumulative=False):
@@ -143,14 +208,12 @@ class Result_viewer:
         fig = plt.gcf()
         fig.set_dpi(250)
         fig.canvas.manager.set_window_title("Обзор стоимости ремонтов по блокам")
-        if self.set_save_image_flag:
-            fname = get_file_name_with_auto_number(self.image_folder, self.scenario, "png"),
-            fig.savefig(
-                fname=fname,
-                bbox_inches="tight",
-                dpi=600,
-                transparent=True,
-            )
+
+            
+            
+            
+        if self.save_image_flag:
+            self._save_image(fig) 
 
 
     def plot_cost_profile_cumulative(self):
@@ -161,14 +224,12 @@ class Result_viewer:
         fig = plt.gcf()
         fig.set_dpi(250)
         fig.canvas.manager.set_window_title("Обзор стоимости ремонтов")
-        if self.set_save_image_flag:
-            fname = get_file_name_with_auto_number(self.image_folder, self.scenario, "png"),
-            fig.savefig(
-                fname=fname,
-                bbox_inches="tight",
-                dpi=600,
-                transparent=True,
-            )
+
+            
+            
+            
+        if self.save_image_flag:
+            self._save_image(fig) 
 
         
     def plot_general_graph(self):
@@ -179,7 +240,25 @@ class Result_viewer:
         # ремонты всех видов
         # стоимость ремонтов
         # накопительная стоимость ремонтов
+        fig = plt.gcf()
+        
+        if self.save_image_flag:
+            self._save_image(fig) 
 
+
+    def _save_image(self, fig):
+            fname = (
+                get_file_name_with_auto_number(self.image_folder, self.scenario, "png"),
+            )
+            fig.savefig(
+                fname=fname,
+                bbox_inches="tight",
+                dpi=600,
+                transparent=True,
+            )
+            
+            
+            
 
 class Control_block_viewer:
     
