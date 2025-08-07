@@ -73,7 +73,6 @@ class Result_viewer:
         font_size = 8
         max_y = 5000
     
-    
         ax_main_risk_df = main_risk_df.plot(
             kind="area",
             ylim=(0, max_y),
@@ -88,7 +87,7 @@ class Result_viewer:
         ax_main_risk_df.tick_params(axis="both", which="major", labelsize=font_size - 2)
         ax_main_risk_df.tick_params(axis="both", which="minor", labelsize=font_size - 2)
         plt.xlabel("Время, часы", labelpad=0, fontsize=6)
-        plt.ylabel("Производство электроэнергии, МВт$\cdot$ч", labelpad=5, fontsize=6)
+        plt.ylabel("Величина риска, %", labelpad=5, fontsize=6)
         fig.canvas.manager.set_window_title("Обзор величины риска")
         fig.set_dpi(250)
         
@@ -132,7 +131,7 @@ class Result_viewer:
         ax_main_risk_df.tick_params(axis="both", which="major", labelsize=font_size - 2)
         ax_main_risk_df.tick_params(axis="both", which="minor", labelsize=font_size - 2)
         plt.xlabel("Время, часы", labelpad=0, fontsize=6)
-        plt.ylabel("Производство электроэнергии, МВт$\cdot$ч", labelpad=5, fontsize=6)
+        plt.ylabel("События риска, %", labelpad=5, fontsize=6)
         fig.canvas.manager.set_window_title("Обзор событий риска")
         fig.set_dpi(250)
         
@@ -157,6 +156,7 @@ class Result_viewer:
             raise ValueError("Mode must be 'status' or 'flow'")
 
         repair_df = self.block_grouper.get_repair_profile(mode=mode)
+        
         colors = repair_df.colors
 
         font_size = 8
@@ -176,7 +176,7 @@ class Result_viewer:
         ax_main_risk_df.tick_params(axis="both", which="major", labelsize=font_size - 2)
         ax_main_risk_df.tick_params(axis="both", which="minor", labelsize=font_size - 2)
         plt.xlabel("Время, часы", labelpad=0, fontsize=6)
-        plt.ylabel("Обзор ремонтов, МВт$\cdot$ч", labelpad=5, fontsize=6)
+        plt.ylabel("Статусы ремонтов" if mode == "status" else "Снижение риска от ремонтов", labelpad=5, fontsize=6)
         title = "Обзор ремонтов (по статусу)" if mode == "status" else "Обзор ремонтов (по потоку)"
         fig.canvas.manager.set_window_title(title)
         fig.set_dpi(250)
@@ -192,7 +192,6 @@ class Result_viewer:
             edgecolor="None",
             facecolor="none",
         )
-            
             
         if self.save_image_flag:
             self._save_image(fig) 
@@ -216,7 +215,7 @@ class Result_viewer:
             self._save_image(fig) 
 
 
-    def plot_cost_profile_cumulative(self):
+    def plot_cost_profile(self, *, cumulative=False):
         
         cost_df = self.block_grouper.get_cost_profile()
         color = "black"
