@@ -384,7 +384,7 @@ class Block_grouper:
         return res
     
     
-    def get_cost_profile_by_block(self):
+    def get_cost_profile_by_block(self, *, cumulative=False):
         res = pd.DataFrame()
         sorted_by_order = sorted(self.electr_groups.values(), key=lambda x: x.electr_plot["order"])
         colors = []
@@ -392,18 +392,27 @@ class Block_grouper:
             res[custom_block.electr_plot["label"]] = custom_block.get_cost_profile()
             colors.append(custom_block.electr_plot["color"])
         res.colors = colors
+        
+        if cumulative:
+            res = res.cumsum()
+            
         return res
     
     
-    def get_cost_profile(self):
+    def get_cost_profile(self, *, cumulative=False):
         res = pd.DataFrame()
         for _, custom_block in self.electr_groups.items():
             res[custom_block.name] = custom_block.get_cost_profile()
         res = res.sum(axis=1)
         res.name = "cost"
+        
+        if cumulative:
+            res = res.cumsum()
+            res.name = "cumulative_cost"        
+        
         return res
-    
-    
+
+
     def get_repair_profile(self, mode):
         #  v.repair_events_plot = {"order": i, "repair_id_lst": repair_id_lst , "colors": colors_lst, "repair_names": repair_names}
         if mode not in {"status", "flow"}:
@@ -436,12 +445,6 @@ class Block_grouper:
         return res
 
 
-    def get_cumulative_cost_profile(self):
-        res = self.get_cost_profile()
-        cum_sum = res.cumsum()
-        cum_sum.name = "cumulative_cost"
-        return res
-    
     
     def get_helper_block_profiles(self, block_name):
         for _, custom_block in self.electr_groups.items():

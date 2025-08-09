@@ -1,7 +1,5 @@
 from matplotlib import pyplot as plt
 
-from npp_load_factor_calculator.utilites import get_file_name_with_auto_number
-
 
 class Result_viewer:
     
@@ -40,8 +38,8 @@ class Result_viewer:
         fig = plt.gcf()
         ax_el_gen_df.tick_params(axis="both", which="major", labelsize=font_size - 2)
         ax_el_gen_df.tick_params(axis="both", which="minor", labelsize=font_size - 2)
-        plt.xlabel("Время, часы", labelpad=0, fontsize=6)
-        plt.ylabel("Производство электроэнергии, МВт$\cdot$ч", labelpad=5, fontsize=6)
+        plt.xlabel("Время, часы", labelpad=0, fontsize=font_size - 2)
+        plt.ylabel("Производство электроэнергии, МВт$\cdot$ч", labelpad=5, fontsize=font_size - 2)
         fig.canvas.manager.set_window_title("Почасовая генерация электроэнергии")
         fig.set_dpi(250)
         
@@ -86,8 +84,8 @@ class Result_viewer:
         fig = plt.gcf()
         ax_main_risk_df.tick_params(axis="both", which="major", labelsize=font_size - 2)
         ax_main_risk_df.tick_params(axis="both", which="minor", labelsize=font_size - 2)
-        plt.xlabel("Время, часы", labelpad=0, fontsize=6)
-        plt.ylabel("Величина риска, %", labelpad=5, fontsize=6)
+        plt.xlabel("Время, часы", labelpad=0, fontsize=font_size - 2)
+        plt.ylabel("Величина риска, %", labelpad=5, fontsize=font_size - 2)
         fig.canvas.manager.set_window_title("Обзор величины риска")
         fig.set_dpi(250)
         
@@ -130,8 +128,8 @@ class Result_viewer:
         fig = plt.gcf()
         ax_main_risk_df.tick_params(axis="both", which="major", labelsize=font_size - 2)
         ax_main_risk_df.tick_params(axis="both", which="minor", labelsize=font_size - 2)
-        plt.xlabel("Время, часы", labelpad=0, fontsize=6)
-        plt.ylabel("События риска, %", labelpad=5, fontsize=6)
+        plt.xlabel("Время, часы", labelpad=0, fontsize=font_size - 2)
+        plt.ylabel("События риска, %", labelpad=5, fontsize=font_size - 2)
         fig.canvas.manager.set_window_title("Обзор событий риска")
         fig.set_dpi(250)
         
@@ -175,8 +173,8 @@ class Result_viewer:
         fig = plt.gcf()
         ax_main_risk_df.tick_params(axis="both", which="major", labelsize=font_size - 2)
         ax_main_risk_df.tick_params(axis="both", which="minor", labelsize=font_size - 2)
-        plt.xlabel("Время, часы", labelpad=0, fontsize=6)
-        plt.ylabel("Статусы ремонтов" if mode == "status" else "Снижение риска от ремонтов", labelpad=5, fontsize=6)
+        plt.xlabel("Время, часы", labelpad=0, fontsize=font_size - 2)
+        plt.ylabel("Статусы ремонтов" if mode == "status" else "Снижение риска от ремонтов", labelpad=5, fontsize=font_size - 2)
         title = "Обзор ремонтов (по статусу)" if mode == "status" else "Обзор ремонтов (по потоку)"
         fig.canvas.manager.set_window_title(title)
         fig.set_dpi(250)
@@ -201,31 +199,86 @@ class Result_viewer:
 
     def plot_cost_profile_by_blocks(self, *, cumulative=False):
         
-        cost_df = self.block_grouper.get_cost_profile_by_block()
+        cost_df = self.block_grouper.get_cost_profile_by_block(сumulative=cumulative)
         colors = cost_df.colors
         
+        font_size = 8
+        max_y = 5000
+        
+        ax_cost_by_block_df = cost_df.plot(
+            kind="area",
+            ylim=(0, max_y),
+            legend="reverse",
+            color=colors,
+            linewidth=0.01,
+            figsize=(7, 5),
+            fontsize=font_size,
+        )
+        
         fig = plt.gcf()
+        ax_cost_by_block_df.tick_params(axis="both", which="major", labelsize=font_size - 2)
+        ax_cost_by_block_df.tick_params(axis="both", which="minor", labelsize=font_size - 2)
+        plt.xlabel("Время, часы", labelpad=0, fontsize=font_size - 2)
+        plt.ylabel("Затраты на ремонты по блокам, $", labelpad=5, fontsize=font_size - 2)
         fig.set_dpi(250)
-        fig.canvas.manager.set_window_title("Обзор стоимости ремонтов по блокам")
+        fig.canvas.manager.set_window_title("Обзор затрат на ремонты по блокам")
 
-            
-            
-            
+        plt.legend(
+            loc="upper center",
+            # bbox_to_anchor=(0.5, 1),
+            fontsize=font_size - 2,
+            # ncols=4,
+            # ncol=2,
+            reverse=True,
+            labelspacing=2,
+            edgecolor="None",
+            facecolor="none",
+        )
+        
         if self.save_image_flag:
             self._save_image(fig) 
 
 
+
+
     def plot_cost_profile(self, *, cumulative=False):
         
-        cost_df = self.block_grouper.get_cost_profile()
+        cost_df = self.block_grouper.get_cost_profile(cumulative=cumulative)
         color = "black"
         
-        fig = plt.gcf()
-        fig.set_dpi(250)
-        fig.canvas.manager.set_window_title("Обзор стоимости ремонтов")
+        font_size = 8
+        max_y = 5000  
 
-            
-            
+        
+        ax_cost_df = cost_df.plot(
+            kind="area",
+            ylim=(0, max_y),
+            legend="reverse",
+            color=color,
+            linewidth=0.01,
+            figsize=(7, 5),
+            fontsize=font_size,
+        )
+        
+        fig = plt.gcf()
+        ax_cost_df.tick_params(axis="both", which="major", labelsize=font_size - 2)
+        ax_cost_df.tick_params(axis="both", which="minor", labelsize=font_size - 2)
+        plt.xlabel("Время, часы", labelpad=0, fontsize=font_size - 2)
+        plt.ylabel("Затраты на ремонты, $", labelpad=5, fontsize=font_size - 2)
+        fig.set_dpi(250)
+        fig.canvas.manager.set_window_title("Обзор затрат на ремонты")
+
+        plt.legend(
+            loc="upper center",
+            # bbox_to_anchor=(0.5, 1),
+            fontsize=font_size - 2,
+            # ncols=4,
+            # ncol=2,
+            reverse=True,
+            labelspacing=2,
+            edgecolor="None",
+            facecolor="none",
+        )
             
         if self.save_image_flag:
             self._save_image(fig) 
@@ -239,22 +292,22 @@ class Result_viewer:
         # ремонты всех видов
         # стоимость ремонтов
         # накопительная стоимость ремонтов
-        fig = plt.gcf()
+        # fig = plt.gcf()
         
-        if self.save_image_flag:
-            self._save_image(fig) 
+        # if self.save_image_flag:
+        #     self._save_image(fig) 
 
 
-    def _save_image(self, fig):
-            fname = (
-                get_file_name_with_auto_number(self.image_folder, self.scenario, "png"),
-            )
-            fig.savefig(
-                fname=fname,
-                bbox_inches="tight",
-                dpi=600,
-                transparent=True,
-            )
+    # def _save_image(self, fig):
+    #         fname = (
+    #             get_file_name_with_auto_number(self.image_folder, self.scenario, "png"),
+    #         )
+    #         fig.savefig(
+    #             fname=fname,
+    #             bbox_inches="tight",
+    #             dpi=600,
+    #             transparent=True,
+    #         )
             
             
             
@@ -271,24 +324,237 @@ class Control_block_viewer:
         
             
     def plot_default_risk_profile(self):
-        pass
+        
+        default_risk_df = self.db["source_default_risk"]
+        
+        color = "red"
+        
+        font_size = 8
+        max_y = 5000  
+        
+        ax_default_risk_df = default_risk_df.plot(
+            kind="area",
+            ylim=(0, max_y),
+            legend="reverse",
+            color=color,
+            linewidth=0.01,
+            figsize=(7, 5),
+            fontsize=font_size,
+        )
+        
+        fig = plt.gcf()
+        ax_default_risk_df.tick_params(axis="both", which="major", labelsize=font_size - 2)
+        ax_default_risk_df.tick_params(axis="both", which="minor", labelsize=font_size - 2)
+        plt.xlabel("Время, часы", labelpad=0, fontsize=font_size - 2)
+        plt.ylabel("default risk profile - output", labelpad=5, fontsize=font_size - 2)
+        fig.set_dpi(250)
+        fig.canvas.manager.set_window_title("default risk profile - output")
+        
+        plt.legend(
+            loc="upper center",
+            # bbox_to_anchor=(0.5, 1),
+            fontsize=font_size - 2,
+            # ncols=4,
+            # ncol=2,
+            reverse=True,
+            labelspacing=2,
+            edgecolor="None",
+            facecolor="none",
+        )
+        
         
         
     def plot_source_output_profile(self, *, mode):
         if mode not in ["source_period", "source_repair"]:
             raise ValueError("Mode must be 'source_period' or 'source_repair'")
         
+        source_output_df = self.db[mode]["output"]
+        
+        color = "black"
+        
+        font_size = 8
+        max_y = 5000  
+        
+        ax_source_output_df = source_output_df.plot(
+            kind="area",
+            ylim=(0, max_y),
+            legend="reverse",
+            color=color,
+            linewidth=0.01,
+            figsize=(7, 5),
+            fontsize=font_size,
+        )
+        
+        fig = plt.gcf()
+        ax_source_output_df.tick_params(axis="both", which="major", labelsize=font_size - 2)
+        ax_source_output_df.tick_params(axis="both", which="minor", labelsize=font_size - 2)
+        plt.xlabel("Время, часы", labelpad=0, fontsize=font_size - 2)
+        plt.ylabel(f"(helper block) {mode} - output", labelpad=5, fontsize=font_size - 2
+        )
+        fig.set_dpi(250)
+        fig.canvas.manager.set_window_title(f"{mode} - output")
+        
+        plt.legend(
+            loc="upper center",
+            # bbox_to_anchor=(0.5, 1),
+            fontsize=font_size - 2,
+            # ncols=4,
+            # ncol=2,
+            reverse=True,
+            labelspacing=2,
+            edgecolor="None",
+            facecolor="none",
+        )
+        
+        
         
     def plot_storage_profiles(self, *, mode):
         if mode not in ["storage_period", "storage_main_risk", "storage_repair"]:
             raise ValueError("Mode must be 'storage_period', 'storage_main_risk' or 'storage_repair'")
 
+        storage_input_df = self.db[mode]["input"]
+        storage_output_df = self.db[mode]["output"]
+        storage_content_df = self.db[mode]["content"]
+        
+        color = "black"
+        
+        font_size = 8
+        max_y = 5000  
+        
+        ax_storage_input_df = storage_input_df.plot(
+            kind="area",
+            ylim=(0, max_y),
+            legend="reverse",
+            color=color,
+            linewidth=0.01,
+            figsize=(7, 5),
+            fontsize=font_size,
+        )
+        
+        ax_storage_output_df = storage_output_df.plot(
+            kind="area",
+            ylim=(0, max_y),
+            legend="reverse",
+            color=color,
+            linewidth=0.01,
+            figsize=(7, 5),
+            fontsize=font_size,
+            ax=ax_storage_input_df
+        )
+        
+        ax_storage_content_df = storage_content_df.plot(
+            kind="area",
+            ylim=(0, max_y),
+            legend="reverse",
+            color=color,
+            linewidth=0.01,
+            figsize=(7, 5),
+            fontsize=font_size,
+            ax=ax_storage_output_df
+        )
+        
+        
+        fig = plt.gcf()
+        ax_storage_content_df.tick_params(axis="both", which="major", labelsize=font_size - 2)
+        ax_storage_content_df.tick_params(axis="both", which="minor", labelsize=font_size - 2)
+        plt.xlabel("Время, часы", labelpad=0, fontsize=font_size - 2)
+        plt.ylabel(f"{mode}, Mwt", labelpad=5, fontsize=font_size - 2
+        )
+        fig.set_dpi(250)
+        fig.canvas.manager.set_window_title(f"{mode}")
+        
+        plt.legend(
+            loc="upper center",
+            # bbox_to_anchor=(0.5, 1),
+            fontsize=font_size - 2,
+            # ncols=4,
+            # ncol=2,
+            reverse=True,
+            labelspacing=2,
+            edgecolor="None",
+            facecolor="none",
+        )
+   
+        
+
             
-    def plot_converter_profiles(self, *, mode):
-        if mode not in ["input_main_risk", "input_period_control", "input_repair_control", "output"]:
-            raise ValueError("Mode must be 'converter_repair'")
+    def plot_converter_profiles(self):
+        
+        converter_input_main_risk_df = self.db["converter_repair"]["input_main_risk"]
+        converter_input_period_control_df = self.db["converter_repair"]["input_period_control"]
+        converter_input_repair_control_df = self.db["converter_repair"]["input_repair_control"]
+        converter_output_df = self.db["converter_repair"]["output"]
             
         
+        color = "black"
+        
+        font_size = 8
+        max_y = 5000  
+        
+        ax_converter_input_main_risk_df = converter_input_main_risk_df.plot(
+            kind="area",
+            ylim=(0, max_y),
+            legend="reverse",
+            color=color,
+            linewidth=0.01,
+            figsize=(7, 5),
+            fontsize=font_size,
+        )
+        
+        ax_converter_input_period_control_df = converter_input_period_control_df.plot(
+            kind="area",
+            ylim=(0, max_y),
+            legend="reverse",
+            color=color,
+            linewidth=0.01,
+            figsize=(7, 5),
+            fontsize=font_size,
+            ax=ax_converter_input_main_risk_df
+        )
+
+        ax_converter_input_repair_control_df = converter_input_repair_control_df.plot(
+            kind="area",
+            ylim=(0, max_y),
+            legend="reverse",
+            color=color,
+            linewidth=0.01,
+            figsize=(7, 5),
+            fontsize=font_size,
+            ax=ax_converter_input_period_control_df
+        )
+
+        ax_converter_output_df = converter_output_df.plot(
+            kind="area",
+            ylim=(0, max_y),
+            legend="reverse",
+            color=color,
+            linewidth=0.01,
+            figsize=(7, 5),
+            fontsize=font_size,
+            ax=ax_converter_input_repair_control_df
+        )
+        
+        
+        fig = plt.gcf()
+        ax_converter_output_df.tick_params(axis="both", which="major", labelsize=font_size - 2)
+        ax_converter_output_df.tick_params(axis="both", which="minor", labelsize=font_size - 2)
+        plt.xlabel("Время, часы", labelpad=0, fontsize=font_size - 2)
+        plt.ylabel("converter, Mwt", labelpad=5, fontsize=font_size - 2
+        )
+        fig.set_dpi(250)
+        fig.canvas.manager.set_window_title("converter")
+        
+        plt.legend(
+            loc="upper center",
+            # bbox_to_anchor=(0.5, 1),
+            fontsize=font_size - 2,
+            # ncols=4,
+            # ncol=2,
+            reverse=True,
+            labelspacing=2,
+            edgecolor="None",
+            facecolor="none",
+        )
         
         
         
