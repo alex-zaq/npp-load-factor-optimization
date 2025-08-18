@@ -48,8 +48,8 @@ class Custom_model:
         risk_per_hour_2 = self.scenario["bel_npp_block_2"]["risk_per_hour"]
         fix_risk_lst_1 = get_risk_events_profile(start_year, end_year, npp_block_1_events)
         fix_risk_lst_2 = get_risk_events_profile(start_year, end_year, npp_block_2_events)
-        repair_options_1 = self.scenario["bel_npp_block_1"]
-        repair_options_2 = self.scenario["bel_npp_block_2"]
+        repair_options_1 = self.scenario["bel_npp_block_1"]["repair_options"]
+        repair_options_2 = self.scenario["bel_npp_block_2"]["repair_options"]
            
         # plot_array(fix_risk_lst_1)
         # plot_array(fix_risk_lst_2)
@@ -94,7 +94,7 @@ class Custom_model:
         upper_bound_risk_1 = self.scenario["new_npp_block_1"]["upper_bound_risk"]
         risk_per_hour_1 = self.scenario["new_npp_block_1"]["risk_per_hour"]
         fix_risk_lst_1 = get_risk_events_profile(start_year, end_year, npp_block_1_events)
-        repair_options_1 = self.scenario["new_npp_block_1"]
+        repair_options_1 = self.scenario["new_npp_block_1"]["repair_options"]
                 
         # plot_array(fix_risk_lst_1)
                 

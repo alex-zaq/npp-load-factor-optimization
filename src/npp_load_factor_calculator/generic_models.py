@@ -5,6 +5,7 @@ from src.npp_load_factor_calculator.utilites import (
     check_sequential_years,
     get_profile_by_period_for_charger,
     get_profile_with_first_day,
+    get_time_pairs_lst,
     get_valid_profile_by_months,
     hours_between_years,
     plot_array,
@@ -143,9 +144,11 @@ class Generic_source:
                 output_bus: solph.Flow(
                     nominal_value=nominal_power,
                     max=1,
+                    # min = 1?
                     min=0,
                     variable_costs=var_cost,
                     nonconvex=solph.NonConvex(),
+                    # bad
                     custom_attributes=npp_keyword_dict,
                 )
             },
@@ -177,6 +180,7 @@ class Generic_source:
                 output_bus=main_risk_bus,
                 capacity=max_risk_level,
             )
+            # не нужно ограничение для неодновременности входа/выхода т.к. есть ремонты, не приводящие к отк. аэс
             npp_block.risk_mode = risk_mode
             npp_block.risk_source = main_risk_source
             npp_block.risk_storage = main_risk_storage
@@ -198,10 +202,11 @@ class Generic_source:
         general_bus = bus_factory.create_bus(set_label(label, "source_control_output_bus"))   
         converter_out_bus = bus_factory.create_bus(set_label(label, "converter_out_bus"))
 
-        c_sink_general = sink_factory.create_sink(set_label(label, "general_sink"), general_bus)
-        c_sink_for_converters = sink_factory.create_sink(set_label(label, "sink_for_converters"), converter_out_bus)   
+        sink_for_source_period = sink_factory.create_sink(set_label(label, "sink_for_source_period"), general_bus)
+        sink_for_repair_converters = sink_factory.create_sink(set_label(label, "sink_for_repair_converters"), converter_out_bus)   
         
-        repair_nodes = {"sink_period": c_sink_general, "general_repair_sink": c_sink_for_converters}
+        # sink for repair one for model
+        repair_nodes = {"sink_for_source_period": sink_for_source_period, "sink_for_repair_converters": sink_for_repair_converters}
            
         npp_keyword_dict = npp_block.npp_keyword_dict
                        
@@ -244,7 +249,7 @@ class Generic_source:
                 converter_out_bus,
                 converter_limit_in_bus,
                 storage_capacity,
-                ) # constraint нельзя одновременно заряжать и разряжать рассчитать емкость
+                ) # constraint нельзя одновременно заряжать и разряжать
 
                 
             if max_count_status:
@@ -294,12 +299,17 @@ class Generic_source:
                 "source_repair": source_repair,
             }
 
-            # constraint converter и source работают одновременно на n и n + 1 (или нет если точное начало ремонта не важно)(опция)
             # начало ремонта в точные даты
 
-            self.constraints["source_converter_n_n_plus_1_constr"].add((source_repair.outputs_pair[0], converter_repair.outputs_pair[0])) 
-            self.constraints["repairing_in_single_npp"].add(npp_keyword)
+            time_pair_lst = get_time_pairs_lst(s, e, repair_options[name])
+            self.constraints["source_converter_n_n_plus_1_constr"].add(
+                [source_repair.outputs_pair[0],
+                 converter_repair.outputs_pair[0], time_pair_lst]
+                ) 
+            # только в соседних точках (во всех нельзя т.к. во время ремонта несовм. статусы)
+            
             self.constraints["repairing_type_for_different_npp"].add(converter_keyword)
+            self.constraints["repairing_in_single_npp"].add(npp_keyword)
             self.constraints["storage_charge_discharge_constr"].add(storage_repair.keyword)
             
             
@@ -475,7 +485,7 @@ class Generic_converter:
             outputs={output_bus: solph.Flow(
                 nominal_value=pow,
                 max=max_power_profile,
-                min=1,
+                min=0,
                 nonconvex=solph.NonConvex(
                     minimum_uptime=minimum_uptime,
                     startup_costs=startup_costs,
@@ -483,8 +493,8 @@ class Generic_converter:
                 custom_attributes={
                     keyword_npp: True,
                     keyword_converter: True,
-                    } if keyword_npp or keyword_converter else None,
-                
+                    } if keyword_npp else None,
+                # если приводит к отлючению аэс то есть keyword_npp поэтому нельзя одновременно проводить данные типы реморнтов и поэтому есть keyword_converter
                 )},
         )
         

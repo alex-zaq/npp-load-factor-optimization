@@ -33,12 +33,12 @@ class Constraint_processor:
         constr = self.constraints["source_converter_n_n_plus_1_constr"]
         model = self.model
         for elem in constr:
-            (souce_block, bus_1), (converter_block, bus_2)  = elem
-            for i in range(self.count):
+            (source_block, bus_1), (converter_block, bus_2), time_pair_lst  = elem
+            for source_t, converter_t in time_pair_lst:
                 solph.constraints.equate_variables(
                     model,
-                    model.NonConvexFlowBlock.status[souce_block, bus_1, i],
-                    model.NonConvexFlowBlock.status[converter_block, bus_2, i + 1],
+                    model.NonConvexFlowBlock.status[source_block, bus_1, source_t],
+                    model.NonConvexFlowBlock.status[converter_block, bus_2, converter_t],
                 )
     
     

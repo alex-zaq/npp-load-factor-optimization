@@ -1,6 +1,5 @@
 import datetime
 import os
-import pprint
 
 import numpy as np
 import pandas as pd
@@ -93,6 +92,9 @@ def plot_array(arr):
     plt.show(block=True)
 
 
+
+
+
 def get_risk_events_profile(start_year, end_year, events):
     t_delta = pd.to_datetime(f"{end_year}-01-01") - pd.to_datetime(f"{start_year}-01-01")
     num_hours = t_delta.days * 24
@@ -104,6 +106,9 @@ def get_risk_events_profile(start_year, end_year, events):
     return profile
 
 
+
+
+
 def get_valid_profile_by_months(start_year, end_year, months):
     t_delta = pd.to_datetime(f"{end_year}-01-01") - pd.to_datetime(f"{start_year}-01-01")
     num_hours = t_delta.days * 24
@@ -113,6 +118,9 @@ def get_valid_profile_by_months(start_year, end_year, months):
     for month in months:
         profile[date_range.month == pd.to_datetime(month, format='%b').month] = 1
     return profile
+
+
+
 
 def get_profile_with_first_day(start_year, end_year):
     t_delta = datetime.datetime(end_year, 1, 1) - datetime.datetime(start_year, 1, 1)
@@ -126,19 +134,20 @@ def get_profile_with_first_day(start_year, end_year):
 
 def get_profile_by_month_day_dict(start_year, end_year, month_days):
     
+    # задаем порядковые дни для каждого месяца
     if list(month_days.keys()) != all_months:
         raise Exception("Months are not the same")    
     
     res = {}
     for month in month_days:
         for order in month_days[month]:
-            date = pd.to_datetime(f"{start_year}-{month}-{order}")
-            date = date - pd.Timedelta(days=1)
+            date = pd.to_datetime(f"{start_year}-{month}-{order}")- pd.Timedelta(days=1)
             if date.month not in res:
                 res[date.month] = []
-            if date.year == start_year:
-                res[date.month].append(date.day) if date.year == start_year else None
-
+            # if date.year == start_year:
+            res[date.month].append(date.day)
+                
+                
     t_delta = pd.to_datetime(f"{end_year}-01-01") - pd.to_datetime(f"{start_year}-01-01")
     num_hours = t_delta.days * 24
     date_range = pd.date_range(start=f"{start_year}-01-01", end=f"{end_year}-01-01", freq="H", inclusive="left")
@@ -191,3 +200,10 @@ def get_npp_block_active_count_by_scen(scen):
     return sum(1 for k, v in scen.items() if "block" in k and v["active"])
  
  
+def get_time_pairs_lst(start_year, end_year, start_repair_days_lst):
+    profile = get_profile_by_period_for_charger(start_year, end_year, start_repair_days_lst)
+    converter_start_hours = np.nonzero(profile)[0].astype(int).flatten()
+    res = []
+    for i in converter_start_hours:
+        res.append((i, i + 1))
+    return res

@@ -264,7 +264,7 @@ print("done")
 # result_plotter.plot_risk_events_profile()
 # result_plotter.plot_cumulative_risk_profile()
 # result_plotter.plot_repair_cost_profile()
-
+# параметры для записи и чтения у компонентов
 # сделать минимальный расчет рабочий
 # записать и восстановить решение
 # проверить df.cumsum c многими столбцами
