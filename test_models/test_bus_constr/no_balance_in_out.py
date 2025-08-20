@@ -5,7 +5,6 @@ from matplotlib import pyplot as plt
 from oemof import solph
 
 date_time_index = pd.date_range(dt.datetime(2021, 1, 1), periods=10, freq="H")
-# date_time_index = get_dt_range(self.year, self.selected_months)
 energysystem = solph.EnergySystem(timeindex=date_time_index, infer_last_interval=True)
 # ######################### create energysystem components ################
 
