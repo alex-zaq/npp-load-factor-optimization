@@ -11,23 +11,24 @@ class Oemof_model:
     
     def __init__(self, scenario, solver_settings):
         self.scenario = scenario
-        self.start_year = scenario["start_year"]
-        self.end_year = scenario["end_year"]
-        self.solver = solver_settings["solver"]
-        self.solver_verbose = solver_settings["solver_verbose"]
-        self.mip_gap = solver_settings["mip_gap"]
+        self.solver_settings = solver_settings
         self.oemof_es = None
             
-    def init_oemof_model(self):
-        t_delta = datetime(self.end_year, 1, 1, 0, 0, 0) - datetime(self.start_year, 1, 1, 0, 0, 0)
-        first_time_step = datetime(self.start_year, 1, 1, 0, 0, 0)
+    def init_oemof_model(self, custom_scenario = None):
+        self.scenario = custom_scenario or self.scenario
+        start_year = self.scenario["years"][0]
+        end_year = self.scenario["years"][-1]
+        t_delta = datetime(end_year + 1, 1, 1, 0, 0, 0) - datetime(start_year, 1, 1, 0, 0, 0)
+        first_time_step = datetime(start_year, 1, 1, 0, 0, 0)
         periods_count = t_delta.days * 24
         date_time_index = pd.date_range(first_time_step, periods=periods_count, freq="h")
         self.oemof_es = solph.EnergySystem(timeindex=date_time_index, infer_last_interval=True)
        
     
-    def init_custom_model(self, scenario):
-        self.custom_es = Custom_model(scenario = scenario, oemof_es = self.oemof_es)
+    def init_custom_model(self, custom_scenario=None, custom_oemof_es = None):
+        self.scenario = custom_scenario or self.scenario
+        self.oemof_es = custom_oemof_es or self.oemof_es
+        self.custom_es = Custom_model(scenario = self.scenario, oemof_es = self.oemof_es)
         self.custom_es.add_electricity_demand()
         self.custom_es.add_bel_npp()
         self.custom_es.add_new_npp()
@@ -47,10 +48,13 @@ class Oemof_model:
         constraints = self.custom_es.get_constraints()
         self.add_constraints(Constraint_processor(model, constraints))
         print("модель сформирована")
+        self.solver = self.solver_settings["solver"]
+        self.solver_verbose = self.solver_settings["solver_verbose"]
+        self.mip_gap = self.solver_settings["mip_gap"]
         start_time = datetime.now()
         model.solve(
             solver=self.solver,
-            cmdline_options={"mipgap": self.mipgap},
+            cmdline_options={"mipgap": self.mip_gap},
             solve_kwargs={"tee": self.solver_verbose},
         )
         elapsed_solver_time = (datetime.now() - start_time).total_seconds()
@@ -64,11 +68,11 @@ class Oemof_model:
         print("результаты извлечены")
     
     
-    
     def calculate(self):
         self.init_oemof_model()
         self.init_custom_model()
         self.launch_solver()
+        
         
     def set_custom_es(self, custom_es):
         self.custom_es = custom_es
@@ -77,15 +81,20 @@ class Oemof_model:
     def get_custom_es(self):
         return self.custom_es
 
+
     def get_oemof_es(self):
         return self.oemof_es
+
     
     def get_scenario(self):
         return self.scenario
+
     
     def get_results(self):
         return self.results
+
     
     def get_meta_results(self):
         return self.meta_results
+
     

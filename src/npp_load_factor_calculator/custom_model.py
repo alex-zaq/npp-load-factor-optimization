@@ -8,6 +8,8 @@ from src.npp_load_factor_calculator.generic_models import (
 )
 from src.npp_load_factor_calculator.utilites import (
     get_risk_events_profile,
+    get_repair_mode_for_block,
+    plot_array,
     # get_valid_profile_by_months,
     # plot_array,
 )
@@ -39,17 +41,24 @@ class Custom_model:
         power_2 = self.scenario["bel_npp_block_2"]["nominal_power"]
         var_cost_1 = self.scenario["bel_npp_block_1"]["var_cost"]
         var_cost_2 = self.scenario["bel_npp_block_2"]["var_cost"]
-        start_year, end_year = self.scenario["start_year"], self.scenario["end_year"]
+        start_year, end_year = self.scenario["years"][0], self.scenario["years"][-1]
         npp_block_1_events = self.scenario["bel_npp_block_1"]["events"]
         npp_block_2_events = self.scenario["bel_npp_block_2"]["events"]
         upper_bound_risk_1 = self.scenario["bel_npp_block_1"]["upper_bound_risk"]
         upper_bound_risk_2 = self.scenario["bel_npp_block_2"]["upper_bound_risk"]
         risk_per_hour_1 = self.scenario["bel_npp_block_1"]["risk_per_hour"]
         risk_per_hour_2 = self.scenario["bel_npp_block_2"]["risk_per_hour"]
-        fix_risk_lst_1 = get_risk_events_profile(start_year, end_year, npp_block_1_events)
-        fix_risk_lst_2 = get_risk_events_profile(start_year, end_year, npp_block_2_events)
+        fix_risk_lst_1 = get_risk_events_profile(start_year, end_year + 1, npp_block_1_events)
+        fix_risk_lst_2 = get_risk_events_profile(start_year, end_year + 1, npp_block_2_events)
         repair_options_1 = self.scenario["bel_npp_block_1"]["repair_options"]
         repair_options_2 = self.scenario["bel_npp_block_2"]["repair_options"]
+        repair_mode_block_1 = get_repair_mode_for_block(self.scenario["bel_npp_block_1"])
+        repair_mode_block_2 = get_repair_mode_for_block(self.scenario["bel_npp_block_2"])
+        risk_mode_1 = repair_mode_block_1 or risk_per_hour_1
+        risk_mode_2 = repair_mode_block_2 or risk_per_hour_2
+           
+        fix_risk_lst_1 = [0] * 8760
+        fix_risk_lst_2 = [0] * 8760   
            
         # plot_array(fix_risk_lst_1)
         # plot_array(fix_risk_lst_2)
@@ -60,7 +69,8 @@ class Custom_model:
                 nominal_power = power_1,
                 output_bus = self.el_bus,
                 var_cost = var_cost_1,
-                risk_mode = False,
+                risk_mode = risk_mode_1,
+                repair_mode = repair_mode_block_1,
                 risk_per_hour = risk_per_hour_1,
                 max_risk_level = upper_bound_risk_1,
                 fix_risk_lst = fix_risk_lst_1,
@@ -74,7 +84,8 @@ class Custom_model:
                 nominal_power = power_2,
                 output_bus = self.el_bus,
                 var_cost = var_cost_2,
-                risk_mode = False,
+                risk_mode = risk_mode_2,
+                repair_mode = repair_mode_block_2,
                 risk_per_hour = risk_per_hour_2,
                 max_risk_level = upper_bound_risk_2,
                 fix_risk_lst = fix_risk_lst_2,
@@ -89,13 +100,14 @@ class Custom_model:
         status_1 = self.scenario["new_npp_block_1"]["status"]
         power_1 = self.scenario["new_npp_block_1"]["nominal_power"]
         var_cost_1 = self.scenario["new_npp_block_1"]["var_cost"]
-        start_year, end_year = self.scenario["start_year"], self.scenario["end_year"]
+        start_year, end_year = self.scenario["years"][0], self.scenario["years"][-1]
         npp_block_1_events = self.scenario["new_npp_block_1"]["events"]
         upper_bound_risk_1 = self.scenario["new_npp_block_1"]["upper_bound_risk"]
         risk_per_hour_1 = self.scenario["new_npp_block_1"]["risk_per_hour"]
-        fix_risk_lst_1 = get_risk_events_profile(start_year, end_year, npp_block_1_events)
+        fix_risk_lst_1 = get_risk_events_profile(start_year, end_year + 1, npp_block_1_events)
         repair_options_1 = self.scenario["new_npp_block_1"]["repair_options"]
-                
+        repair_mode_block_1 = get_repair_mode_for_block(self.scenario["new_npp_block_1"])
+        risk_mode_1 = repair_mode_block_1 or risk_per_hour_1       
         # plot_array(fix_risk_lst_1)
                 
         if status_1:
@@ -104,7 +116,8 @@ class Custom_model:
                 nominal_power=power_1,
                 output_bus=self.el_bus,
                 var_cost=var_cost_1,
-                risk_mode=False,
+                risk_mode=risk_mode_1,
+                repair_mode=repair_mode_block_1,
                 risk_per_hour=risk_per_hour_1,
                 max_risk_level=upper_bound_risk_1,
                 fix_risk_lst=fix_risk_lst_1,

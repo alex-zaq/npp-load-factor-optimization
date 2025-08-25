@@ -1,27 +1,48 @@
+from pathlib import Path
+
 from matplotlib import pyplot as plt
+
+from src.npp_load_factor_calculator.utilites import center_matplotlib_figure, get_file_name_with_auto_number
 
 
 class Result_viewer:
     
     def __init__(self, block_grouper):
         self.block_grouper = block_grouper
-        self.scenario = block_grouper.scenario
+        self.scenario = block_grouper.custom_es.scenario
         self.save_image_flag = False
         self.image_folder = None
         
         
-    def save_image_flag(self, flag):
+    def _save_image(self, figure, dpi):
+        
+        folder = Path(self.image_folder)
+        name = get_file_name_with_auto_number(folder, self.scenario, self.image_format)
+        path = folder / name
+        
+        figure.savefig(
+            path,
+            bbox_inches="tight",
+            dpi=dpi,
+            transparent=True,
+        )
+        print(f"Saved to {path}")
+        
+        
+    def set_image_flag(self, flag):
         self.save_image_flag = flag
     
     
-    def set_image_folder(self, folder):
+    def set_image_options(self, folder, image_format, dpi):
         self.image_folder = folder
+        self.image_format = image_format
+        self.image_dpi = dpi
         
         
     def plot_electricity_generation_profile(self):
         
         el_gen_df = self.block_grouper.get_electricity_profile()
-        custom_colors = el_gen_df.custom_colors
+        custom_colors = el_gen_df.colors
         font_size = 8
         max_y = 5000
         
@@ -41,8 +62,9 @@ class Result_viewer:
         plt.xlabel("Время, часы", labelpad=0, fontsize=font_size - 2)
         plt.ylabel("Производство электроэнергии, МВт$\cdot$ч", labelpad=5, fontsize=font_size - 2)
         fig.canvas.manager.set_window_title("Почасовая генерация электроэнергии")
-        fig.set_dpi(250)
+        fig.set_dpi(150)
         
+        center_matplotlib_figure(fig, extra_y=-60)
         
         plt.legend(
             loc="upper center",
@@ -60,7 +82,7 @@ class Result_viewer:
         
         
         if self.save_image_flag:
-            self._save_image(fig) 
+            self._save_image(fig, self.image_dpi) 
 
 
     
@@ -320,12 +342,26 @@ class Control_block_viewer:
     def select_block(self, block):
         if block is None:
             raise ValueError("Block is None")
-        self.db = self.block_grouper.get_helper_block_profiles(block)
+        try:
+            self.block_grouper.get_helper_block_profiles(block)
+            self.status = True
+        except Exception as e:
+            self.status = False
+            print(e)
+        
         
             
     def plot_default_risk_profile(self):
         
+        if not self.status:
+            return
+        
+        
         default_risk_df = self.db["source_default_risk"]
+        
+        if default_risk_df.empty:
+            return
+        
         
         color = "red"
         

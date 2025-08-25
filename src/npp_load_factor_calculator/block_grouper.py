@@ -22,7 +22,7 @@ class Custom_block:
     
     
     def get_electricity_profile(self):
-        block,output_bus = self.npp_block.output_pair[0]     
+        block,output_bus = self.npp_block.outputs_pair[0]     
         block_results = solph.views.node(self.results, output_bus.label)["sequences"].dropna()
         res_df = pd.DataFrame()
         res_df[block.label] = block_results[((block.label, output_bus.label), "flow")]
@@ -112,6 +112,15 @@ class Custom_block:
         res = res.sum(axis=1)
         res.name = "cumulative_cost"
         return res
+    
+    
+    def get_all_helper_profiles_dict(self):
+        res = {}
+        # for repair_part_name in self.repair_events_plot["repair_names"]:
+        for repair_part_name in self.npp_block.repair_nodes:
+            res[repair_part_name] = self.get_helper_profiles_dict(repair_part_name)
+        return res
+    
 
     def get_helper_profiles_dict(self, repair_part_name):
         
@@ -324,7 +333,7 @@ class Block_grouper:
         self.electr_groups = {k: Custom_block(v["order"][0], k) for k, v in electricity_gen.items() if v["order"][0]}
         
         for _, v in self.electr_groups.items():
-            for i, (es_k, es_v) in enumerate(self.custom_es.items()):
+            for i, (es_k, es_v) in enumerate(electricity_gen.items()):
                 if v.npp_block is es_v["order"][0]:
                     v.electr_plot = {"order": i, "label": es_k, "color": es_v["color"]}
             for i, (main_risk_k, main_risk_v) in enumerate(main_risk_gen.items()):
@@ -344,9 +353,9 @@ class Block_grouper:
         for v in self.electr_groups.values():
             for i, (repair_events_k, repair_events_v) in enumerate(repair_events.items()):
                 if v.npp_block is repair_events_v["order"][0]:
-                    repair_id_lst =[v[1] for v in repair_events_v["color"].values()]  
-                    colors_lst = [v[0] for v in repair_events_v["color"].values()]
-                    repair_names = list(repair_events_v["color"].keys())
+                    repair_id_lst = [v[0] for v in repair_events_v["options"].values()]  
+                    colors_lst = [v[1] for v in repair_events_v["options"].values()]
+                    repair_names = list(repair_events_v["options"].keys())
                     repair_names = [f"{repair_events_k}_{v}" for v in repair_names]
                     v.repair_events_plot = {"order": i, "repair_id_lst": repair_id_lst , "colors": colors_lst, "repair_names": repair_names}
     
@@ -444,12 +453,11 @@ class Block_grouper:
             res += custom_block.get_global_abs_cost_by_block()
         return res
 
-
     
-    def get_helper_block_profiles(self, block_name):
+    def get_helper_block_profiles(self, block):
         for _, custom_block in self.electr_groups.items():
-            if custom_block is block_name:
-                return custom_block.get_helper_profiles_dict()
+            if custom_block.npp_block is block:
+                return custom_block.get_all_helper_profiles_dict()
         return None
     
     

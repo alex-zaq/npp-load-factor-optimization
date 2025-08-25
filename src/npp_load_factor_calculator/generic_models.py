@@ -94,6 +94,7 @@ class Generic_source:
         source = solph.components.Source(
             label = label,
             outputs = {output_bus: solph.Flow(
+                nominal_value=1,
                 fix=fixed_pow_lst
             )}
         )
@@ -130,13 +131,15 @@ class Generic_source:
         output_bus,
         var_cost,
         risk_mode,
+        repair_mode,
         risk_per_hour,
         max_risk_level,
         fix_risk_lst,
         repair_options,
     ):
         
-        npp_keyword_dict = {k: {(label, k,"npp_stop"): True} for k in repair_options if repair_options[k]["npp_stop"]}
+        keyword_dict = {repair_name: {(label, repair_name,"npp_stop"): True} for repair_name in repair_options if repair_options[repair_name]["npp_stop"]}
+        custom_attributes = {f"{k}_{list(v.keys())[0][2]}" : True for k, v in keyword_dict.items()}
         
         npp_block = solph.components.Source(
             label=label,
@@ -144,52 +147,52 @@ class Generic_source:
                 output_bus: solph.Flow(
                     nominal_value=nominal_power,
                     max=1,
-                    # min = 1?
-                    min=0,
+                    min=1,
                     variable_costs=var_cost,
                     nonconvex=solph.NonConvex(),
-                    # bad
-                    custom_attributes=npp_keyword_dict,
+                    custom_attributes=custom_attributes,
                 )
             },
         )
                 
         npp_block.inputs_pair = None 
         npp_block.outputs_pair = [(npp_block, output_bus)]
-        npp_block.npp_keyword_dict = npp_keyword_dict
+        npp_block.npp_keyword_dict = keyword_dict
         self.oemof_es.add(npp_block)
         
         if risk_mode:
-            
             bus_factory = Generic_bus(self.oemof_es)
             risk_bus_in = bus_factory.create_bus(set_label(label, "risk_bus_in"))
             main_risk_bus = bus_factory.create_bus(set_label(label, "risk_bus_out"))
-            
-            
-            if risk_per_hour:
-                default_risk_source = self.create_source_nonconvex(set_label(label, "default_risk_source"), risk_bus_in, risk_per_hour, 0, 1)
-                npp_block.default_risk_mode = True
-                npp_block.default_risk_source = default_risk_source
-                self.constraints["default_risk_constr"].add(((npp_block, output_bus),(default_risk_source, risk_bus_in)))
-
-
             main_risk_source = self.create_source_fixed(set_label(label, "risk_source"), risk_bus_in, fix_risk_lst)
             storage_factory = Generic_storage(self.oemof_es)
             main_risk_storage = storage_factory.create_storage(
                 input_bus=risk_bus_in,
                 output_bus=main_risk_bus,
                 capacity=max_risk_level,
+                initial_storage_level=0
             )
-            # не нужно ограничение для неодновременности входа/выхода т.к. есть ремонты, не приводящие к отк. аэс
-            npp_block.risk_mode = risk_mode
+            npp_block.repair_mode = repair_mode
             npp_block.risk_source = main_risk_source
             npp_block.risk_storage = main_risk_storage
-            
-            repair_nodes = self._get_repair_nodes(label, npp_block, repair_options, main_risk_bus)
-            npp_block.repair_nodes = repair_nodes
+
+            if risk_per_hour:
+                default_risk_source = self.create_source_nonconvex(
+                    set_label(label, "default_risk_source"),
+                    output_bus=risk_bus_in,
+                    power=risk_per_hour,
+                    min_val = 1,
+                    max_val = 1)
+                npp_block.default_risk_mode = True
+                npp_block.default_risk_source = default_risk_source
+                self.constraints["default_risk_constr"].add(((npp_block, output_bus),(default_risk_source, risk_bus_in)))
+        
+            if repair_mode:
+                repair_nodes = self._get_repair_nodes(label, npp_block, repair_options, main_risk_bus)
+                npp_block.repair_nodes = repair_nodes
+        
         
         return npp_block
-    
     
 
     def _get_repair_nodes(self, label, npp_block, repair_options, converter_main_risk_in_bus):
@@ -341,7 +344,7 @@ class Generic_source:
 class Generic_storage:
 
     def __init__(self, oemof_es):
-        self.oemof_es = oemof_es
+        self.es = oemof_es
         self.constraints = {}
     
     
@@ -433,6 +436,7 @@ class Generic_storage:
         input_bus,
         output_bus,
         capacity,
+        initial_storage_level,
     ):
               
         # keyword = "storage_keyword"
@@ -442,8 +446,10 @@ class Generic_storage:
         storage = solph.components.GenericStorage(
             label="аккумулятор риска",
             nominal_storage_capacity=capacity,
+            initial_storage_level=initial_storage_level,
             inputs={input_bus: solph.Flow()},
             outputs={output_bus: solph.Flow()},
+            balanced=False
         )
         
         storage.inputs_pair = [(input_bus, storage)]

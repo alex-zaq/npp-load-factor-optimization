@@ -1,6 +1,7 @@
 import datetime
 import os
 
+import matplotlib
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
@@ -60,16 +61,42 @@ def get_next_number_file_name(folder):
     res = max(number_files) + 1
     return res
 
-def get_dumps_file_name(self, scenario):
-    scen_number = scenario["№"]
+def get_dumps_file_name(scenario):
+    scen_number = str(scenario["№"])
     scen_name = scenario["name"]
-    start_year = scenario["years"][0]
-    end_year = scenario["end_year"][-1]
-    active_npp_count = get_npp_block_active_count_by_scen(scenario)
-    file_name = "_".join(
-        [scen_number, scen_name, start_year, end_year, active_npp_count]
-    )
+    start_year, end_year = scenario["years"][0], scenario["years"][-1]
+    years = str(start_year) if start_year == end_year else f"{start_year}-{end_year}"
+    active_npp_count = f"npp_count_{str(get_npp_block_active_count_by_scen(scenario))}"
+    default_str = get_default_str(scenario)
+    repair_conf_str = get_repair_conf_str(scenario)
+    res = [scen_number, scen_name, years, active_npp_count, default_str, repair_conf_str]
+    res = [item for item in res if item]
+    file_name = "_".join(res)
     return file_name
+
+
+def get_default_str(scenario):
+    res = ''
+    if  sum(scenario[key]["risk_per_hour"] for key in scenario if "block" in key and scenario[key]["status"]):
+        res = "default"
+    return res
+
+
+def get_repair_conf_str(scenario):
+    res = []
+    for i in range(3):
+        for key in scenario:
+            if "block" in key and scenario[key]["status"]:
+                for repair_type in scenario[key]["repair_options"]:
+                    if scenario[key]["repair_options"][repair_type]["status"] and scenario[key]["repair_options"][repair_type]["id"] == i:
+                        res.append(int(scenario[key]["repair_options"][repair_type]["status"]))
+                        
+        if repair_status_sum := sum(res):
+            res[i] = bool(repair_status_sum)  
+    res = sum(res.values()) * "l" if res else ""
+    return res
+
+
 
 def get_file_name_with_auto_number(dumps_folder, scenario, ext):
     next_number = get_number(get_next_number_file_name(dumps_folder))
@@ -197,7 +224,7 @@ def hours_between_years(start_year, end_year):
  
  
 def get_npp_block_active_count_by_scen(scen):
-    return sum(1 for k, v in scen.items() if "block" in k and v["active"])
+    return sum(1 for k, v in scen.items() if "block" in k and v["status"])
  
  
 def get_time_pairs_lst(start_year, end_year, start_repair_days_lst):
@@ -207,3 +234,37 @@ def get_time_pairs_lst(start_year, end_year, start_repair_days_lst):
     for i in converter_start_hours:
         res.append((i, i + 1))
     return res
+
+
+def get_repair_mode_for_block(block_options):
+    return bool(sum(repair_type_val["status"] for repair_type_val in block_options["repair_options"].values()))
+
+
+def center_matplotlib_figure(fig, extra_x=0, extra_y=0):
+    
+    manager = fig.canvas.manager
+    # backend = matplotlib.get_backend()
+
+    window = manager.window
+
+    # Важно: Обновляем задачи окна, чтобы убедиться, что его размеры актуальны
+    # перед получением размеров экрана и расчетом позиции.
+    window.update_idletasks()
+
+    # Получаем разрешение экрана с помощью методов Tkinter
+    screen_width = window.winfo_screenwidth()
+    screen_height = window.winfo_screenheight()
+
+    # Получаем размеры графика в пикселях.
+    # fig.get_size_inches() возвращает размеры фигуры в дюймах.
+    # Умножаем на DPI (точек на дюйм) фигуры, чтобы получить пиксели.
+    fig_width_px = int(fig.get_size_inches()[0] * fig.dpi)
+    fig_height_px = int(fig.get_size_inches()[1] * fig.dpi)
+
+    # Вычисляем координаты для центрирования окна
+    x = (screen_width - fig_width_px) // 2 + extra_x
+    y = (screen_height - fig_height_px) // 2 + extra_y
+
+    # Устанавливаем геометрию окна. Формат строки: "ширинаxвысота+x+y"
+    window.geometry(f"{fig_width_px}x{fig_height_px}+{x}+{y}")
+

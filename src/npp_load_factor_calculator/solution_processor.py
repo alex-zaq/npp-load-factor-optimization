@@ -44,13 +44,12 @@ class Solution_processor:
 
     def set_restore_mode(self, *, file_number):
         self.load_file_name = get_full_filename(self.dumps_folder, file_number)
-        self.restore_mode = True
-        self.calc_mode = False
+        self.restore_mode, self.calc_mode = True, False
         
         
     def calculate(self):
-        self.oemof_model.init_energy_system()
-        self.oemof_model.init_custom_model(self.scenario)
+        self.oemof_model.init_oemof_model()
+        self.oemof_model.init_custom_model()
         self.oemof_model.launch_solver()
         self.custom_es = self.oemof_model.get_custom_es()
         self.oemof_es = self.oemof_model.get_oemof_es()
@@ -59,10 +58,11 @@ class Solution_processor:
 
 
     def save_solution(self):
+        scenario = self.oemof_model.get_scenario()
         self.oemof_es.results["main"] = self.results
         self.oemof_es.results["meta"] = self.meta_results
-        self.oemof_es.results["scenario"] = self.oemof_model.get_group_options()
-        file_name = get_file_name_with_auto_number(self.dumps_folder, self.scenario, "oemof")
+        self.oemof_es.results["scenario"] = scenario
+        file_name = get_file_name_with_auto_number(self.dumps_folder, scenario, "oemof")
         self.oemof_es.dump(dpath=self.dumps_folder, filename=file_name)
 
 
@@ -71,11 +71,10 @@ class Solution_processor:
         self.oemof_es.restore(dpath=self.dumps_folder, filename=self.load_file_name)
         self.results = self.oemof_es.results["main"]
         self.meta_results = self.oemof_es.results["meta"]
-        self.scenario = self.oemof_es.results["scenario"]
-        self.oemof_model.init_custom_model(self.scenario)
+        self.restored_scenario = self.oemof_es.results["scenario"]
+        self.oemof_model.init_custom_model(self.restored_scenario, self.oemof_es)
+        self.custom_es = self.oemof_model.get_custom_es()
 
-        # self.custom_es = Custom_model(self.scenario, self.oemof_es)
-        # self.oemof_model.set_custom_es(self.custom_es)
 
 
 
