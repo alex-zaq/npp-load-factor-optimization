@@ -4,27 +4,19 @@ from src.npp_load_factor_calculator.solution_processor import Solution_processor
 from src.npp_load_factor_calculator.utilites import all_months
 
 bel_npp_block_1_events = {
-    "accident_1": {
-        "start_datetime": "2025-02-01 00:00:00",
-        "risk_increase": 0.1,
-        "duration_hours": 1,
-    },
-    "accident_2": {
-        "start_datetime": "2025-04-01 00:00:00",
-        "risk_increase": 0.3,
-        "duration_hours": 1,
-    },
-}
-
-events = {
     "event_1": {
-        "start_datetime": "2025-02-01 00:00:00",
+        "start_datetime": "2025-01-01 00:00:00",
         "risk_increase": 0.1,
+        "duration_hours": 1,
+    },
+    "event_2": {
+        "start_datetime": "2025-02-01 00:00:00",
+        "risk_increase": 0.2,
         "duration_hours": 1,
     },
     "event_3": {
         "start_datetime": "2025-03-15 06:00:00",
-        "risk_increase": 0.2,
+        "risk_increase": 0.3,
         "duration_hours": 1,
     },
     "event_4": {
@@ -32,14 +24,44 @@ events = {
         "risk_increase": 0.4,
         "duration_hours": 1,
     },
-    "event_2": {
+    "event_5": {
         "start_datetime": "2025-05-01 12:00:00",
+        "risk_increase": 0.5,
+        "duration_hours": 1,
+    },
+    "event_6": {
+        "start_datetime": "2025-06-11 09:00:00",
         "risk_increase": 0.3,
         "duration_hours": 1,
     },
-    "event_5": {
-        "start_datetime": "2025-06-11 09:00:00",
+    "event_7": {
+        "start_datetime": "2025-07-01 00:00:00",
         "risk_increase": 0.2,
+        "duration_hours": 1,
+    },
+    "event_8": {
+        "start_datetime": "2025-08-15 06:00:00",
+        "risk_increase": 0.4,
+        "duration_hours": 1,
+    },
+    "event_9": {
+        "start_datetime": "2025-09-22 18:00:00",
+        "risk_increase": 0.5,
+        "duration_hours": 1,
+    },
+    "event_10": {
+        "start_datetime": "2025-10-01 12:00:00",
+        "risk_increase": 0.6,
+        "duration_hours": 1,
+    },
+    "event_11": {
+        "start_datetime": "2025-11-11 09:00:00",
+        "risk_increase": 0.4,
+        "duration_hours": 1,
+    },
+    "event_12": {
+        "start_datetime": "2025-12-01 00:00:00",
+        "risk_increase": 0.7,
         "duration_hours": 1,
     },
 }
@@ -94,9 +116,13 @@ scen_1 = {
         "bel_npp_block_1": {
             "status": True,
             "nominal_power": 1170,
-            "var_cost": -56.5,
-            "risk_per_hour": 0.01,
-            "upper_bound_risk": 5000 * 0.01,
+            # "var_cost": -56.5,
+            "var_cost": -50,
+            # "risk_per_hour": 0.01,
+            "risk_per_hour": 0,
+            "min_up_time": 0,
+            "min_down_time": 0,
+            "upper_bound_risk": 50,
             "events": bel_npp_block_1_events,
             "repair_options": repair_options,
         },
@@ -105,7 +131,9 @@ scen_1 = {
             "nominal_power": 1170,
             "var_cost": -56.5,
             "risk_per_hour": 0.01,
-            "upper_bound_risk": 0.5,
+            "min_up_time": 0,
+            "min_down_time": 0,
+            "upper_bound_risk": 50,
             "events": bel_npp_block_2_events,
             "repair_options": repair_options,
         },
@@ -114,6 +142,8 @@ scen_1 = {
             "nominal_power": 1170,
             "var_cost": -56.5,
             "risk_per_hour": 0.01,
+            "min_up_time": 0,
+            "min_down_time": 0,
             "upper_bound_risk": 0.5,
             "events": new_npp_block_1_events,
             "repair_options": repair_options,
@@ -136,8 +166,8 @@ oemof_model = Oemof_model(
 
 
 solution_processor = Solution_processor(oemof_model)
-# solution_processor.set_calc_mode(save_results=False)
-solution_processor.set_calc_mode(save_results=True)
+solution_processor.set_calc_mode(save_results=False)
+# solution_processor.set_calc_mode(save_results=True)
 solution_processor.set_dumps_folder("./dumps")
 solution_processor.set_excel_folder("./excel_results")
 
@@ -145,6 +175,7 @@ solution_processor.set_excel_folder("./excel_results")
 # solution_processor.set_restore_mode(file_number="01") 
 # solution_processor.set_restore_mode(file_number="02") 
 # solution_processor.set_restore_mode(file_number="03") 
+# solution_processor.set_restore_mode(file_number="06") 
 
 solution_processor.apply()
 
@@ -223,7 +254,9 @@ result_viewer.plot_electricity_generation_profile()
 
 control_block_viewer.plot_default_risk_profile()
 
-
+control_block_viewer.plot_storage_profiles(mode = "storage_main_risk", flow_mode = "content")
+control_block_viewer.plot_storage_profiles(mode = "storage_main_risk", flow_mode = "input")
+control_block_viewer.plot_storage_profiles(mode = "storage_main_risk", flow_mode = "output")
 
 print("done")
 
@@ -231,8 +264,9 @@ print("done")
 
 
 
-
-
+# cbc glpk
+# динам изменением maxY
+# objective value extract
 # solution_processor.write_excel_file("test.xlsx")
 # учитываемые ремонты в названии результатов и default
 # result_plotter.plot_electricity_generation_profile()

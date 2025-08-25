@@ -7,8 +7,8 @@ from src.npp_load_factor_calculator.generic_models import (
     Generic_source,
 )
 from src.npp_load_factor_calculator.utilites import (
-    get_risk_events_profile,
     get_repair_mode_for_block,
+    get_risk_events_profile,
     plot_array,
     # get_valid_profile_by_months,
     # plot_array,
@@ -54,13 +54,18 @@ class Custom_model:
         repair_options_2 = self.scenario["bel_npp_block_2"]["repair_options"]
         repair_mode_block_1 = get_repair_mode_for_block(self.scenario["bel_npp_block_1"])
         repair_mode_block_2 = get_repair_mode_for_block(self.scenario["bel_npp_block_2"])
+        min_up_time_1 = self.scenario["bel_npp_block_1"]["min_up_time"]
+        min_up_time_2 = self.scenario["bel_npp_block_2"]["min_up_time"]
+        min_down_time_1 = self.scenario["bel_npp_block_1"]["min_down_time"]
+        min_down_time_2 = self.scenario["bel_npp_block_2"]["min_down_time"]
         risk_mode_1 = repair_mode_block_1 or risk_per_hour_1
         risk_mode_2 = repair_mode_block_2 or risk_per_hour_2
            
-        fix_risk_lst_1 = [0] * 8760
-        fix_risk_lst_2 = [0] * 8760   
+        # fix_risk_lst_1 = [0] * 8760
+        # fix_risk_lst_2 = [0] * 8760   
+        
            
-        # plot_array(fix_risk_lst_1)
+        plot_array(fix_risk_lst_1)
         # plot_array(fix_risk_lst_2)
            
         if status_1:
@@ -72,6 +77,8 @@ class Custom_model:
                 risk_mode = risk_mode_1,
                 repair_mode = repair_mode_block_1,
                 risk_per_hour = risk_per_hour_1,
+                min_up_time = min_up_time_1,
+                min_down_time = min_down_time_1,
                 max_risk_level = upper_bound_risk_1,
                 fix_risk_lst = fix_risk_lst_1,
                 repair_options = repair_options_1
@@ -87,6 +94,8 @@ class Custom_model:
                 risk_mode = risk_mode_2,
                 repair_mode = repair_mode_block_2,
                 risk_per_hour = risk_per_hour_2,
+                min_up_time = min_up_time_2,
+                min_down_time = min_down_time_2,
                 max_risk_level = upper_bound_risk_2,
                 fix_risk_lst = fix_risk_lst_2,
                 repair_options = repair_options_2
@@ -107,7 +116,9 @@ class Custom_model:
         fix_risk_lst_1 = get_risk_events_profile(start_year, end_year + 1, npp_block_1_events)
         repair_options_1 = self.scenario["new_npp_block_1"]["repair_options"]
         repair_mode_block_1 = get_repair_mode_for_block(self.scenario["new_npp_block_1"])
-        risk_mode_1 = repair_mode_block_1 or risk_per_hour_1       
+        risk_mode_1 = repair_mode_block_1 or risk_per_hour_1   
+        min_up_time_1 = self.scenario["new_npp_block_1"]["min_up_time"]
+        min_down_time_1 = self.scenario["new_npp_block_1"]["min_down_time"]    
         # plot_array(fix_risk_lst_1)
                 
         if status_1:
@@ -119,6 +130,8 @@ class Custom_model:
                 risk_mode=risk_mode_1,
                 repair_mode=repair_mode_block_1,
                 risk_per_hour=risk_per_hour_1,
+                min_up_time=min_up_time_1,
+                min_down_time=min_down_time_1,
                 max_risk_level=upper_bound_risk_1,
                 fix_risk_lst=fix_risk_lst_1,
                 repair_options=repair_options_1,

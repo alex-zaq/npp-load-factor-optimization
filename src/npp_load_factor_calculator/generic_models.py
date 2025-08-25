@@ -133,6 +133,8 @@ class Generic_source:
         risk_mode,
         repair_mode,
         risk_per_hour,
+        min_up_time,
+        min_down_time,
         max_risk_level,
         fix_risk_lst,
         repair_options,
@@ -149,7 +151,11 @@ class Generic_source:
                     max=1,
                     min=1,
                     variable_costs=var_cost,
-                    nonconvex=solph.NonConvex(),
+                    nonconvex=solph.NonConvex(
+                        minimum_uptime=min_up_time,
+                        minimum_downtime=min_down_time
+                        
+                        ),
                     custom_attributes=custom_attributes,
                 )
             },
@@ -160,36 +166,37 @@ class Generic_source:
         npp_block.npp_keyword_dict = keyword_dict
         self.oemof_es.add(npp_block)
         
+        npp_block.risk_mode = risk_mode
+        npp_block.repair_mode = repair_mode
+        npp_block.default_risk_mode = bool(risk_per_hour)
+        
         if risk_mode:
             bus_factory = Generic_bus(self.oemof_es)
             risk_bus_in = bus_factory.create_bus(set_label(label, "risk_bus_in"))
             main_risk_bus = bus_factory.create_bus(set_label(label, "risk_bus_out"))
-            main_risk_source = self.create_source_fixed(set_label(label, "risk_source"), risk_bus_in, fix_risk_lst)
+            source_main_risk = self.create_source_fixed(set_label(label, "risk_source"), risk_bus_in, fix_risk_lst)
             storage_factory = Generic_storage(self.oemof_es)
-            main_risk_storage = storage_factory.create_storage(
+            storage_main_risk = storage_factory.create_storage(
                 input_bus=risk_bus_in,
                 output_bus=main_risk_bus,
                 capacity=max_risk_level,
-                initial_storage_level=0
+                initial_storage_level=None
             )
-            npp_block.repair_mode = repair_mode
-            npp_block.risk_source = main_risk_source
-            npp_block.risk_storage = main_risk_storage
+            npp_block.main_risk_nodes = {"source_main_risk": source_main_risk, "storage_main_risk": storage_main_risk}
 
             if risk_per_hour:
-                default_risk_source = self.create_source_nonconvex(
-                    set_label(label, "default_risk_source"),
+                source_default_risk = self.create_source_nonconvex(
+                    set_label(label, "source_default_risk"),
                     output_bus=risk_bus_in,
                     power=risk_per_hour,
-                    min_val = 1,
-                    max_val = 1)
-                npp_block.default_risk_mode = True
-                npp_block.default_risk_source = default_risk_source
-                self.constraints["default_risk_constr"].add(((npp_block, output_bus),(default_risk_source, risk_bus_in)))
+                    min_val=1,
+                    max_val=1,
+                )
+                npp_block.default_risk_nodes = {"source_default_risk": source_default_risk}
+                self.constraints["default_risk_constr"].add(((npp_block, output_bus),(source_default_risk, risk_bus_in)))
         
             if repair_mode:
-                repair_nodes = self._get_repair_nodes(label, npp_block, repair_options, main_risk_bus)
-                npp_block.repair_nodes = repair_nodes
+                npp_block.repair_nodes = self._get_repair_nodes(label, npp_block, repair_options, main_risk_bus)
         
         
         return npp_block
@@ -437,6 +444,8 @@ class Generic_storage:
         output_bus,
         capacity,
         initial_storage_level,
+        # max_lst,
+        # min_lst,
     ):
               
         # keyword = "storage_keyword"
@@ -449,6 +458,8 @@ class Generic_storage:
             initial_storage_level=initial_storage_level,
             inputs={input_bus: solph.Flow()},
             outputs={output_bus: solph.Flow()},
+            # max_storage_level=max_lst,
+            # min_storage_level=min_lst,
             balanced=False
         )
         

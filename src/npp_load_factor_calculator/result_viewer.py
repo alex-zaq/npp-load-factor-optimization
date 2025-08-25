@@ -64,7 +64,7 @@ class Result_viewer:
         fig.canvas.manager.set_window_title("Почасовая генерация электроэнергии")
         fig.set_dpi(150)
         
-        center_matplotlib_figure(fig, extra_y=-60)
+        center_matplotlib_figure(fig, extra_y=-60, extra_x=40)
         
         plt.legend(
             loc="upper center",
@@ -109,8 +109,8 @@ class Result_viewer:
         plt.xlabel("Время, часы", labelpad=0, fontsize=font_size - 2)
         plt.ylabel("Величина риска, %", labelpad=5, fontsize=font_size - 2)
         fig.canvas.manager.set_window_title("Обзор величины риска")
-        fig.set_dpi(250)
-        
+        fig.set_dpi(150)
+        center_matplotlib_figure(fig, extra_y=-60, extra_x=40)
         
         plt.legend(
             loc="upper center",
@@ -153,8 +153,8 @@ class Result_viewer:
         plt.xlabel("Время, часы", labelpad=0, fontsize=font_size - 2)
         plt.ylabel("События риска, %", labelpad=5, fontsize=font_size - 2)
         fig.canvas.manager.set_window_title("Обзор событий риска")
-        fig.set_dpi(250)
-        
+        fig.set_dpi(150)
+        center_matplotlib_figure(fig, extra_y=-60, extra_x=40)
         plt.legend(
             loc="upper center",
             # bbox_to_anchor=(0.5, 1),
@@ -199,8 +199,8 @@ class Result_viewer:
         plt.ylabel("Статусы ремонтов" if mode == "status" else "Снижение риска от ремонтов", labelpad=5, fontsize=font_size - 2)
         title = "Обзор ремонтов (по статусу)" if mode == "status" else "Обзор ремонтов (по потоку)"
         fig.canvas.manager.set_window_title(title)
-        fig.set_dpi(250)
-        
+        fig.set_dpi(150)
+        center_matplotlib_figure(fig, extra_y=-60, extra_x=40)
         plt.legend(
             loc="upper center",
             # bbox_to_anchor=(0.5, 1),
@@ -242,9 +242,9 @@ class Result_viewer:
         ax_cost_by_block_df.tick_params(axis="both", which="minor", labelsize=font_size - 2)
         plt.xlabel("Время, часы", labelpad=0, fontsize=font_size - 2)
         plt.ylabel("Затраты на ремонты по блокам, $", labelpad=5, fontsize=font_size - 2)
-        fig.set_dpi(250)
+        fig.set_dpi(150)
         fig.canvas.manager.set_window_title("Обзор затрат на ремонты по блокам")
-
+        center_matplotlib_figure(fig, extra_y=-60, extra_x=40)
         plt.legend(
             loc="upper center",
             # bbox_to_anchor=(0.5, 1),
@@ -287,9 +287,9 @@ class Result_viewer:
         ax_cost_df.tick_params(axis="both", which="minor", labelsize=font_size - 2)
         plt.xlabel("Время, часы", labelpad=0, fontsize=font_size - 2)
         plt.ylabel("Затраты на ремонты, $", labelpad=5, fontsize=font_size - 2)
-        fig.set_dpi(250)
+        fig.set_dpi(150)
         fig.canvas.manager.set_window_title("Обзор затрат на ремонты")
-
+        center_matplotlib_figure(fig, extra_y=-60, extra_x=40)
         plt.legend(
             loc="upper center",
             # bbox_to_anchor=(0.5, 1),
@@ -342,12 +342,12 @@ class Control_block_viewer:
     def select_block(self, block):
         if block is None:
             raise ValueError("Block is None")
-        try:
-            self.block_grouper.get_helper_block_profiles(block)
-            self.status = True
-        except Exception as e:
-            self.status = False
-            print(e)
+        # try:
+        self.block_db = self.block_grouper.get_helper_block_profiles(block)
+        self.status = True
+        # except Exception as e:
+        #     self.status = False
+        #     print(e)
         
         
             
@@ -356,8 +356,11 @@ class Control_block_viewer:
         if not self.status:
             return
         
+        if not self.block_db:
+            return
         
-        default_risk_df = self.db["source_default_risk"]
+        
+        default_risk_df = self.block_db["source_default_risk"]["output"]
         
         if default_risk_df.empty:
             return
@@ -366,13 +369,13 @@ class Control_block_viewer:
         color = "red"
         
         font_size = 8
-        max_y = 5000  
+        max_y = default_risk_df.max().max()  
         
         ax_default_risk_df = default_risk_df.plot(
             kind="area",
-            ylim=(0, max_y),
+            ylim=(0, max_y * 10),
             legend="reverse",
-            color=color,
+            color="#d2f319",
             linewidth=0.01,
             figsize=(7, 5),
             fontsize=font_size,
@@ -383,9 +386,9 @@ class Control_block_viewer:
         ax_default_risk_df.tick_params(axis="both", which="minor", labelsize=font_size - 2)
         plt.xlabel("Время, часы", labelpad=0, fontsize=font_size - 2)
         plt.ylabel("default risk profile - output", labelpad=5, fontsize=font_size - 2)
-        fig.set_dpi(250)
+        fig.set_dpi(150)
         fig.canvas.manager.set_window_title("default risk profile - output")
-        
+        center_matplotlib_figure(fig, extra_y=-60, extra_x=40)
         plt.legend(
             loc="upper center",
             # bbox_to_anchor=(0.5, 1),
@@ -398,13 +401,18 @@ class Control_block_viewer:
             facecolor="none",
         )
         
+        center_matplotlib_figure(fig, extra_y=-60, extra_x=40)
+
+
+        plt.show(block=True)
+        
         
         
     def plot_source_output_profile(self, *, mode):
         if mode not in ["source_period", "source_repair"]:
             raise ValueError("Mode must be 'source_period' or 'source_repair'")
         
-        source_output_df = self.db[mode]["output"]
+        source_output_df = self.block_db[mode]["output"]
         
         color = "black"
         
@@ -425,11 +433,10 @@ class Control_block_viewer:
         ax_source_output_df.tick_params(axis="both", which="major", labelsize=font_size - 2)
         ax_source_output_df.tick_params(axis="both", which="minor", labelsize=font_size - 2)
         plt.xlabel("Время, часы", labelpad=0, fontsize=font_size - 2)
-        plt.ylabel(f"(helper block) {mode} - output", labelpad=5, fontsize=font_size - 2
-        )
-        fig.set_dpi(250)
+        plt.ylabel(f"(helper block) {mode} - output", labelpad=5, fontsize=font_size - 2)
+        fig.set_dpi(150)
         fig.canvas.manager.set_window_title(f"{mode} - output")
-        
+        center_matplotlib_figure(fig, extra_y=-60, extra_x=40)
         plt.legend(
             loc="upper center",
             # bbox_to_anchor=(0.5, 1),
@@ -444,82 +451,69 @@ class Control_block_viewer:
         
         
         
-    def plot_storage_profiles(self, *, mode):
+    def plot_storage_profiles(self, *, mode, flow_mode):
         if mode not in ["storage_period", "storage_main_risk", "storage_repair"]:
             raise ValueError("Mode must be 'storage_period', 'storage_main_risk' or 'storage_repair'")
 
-        storage_input_df = self.db[mode]["input"]
-        storage_output_df = self.db[mode]["output"]
-        storage_content_df = self.db[mode]["content"]
-        
-        color = "black"
-        
+        if flow_mode not in ["input", "output", "content"]:
+            raise ValueError("flow_mode must be 'input', 'output' or 'content'")
+
         font_size = 8
-        max_y = 5000  
+
+        if flow_mode == "input":
+                storage_input_df = self.block_db[mode]["input"]
+                max_input = storage_input_df.max().max()
+                ax_storage_input_df = storage_input_df.plot(
+                    kind="line",
+                    ylim=(0, max_input * 1.2),
+                    legend="reverse",
+                    color="#000000",
+                    linewidth=0.5,
+                    figsize=(7, 5),
+                    fontsize=font_size,
+                )
+        elif flow_mode == "output":
+                storage_output_df = self.block_db[mode]["output"]
+                max_output = storage_output_df.max().max()
+                ax_storage_output_df = storage_output_df.plot(
+                    kind="area",
+                    ylim=(0, max_output * 1.2),
+                    legend="reverse",
+                    color="#002c66",
+                    linewidth=0.01,
+                    figsize=(7, 5),
+                    fontsize=font_size,
+                )
+        elif flow_mode == "content":
+                storage_content_df = self.block_db[mode]["content"]
+                max_content = storage_content_df.max().max()
+                ax_storage_content_df = storage_content_df.plot(
+                kind="area",
+                ylim=(0, max_content * 1.2),
+                legend="reverse",
+                color="#1f77b4",
+                linewidth=0.01,
+                figsize=(7, 5),
+                fontsize=font_size,
+            )
         
-        ax_storage_input_df = storage_input_df.plot(
-            kind="area",
-            ylim=(0, max_y),
-            legend="reverse",
-            color=color,
-            linewidth=0.01,
-            figsize=(7, 5),
-            fontsize=font_size,
-        )
-        
-        ax_storage_output_df = storage_output_df.plot(
-            kind="area",
-            ylim=(0, max_y),
-            legend="reverse",
-            color=color,
-            linewidth=0.01,
-            figsize=(7, 5),
-            fontsize=font_size,
-            ax=ax_storage_input_df
-        )
-        
-        ax_storage_content_df = storage_content_df.plot(
-            kind="area",
-            ylim=(0, max_y),
-            legend="reverse",
-            color=color,
-            linewidth=0.01,
-            figsize=(7, 5),
-            fontsize=font_size,
-            ax=ax_storage_output_df
-        )
-        
-        
+        plt.xlabel("Время, ч", labelpad=0, fontsize=font_size - 2)
+        plt.ylabel("МВт" if flow_mode == "input_output" else "МВтч", labelpad=5, fontsize=font_size - 2)
         fig = plt.gcf()
-        ax_storage_content_df.tick_params(axis="both", which="major", labelsize=font_size - 2)
-        ax_storage_content_df.tick_params(axis="both", which="minor", labelsize=font_size - 2)
-        plt.xlabel("Время, часы", labelpad=0, fontsize=font_size - 2)
-        plt.ylabel(f"{mode}, Mwt", labelpad=5, fontsize=font_size - 2
-        )
-        fig.set_dpi(250)
-        fig.canvas.manager.set_window_title(f"{mode}")
-        
-        plt.legend(
-            loc="upper center",
-            # bbox_to_anchor=(0.5, 1),
-            fontsize=font_size - 2,
-            # ncols=4,
-            # ncol=2,
-            reverse=True,
-            labelspacing=2,
-            edgecolor="None",
-            facecolor="none",
-        )
+        fig.set_dpi(150)
+        fig.canvas.manager.set_window_title(f"{mode} - {flow_mode}")
+        center_matplotlib_figure(fig, extra_y=-60, extra_x=40)
+        plt.show(block=True)
    
         
 
             
     def plot_converter_profiles(self):
         
-        converter_input_main_risk_df = self.db["converter_repair"]["input_main_risk"]
-        converter_input_period_control_df = self.db["converter_repair"]["input_period_control"]
-        converter_input_repair_control_df = self.db["converter_repair"]["input_repair_control"]
-        converter_output_df = self.db["converter_repair"]["output"]
+        converter_input_main_risk_df = self.block_db["converter_repair"]["input_main_risk"]
+        converter_input_period_control_df = self.block_db["converter_repair"]["input_period_control"]
+        converter_input_repair_control_df = self.block_db["converter_repair"]["input_repair_control"]
+        converter_output_df = self.block_db["converter_repair"]["output"]
             
         
         color = "black"
@@ -577,9 +571,9 @@ class Control_block_viewer:
         plt.xlabel("Время, часы", labelpad=0, fontsize=font_size - 2)
         plt.ylabel("converter, Mwt", labelpad=5, fontsize=font_size - 2
         )
-        fig.set_dpi(250)
+        fig.set_dpi(150)
         fig.canvas.manager.set_window_title("converter")
-        
+        center_matplotlib_figure(fig, extra_y=-60, extra_x=40)
         plt.legend(
             loc="upper center",
             # bbox_to_anchor=(0.5, 1),
