@@ -8,61 +8,73 @@ bel_npp_block_1_events = {
         "start_datetime": "2025-01-01 00:00:00",
         "risk_increase": 0.1,
         "duration_hours": 1,
+        "repair_types": ["light", "medium", "heavy"],
     },
     "event_2": {
         "start_datetime": "2025-02-01 00:00:00",
         "risk_increase": 0.2,
         "duration_hours": 1,
+        "repair_types": ["light", "medium", "heavy"],
     },
     "event_3": {
         "start_datetime": "2025-03-15 06:00:00",
         "risk_increase": 0.3,
         "duration_hours": 1,
+        "repair_types": ["light", "medium", "heavy"],
     },
     "event_4": {
         "start_datetime": "2025-04-22 18:00:00",
         "risk_increase": 0.4,
         "duration_hours": 1,
+        "repair_types": ["light", "medium", "heavy"],
     },
     "event_5": {
         "start_datetime": "2025-05-01 12:00:00",
         "risk_increase": 0.5,
         "duration_hours": 1,
+        "repair_types": ["light", "medium", "heavy"],
     },
     "event_6": {
         "start_datetime": "2025-06-11 09:00:00",
         "risk_increase": 0.3,
         "duration_hours": 1,
+        "repair_types": ["light", "medium", "heavy"],
     },
     "event_7": {
         "start_datetime": "2025-07-01 00:00:00",
         "risk_increase": 0.2,
         "duration_hours": 1,
+        "repair_types": ["light", "medium", "heavy"],
     },
     "event_8": {
         "start_datetime": "2025-08-15 06:00:00",
         "risk_increase": 0.4,
         "duration_hours": 1,
+        "repair_types": ["light", "medium", "heavy"],
     },
     "event_9": {
         "start_datetime": "2025-09-22 18:00:00",
         "risk_increase": 0.5,
         "duration_hours": 1,
+        "repair_types": ["light", "medium", "heavy"],
     },
     "event_10": {
         "start_datetime": "2025-10-01 12:00:00",
         "risk_increase": 0.6,
         "duration_hours": 1,
+        "repair_types": ["light", "medium", "heavy"],
     },
     "event_11": {
         "start_datetime": "2025-11-11 09:00:00",
         "risk_increase": 0.4,
         "duration_hours": 1,
+        "repair_types": ["light", "medium", "heavy"],
     },
     "event_12": {
         "start_datetime": "2025-12-01 00:00:00",
         "risk_increase": 0.7,
         "duration_hours": 1,
+        "repair_types": ["light", "medium", "heavy"],
     },
 }
 
@@ -73,7 +85,7 @@ new_npp_block_1_events = {}
 
 
 repair_options = {
-    "light_repair": {
+    "light": {
         "id": 0,
         "status": False,
         "cost": 0.1,
@@ -84,7 +96,7 @@ repair_options = {
         "avail_months": all_months,
         "npp_stop": False,
     },
-    "avg_repair": {
+    "medium": {
         "id": 1,
         "status": False,
         "cost": 0.2,
@@ -95,7 +107,7 @@ repair_options = {
         "avail_months": all_months,
         "npp_stop": True,
     },
-    "capital_repair": {
+    "capital": {
         "id": 2,
         "status": False,
         "cost": 0.3,
@@ -123,6 +135,7 @@ scen_1 = {
             "min_up_time": 0,
             "min_down_time": 0,
             "upper_bound_risk": 50,
+            "allow_no_cost_mode": True,
             "events": bel_npp_block_1_events,
             "repair_options": repair_options,
         },
@@ -149,7 +162,6 @@ scen_1 = {
             "repair_options": repair_options,
         },
 }
-
 
 
 scenario = scen_1
@@ -267,7 +279,6 @@ print("done")
 # отмечать какие ремонты могут нейтр. аварий событие 
 # переделать расчет фикс ав. событий
 # переключатель нейтролизуемого риска (от 1 до 3) в качестве input через сonverter_repair
-# cbc glpk
 # динам изменением maxY
 # objective value extract
 # solution_processor.write_excel_file("test.xlsx")

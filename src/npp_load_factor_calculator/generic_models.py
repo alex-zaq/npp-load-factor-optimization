@@ -5,6 +5,7 @@ from src.npp_load_factor_calculator.utilites import (
     check_sequential_years,
     get_profile_by_period_for_charger,
     get_profile_with_first_day,
+    get_risk_events_profile_by_repair_type,
     get_time_pairs_lst,
     get_valid_profile_by_months,
     hours_between_years,
@@ -133,6 +134,7 @@ class Generic_source:
         risk_mode,
         repair_mode,
         risk_per_hour,
+        allow_no_cost_mode,
         min_up_time,
         min_down_time,
         max_risk_level,
@@ -172,16 +174,22 @@ class Generic_source:
         
         if risk_mode:
             bus_factory = Generic_bus(self.oemof_es)
+            storage_factory = Generic_storage(self.oemof_es)
+
+
             risk_bus_in = bus_factory.create_bus(set_label(label, "risk_bus_in"))
             main_risk_bus = bus_factory.create_bus(set_label(label, "risk_bus_out"))
             source_main_risk = self.create_source_fixed(set_label(label, "risk_source"), risk_bus_in, fix_risk_lst)
-            storage_factory = Generic_storage(self.oemof_es)
+
+
             storage_main_risk = storage_factory.create_storage(
                 input_bus=risk_bus_in,
                 output_bus=main_risk_bus,
                 capacity=max_risk_level,
                 initial_storage_level=None
             )
+            
+            
             npp_block.main_risk_nodes = {"source_main_risk": source_main_risk, "storage_main_risk": storage_main_risk}
 
             if risk_per_hour:
@@ -196,13 +204,32 @@ class Generic_source:
                 self.constraints["default_risk_constr"].add(((npp_block, output_bus),(source_default_risk, risk_bus_in)))
         
             if repair_mode:
-                npp_block.repair_nodes = self._get_repair_nodes(label, npp_block, repair_options, main_risk_bus)
+                npp_block.repair_nodes = self._get_repair_nodes(
+                    label,
+                    npp_block,
+                    repair_options,
+                    main_risk_bus,
+                    allow_no_cost_mode,
+                    fix_risk_lst,
+                    main_risk_bus
+                )
+                
+                
+
         
         
         return npp_block
-    
 
-    def _get_repair_nodes(self, label, npp_block, repair_options, converter_main_risk_in_bus):
+    def _get_repair_nodes(
+        self,
+        label,
+        npp_block,
+        repair_options,
+        converter_main_risk_in_bus,
+        allow_no_cost_mode,
+        fix_risk_lst,
+        main_risk_bus,
+    ):
        
         bus_factory = Generic_bus(self.oemof_es)   
         storage_factory = Generic_storage(self.oemof_es)
@@ -222,22 +249,22 @@ class Generic_source:
                        
         s,e = self.start_year, self.end_year
            
-        for name in repair_options:
+        for repair_name in repair_options:
             
-            repair_nodes[name] = {}
+            repair_nodes[repair_name] = {}
             
-            source_repair_label = set_label(label, name, "source_repair")
-            converter_label = set_label(label, name, "converter_repair")
-            storage_repair_label = set_label(label, name, "storage_repair")
-            converter_keyword = f"{name}_converter_keyword"
+            source_repair_label = set_label(label, repair_name, "source_repair")
+            converter_label = set_label(label, repair_name, "converter_repair")
+            storage_repair_label = set_label(label, repair_name, "storage_repair")
+            converter_keyword = f"{repair_name}_converter_keyword"
             
-            max_count_status = repair_options[name]["max_count_in_year"]["status"]
+            max_count_status = repair_options[repair_name]["max_count_in_year"]["status"]
             
-            max_power_profile_source = self._get_source_profile(s, e, repair_options[name])
-            converter_max_power_profile = get_valid_profile_by_months(s, e, repair_options[name]["avail_months"])
-            converter_power = repair_options[name]["risk_reducing"] / (repair_options[name]["duration"] * 24)
-            converter_startup_cost = repair_options[name]["cost"]
-            converter_minuptime = repair_options[name]["duration"] * 24
+            max_power_profile_source = self._get_source_profile(s, e, repair_options[repair_name])
+            converter_max_power_profile = get_valid_profile_by_months(s, e, repair_options[repair_name]["avail_months"])
+            converter_power = repair_options[repair_name]["risk_reducing"] / (repair_options[repair_name]["duration"] * 24)
+            converter_startup_cost = repair_options[repair_name]["cost"]
+            converter_minuptime = repair_options[repair_name]["duration"] * 24
             storage_capacity = converter_power * converter_minuptime
 
             # plot_array(max_power_profile_source)
@@ -246,7 +273,7 @@ class Generic_source:
             # проверить и переименовать bus
                         
                         
-            converter_limit_in_bus = bus_factory.create_bus(set_label(label, name, "converter_limit_in_bus"))
+            converter_limit_in_bus = bus_factory.create_bus(set_label(label, repair_name, "converter_limit_in_bus"))
             
             source_repair = self.create_source_with_max_profile(
                 source_repair_label,
@@ -264,10 +291,10 @@ class Generic_source:
                 
             if max_count_status:
                 
-                storage_period_label = set_label(label, name, "storage_period")
-                source_period_label = set_label(label, name, "source_period")
+                storage_period_label = set_label(label, repair_name, "storage_period")
+                source_period_label = set_label(label, repair_name, "source_period")
 
-                storage_period = storage_factory.create_storage_period_level(storage_period_label, repair_options[name])
+                storage_period = storage_factory.create_storage_period_level(storage_period_label, repair_options[repair_name])
                 
                 storage_perios_bus_in = storage_period.inputs_pair[0][0]
                 storage_period_bus_out = storage_period.outputs_pair[0][1]
@@ -276,15 +303,25 @@ class Generic_source:
 
                 source_period = self.create_source_with_max_profile(source_period_label, storage_perios_bus_in, max_power_profile_source_period)
 
-                repair_nodes[name] |= {"storage_period": storage_period,"source_period": source_period}
+                repair_nodes[repair_name] |= {"storage_period": storage_period,"source_period": source_period}
                 
                 self.constraints["storage_charge_discharge_constr"].add(storage_period.keyword)
 
             else: 
                 storage_period_bus_out = None
+                
+        
+            # bad equal statutes required
+            if allow_no_cost_mode:
+                risk_profile_for_sink = self._get_risk_profile_by_repair_type(s,e, repair_name)
+                # label bad
+                sink_peak, keyword_sink_peak = self._get_sink_for_risk_peak(label, risk_profile_for_sink, main_risk_bus)
+                self.constraints["sink_peak_converter_constr"].add(keyword_sink_peak)
+                repair_nodes[repair_name] |= {"sink_peak": sink_peak}
+                
 
 
-            npp_keyword, converter_keyword = self._get_npp_converter_keywords(name, npp_keyword_dict)
+            npp_keyword, converter_keyword = self._get_npp_converter_keywords(repair_name, npp_keyword_dict)
 
             # переделать на source.output_bus
             converter_repair = converter_factory.create_converter_double_input(
@@ -299,19 +336,19 @@ class Generic_source:
                 converter_startup_cost,
                 npp_keyword,
                 converter_keyword,
-                )  # constraint нельзя одновременно ремонтировать несколько аэс, доступные месяцы работы
+                keyword_sink_peak,
+            )  # constraint нельзя одновременно ремонтировать несколько аэс, доступные месяцы работы
 
 
             # переделать
-            repair_nodes[name] |= {
+            repair_nodes[repair_name] |= {
                 "storage_repair": storage_repair,
                 "converter_repair": converter_repair,
                 "source_repair": source_repair,
             }
 
             # начало ремонта в точные даты
-
-            time_pair_lst = get_time_pairs_lst(s, e, repair_options[name])
+            time_pair_lst = get_time_pairs_lst(s, e, repair_options[repair_name])
             self.constraints["source_converter_n_n_plus_1_constr"].add(
                 [source_repair.outputs_pair[0],
                  converter_repair.outputs_pair[0], time_pair_lst]
@@ -324,6 +361,28 @@ class Generic_source:
             
             
         return repair_nodes
+    
+    
+    def _get_sink_for_risk_peak(self, label, risk_profile_for_sink, main_risk_bus):
+        
+        
+        keyword = set_label(label, "sink_peak")
+        
+        sink_peak = solph.components.Sink(
+            label = set_label(label, "sink_peak"),
+            inputs = {
+                main_risk_bus: solph.Flow(
+                    nonconvex=solph.NonConvex(),
+                    max = risk_profile_for_sink,
+                    nominal_value=1,
+                    custom_attributes={keyword: True},
+            )},
+        )
+        
+        sink_peak.inputs_pair = [(main_risk_bus, sink_peak)]
+        sink_peak.keyword = keyword
+        
+        return sink_peak, keyword
     
     
     def _get_source_profile(self, s, e, repair_options):
@@ -490,46 +549,52 @@ class Generic_converter:
         max_power_profile,
         minimum_uptime,
         startup_costs,
-        keyword_npp,
+        keyword_npp_stop,
         keyword_converter,
+        keyword_sink_peak,
     ):
         
         inputs = self._get_inputs(main_risk_bus, repair_limit_risk_bus, storage_repair_bus)
-        
+        custom_attributes = self._get_custom_attributes(keyword_npp_stop, keyword_converter, keyword_sink_peak)
         converter = solph.components.Converter(
             label=label,
             inputs=inputs,
-            outputs={output_bus: solph.Flow(
-                nominal_value=pow,
-                max=max_power_profile,
-                min=0,
-                nonconvex=solph.NonConvex(
-                    minimum_uptime=minimum_uptime,
-                    startup_costs=startup_costs,
-                ),
-                custom_attributes={
-                    keyword_npp: True,
-                    keyword_converter: True,
-                    } if keyword_npp else None,
-                # если приводит к отлючению аэс то есть keyword_npp поэтому нельзя одновременно проводить данные типы реморнтов и поэтому есть keyword_converter
-                )},
+            outputs={
+                output_bus: solph.Flow(
+                    nominal_value=pow,
+                    max=max_power_profile,
+                    min=0,
+                    nonconvex=solph.NonConvex(
+                        minimum_uptime=minimum_uptime,
+                        startup_costs=startup_costs,
+                    ),
+                    custom_attributes=custom_attributes,
+                )
+            },
         )
         
         converter.inputs_pair = [(main_risk_bus, converter), (repair_limit_risk_bus, converter), (storage_repair_bus, converter)]
         converter.outputs_pair = [(converter, output_bus)]
-        converter.keyword_npp = keyword_npp
+        converter.keyword_npp = keyword_npp_stop
         converter.keyword_converter = keyword_converter
         converter.startup_costs = startup_costs
 
         self.oemof_es.add(converter)
-        return converter, keyword_npp
+        return converter, keyword_npp_stop
+    
+    def _get_custom_attributes(self, keyword_npp_stop, keyword_converter, keyword_sink_peak):
+        # если приводит к отлючению аэс то есть keyword_npp поэтому нельзя одновременно проводить данные типы реморнтов и поэтому есть keyword_converter
+        if not any((keyword_npp_stop, keyword_converter, keyword_sink_peak)):
+            res = None
+        elif keyword_npp_stop:
+            res = {keyword_npp_stop: True, keyword_converter: True}
+            if keyword_sink_peak:
+                res[keyword_sink_peak] = True
+        return res
 
     def _get_inputs(self, input_bus_1, input_bus_2, input_bus_3):
-        inputs = {input_bus_1: solph.Flow(),
-                  input_bus_2: solph.Flow(),
-                  input_bus_3: solph.Flow()} if input_bus_3 else {
-                      input_bus_1: solph.Flow(),
-                      input_bus_2: solph.Flow()}
-                      
+        inputs = {input_bus_1: solph.Flow(), input_bus_2: solph.Flow()}
+        if input_bus_3:
+            inputs[input_bus_3] = solph.Flow()
         return inputs
             

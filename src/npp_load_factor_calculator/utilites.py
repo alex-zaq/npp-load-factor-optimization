@@ -133,7 +133,18 @@ def get_risk_events_profile(start_year, end_year, events):
     return profile
 
 
+def get_risk_events_profile_by_repair_type(start_year, end_year, events):
+    res = {}
+    check_set = set([repair_elem for event in events.values() for repair_elem in event["repair_types"]])
+    if len(check_set) != 3:
+        raise Exception("Number of repair types is not equal 3")
 
+    for repair_type in check_set:
+        filtered_events_dict = {key: value for key, value in events.items() if repair_type in value["repair_types"]}
+        res[repair_type] = get_risk_events_profile(start_year, end_year, filtered_events_dict)
+    
+    return res
+    
 
 
 def get_valid_profile_by_months(start_year, end_year, months):
