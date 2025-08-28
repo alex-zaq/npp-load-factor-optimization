@@ -68,6 +68,22 @@ class Constraint_processor:
                 solph.constraints.limit_active_flow_count_by_keyword(
                 model, keyword, lower_limit=0, upper_limit=1
             )
+                
+    
+    def apply_max_risk_value(self):
+        max_risk_value = self.constraints["max_risk_value"]["value"]
+        storages_lst = self.constraints["max_risk_value"]["storages_lst"]
+        model = self.model
+        solph.constraints.shared_limit(
+            model,
+            model.GenericStorageBlock.storage_content,
+            "limit_storage",
+            storages_lst,
+            [1, 1],
+            upper_limit=max_risk_value,
+        )
+
+                
             
 
 
