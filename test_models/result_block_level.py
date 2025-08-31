@@ -34,11 +34,17 @@ energysystem.add(gas_source)
 
 el_cpp_cheap_converter = solph.components.Converter(
     label="el_cpp_cheap_converter",
-    inputs={gas_bus: solph.Flow()},
+    inputs= (v:={gas_bus: solph.Flow()}),
     outputs={el_bus: solph.Flow(nominal_value=150, variable_costs=3)},
     conversion_factors={gas_bus: 1/0.5, el_bus: 1},
 )
 energysystem.add(el_cpp_cheap_converter)
+
+inputs = el_cpp_cheap_converter.inputs
+
+# for k,v in inputs.items():
+#     print(type(k))
+
 
 el_cpp_expensive_converter = solph.components.Converter(
     label="el_cpp_expensive_converter",

@@ -1,3 +1,4 @@
+from collections import Counter
 import datetime
 import os
 
@@ -133,18 +134,14 @@ def get_risk_events_profile(start_year, end_year, events):
     return profile
 
 
-def get_risk_events_profile_by_repair_type(start_year, end_year, events):
+def get_risk_events_profile_for_all_repair_types(start_year, end_year, events):
     res = {}
-    check_set = set([repair_elem for event in events.values() for repair_elem in event["repair_types"]])
-    if len(check_set) != 3:
-        raise Exception("Number of repair types is not equal 3")
-
+    check_set = set([event["repair_types"] for event in events.values()])
     for repair_type in check_set:
-        filtered_events_dict = {key: value for key, value in events.items() if repair_type in value["repair_types"]}
+        filtered_events_dict = {key: value for key, value in events.items() if repair_type == value["repair_types"]}
         res[repair_type] = get_risk_events_profile(start_year, end_year, filtered_events_dict)
-    
     return res
-    
+
 
 
 def get_valid_profile_by_months(start_year, end_year, months):
@@ -220,6 +217,10 @@ def get_profile_by_period_for_charger(start_year, end_year, day_numbers):
     if isinstance(day_numbers, dict):
         return get_profile_by_month_day_dict(start_year, end_year, day_numbers)
     
+
+def get_main_risk_by_inner_types(events_lst):
+    pass
+
 
 
 def check_sequential_years(years):

@@ -30,12 +30,18 @@ class Constraint_processor:
                     
                     
     def apply_sink_peak_converter_constr(self):
-        keywords = self.constraints["sink_peak_converter_constr"]
+        constr = self.constraints["sink_peak_converter_constr"]
         model = self.model
-        for keyword in keywords:
-                solph.constraints.limit_active_flow_count_by_keyword(
-                model, keyword, lower_limit=0, upper_limit=1
-            )
+        for elem in constr:
+            (input_bus, sink_block), (converter_block, output_bus) = elem
+            for i in range(self.count):
+                solph.constraints.equate_variables(
+                    model,
+                    model.NonConvexFlowBlock.status[input_bus, sink_block, i],
+                    model.NonConvexFlowBlock.status[converter_block, output_bus, i],
+                )
+
+                
                 
                 
                 
