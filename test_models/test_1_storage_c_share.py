@@ -47,6 +47,19 @@ blocks.append(storage)
 
 model = solph.Model(energysystem)
 
+storages = [storage]
+weights = [1 for _ in storages]
+
+solph.constraints.shared_limit(
+    model,
+    model.GenericStorageBlock.storage_content,
+    "limit_storage",
+    storages,
+    weights,
+    upper_limit=600,
+)
+
+
 model.solve(solver="cplex")
 results = solph.processing.results(model)
 

@@ -38,25 +38,34 @@ gas_tr = Source(
 es.add(gas_tr)
 
 
-npp_power = 300
+npp_power = 400
 cpp_power = 300
 npp_key_word_1 = "npp_1"
 npp_key_word_2 = "npp_2"
+
+
+min_npp = 0.5
 
 npp = solph.components.Source(
     label="NPP",
     outputs={
         el_bus: Flow(
+            min=min_npp,
             nominal_value=npp_power,
             variable_costs=999,
             nonconvex=solph.NonConvex(),
             custom_attributes={npp_key_word_1: True},
         ),
-        control_bus_npp: Flow(custom_attributes={npp_key_word_2: True}),
+        # control_bus_npp: Flow(custom_attributes={npp_key_word_2: True}),
     },
 )
 es.add(npp)
 
+control_source_npp = solph.components.Source(
+    label="control source (npp)",
+    outputs={control_bus_npp: Flow(custom_attributes={npp_key_word_2: True})},
+)
+es.add(control_source_npp)
 
 
 
@@ -65,31 +74,45 @@ cpp = solph.components.Converter(
     inputs={gas_bus: Flow()},
     outputs={el_bus: Flow(
         nominal_value=cpp_power,
-        min=0,
-        variable_costs=-999,
+        min=0.1,
+        variable_costs=-10,
         nonconvex=solph.NonConvex(),
         )}, 
 )
 es.add(cpp)
 
 
+
+
+
+
+cpp_cheap = solph.components.Converter(
+    label="cpp_cheap",
+    inputs={gas_bus: Flow()},
+    outputs={el_bus: Flow(
+        nominal_value=cpp_power,
+        variable_costs=-5,
+        nonconvex=solph.NonConvex(),
+        )}, 
+)
+es.add(cpp_cheap)
+
+
 excess_sink_npp = Sink(
     label="excess sink (npp)",
     inputs={control_bus_npp: Flow(
-        nominal_value= npp_power
-        
+        nominal_value= npp_power*(1-min_npp)
         )},
-
 )
 es.add(excess_sink_npp)
+
 
 control_sink_npp = Sink(
     label="sink (npp)",
     inputs= {control_bus_npp: Flow(
-        nominal_value=npp_power,
+        nominal_value=npp_power*(1-min_npp),
         min = 1,
         nonconvex= solph.NonConvex(),
-        
         )}
     )
 es.add(control_sink_npp)
@@ -157,7 +180,7 @@ cb_results = solph.views.node(results, control_bus_npp.label)["sequences"].dropn
 
 
 # el_blocks = [el_block, el_expense_block]
-el_blocks = [npp, cpp]
+el_blocks = [npp, cpp, cpp_cheap]
 # el_blocks = [expense_block]
 el_df = pd.DataFrame()
 for el_block in el_blocks:

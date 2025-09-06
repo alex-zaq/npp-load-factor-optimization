@@ -32,16 +32,6 @@ energysystem.add(source)
 
 
 
-# source = solph.components.Source(
-#     label="source",
-#     outputs={b1: solph.Flow(
-#         nominal_capacity=20
-
-#         )},
-# )
-# energysystem.add(source)
-
-
 
 
 
