@@ -537,13 +537,8 @@ class Generic_storage:
         output_bus,
         capacity,
         initial_storage_level,
-        # max_lst,
-        # min_lst,
     ):
               
-        # keyword = "storage_keyword"
-        
-        # max_storage_level = np.append(max_storage_level, max_storage_level[-1])
            
         storage = solph.components.GenericStorage(
             label=label,
@@ -551,8 +546,6 @@ class Generic_storage:
             initial_storage_level=initial_storage_level,
             inputs={input_bus: solph.Flow()},
             outputs={output_bus: solph.Flow()},
-            # max_storage_level=max_lst,
-            # min_storage_level=min_lst,
             balanced=False
         )
         
