@@ -1,5 +1,6 @@
 from collections import Counter
 import datetime
+import itertools
 import os
 
 import matplotlib
@@ -120,6 +121,30 @@ def plot_array(arr):
     plt.show(block=True)
 
 
+def plot_array_from_dict(dct):
+    dct = {",".join(k): v for k, v in dct.items()}
+    df = pd.DataFrame(dct)
+    df.plot(kind="line", linewidth=1, legend=False)
+    plt.margins(x=0, y=0)
+    plt.ylim(0, df.max().max() * 1.2)
+    plt.xlabel("Время, часы")
+    plt.ylabel("Условные единицы повышения риска")
+    plt.legend(loc='upper center', ncol=len(dct))
+    plt.show(block=True)
+
+
+
+def plot_array_from_dict_cumsum(dct):
+    dct = {",".join(k): v for k, v in dct.items()}
+    df = pd.DataFrame(dct)
+    df = df.cumsum()
+    df.plot(kind="line", linewidth=1, legend=False)
+    plt.margins(x=0, y=0)
+    plt.ylim(0, df.max().max() * 1.2)
+    plt.xlabel("Время, часы")
+    plt.ylabel("Условные единицы повышения риска")
+    plt.legend(loc='upper center', ncol=len(dct))
+    plt.show(block=True)
 
 
 
@@ -134,7 +159,7 @@ def get_risk_events_profile(start_year, end_year, events):
     return profile
 
 
-def get_risk_events_profile_for_all_repair_types(start_year, end_year, events):
+def get_profile_for_all_repair_types(start_year, end_year, events):
     res = {}
     check_set = set([event["repair_types"] for event in events.values()])
     for repair_type in check_set:
@@ -142,6 +167,11 @@ def get_risk_events_profile_for_all_repair_types(start_year, end_year, events):
         res[repair_type] = get_risk_events_profile(start_year, end_year, filtered_events_dict)
     return res
 
+
+
+def check_unig_seq(seq):
+    dates = [v["start_datetime"] for k,v in seq.items()]
+    return len(dates) == len(set(dates))
 
 
 def get_valid_profile_by_months(start_year, end_year, months):
@@ -240,7 +270,7 @@ def get_npp_block_active_count_by_scen(scen):
  
  
 def get_time_pairs_lst(start_year, end_year, start_repair_days_lst):
-    profile = get_profile_by_period_for_charger(start_year, end_year, start_repair_days_lst)
+    profile = get_profile_by_period_for_charger(start_year, end_year, start_repair_days_lst["start_day"]["days"])
     converter_start_hours = np.nonzero(profile)[0].astype(int).flatten()
     res = []
     for i in converter_start_hours:
@@ -280,3 +310,8 @@ def center_matplotlib_figure(fig, extra_x=0, extra_y=0):
     # Устанавливаем геометрию окна. Формат строки: "ширинаxвысота+x+y"
     window.geometry(f"{fig_width_px}x{fig_height_px}+{x}+{y}")
 
+def get_combinations(a):
+    combinations = []
+    for r in range(1, len(a) + 1):
+        combinations.extend(itertools.combinations(a, r))
+    return combinations

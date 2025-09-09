@@ -5,8 +5,6 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from oemof import solph
 
-
-
 # доступность электрокотлов на уровне тэц или на уровне энергссистемы
 
 chp_options = {

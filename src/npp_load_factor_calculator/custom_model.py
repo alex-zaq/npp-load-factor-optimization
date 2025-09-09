@@ -10,7 +10,7 @@ from src.npp_load_factor_calculator.utilites import (
     get_main_risk_by_inner_types,
     get_repair_mode_for_block,
     get_risk_events_profile,
-    get_risk_events_profile_for_all_repair_types,
+    get_profile_for_all_repair_types,
     plot_array,
     # get_valid_profile_by_months,
     # plot_array,
@@ -37,41 +37,39 @@ class Custom_model:
         
     def add_bel_npp(self):
                                
+        start_year, end_year = self.scenario["years"][0], self.scenario["years"][-1]
+
         status_1 = self.scenario["bel_npp_block_1"]["status"]
         status_2 = self.scenario["bel_npp_block_2"]["status"]
-        power_1 = self.scenario["bel_npp_block_1"]["nominal_power"]
-        power_2 = self.scenario["bel_npp_block_2"]["nominal_power"]
-        var_cost_1 = self.scenario["bel_npp_block_1"]["var_cost"]
-        var_cost_2 = self.scenario["bel_npp_block_2"]["var_cost"]
-        start_year, end_year = self.scenario["years"][0], self.scenario["years"][-1]
-        npp_block_1_events = self.scenario["bel_npp_block_1"]["events"]
-        npp_block_2_events = self.scenario["bel_npp_block_2"]["events"]
-        upper_bound_risk_1 = self.scenario["bel_npp_block_1"]["upper_bound_risk"]
-        upper_bound_risk_2 = self.scenario["bel_npp_block_2"]["upper_bound_risk"]
         
-        
-        default_risk_options_1 = self.scenario["bel_npp_block_1"]["default_risk_options"]
-        default_risk_options_2 = self.scenario["bel_npp_block_2"]["default_risk_options"]
+        if status_1:
+            power_1 = self.scenario["bel_npp_block_1"]["nominal_power"]
+            var_cost_1 = self.scenario["bel_npp_block_1"]["var_cost"]
+            npp_block_1_events = self.scenario["bel_npp_block_1"]["events"]
+            upper_bound_risk_1 = self.scenario["bel_npp_block_1"]["upper_bound_risk"]
+            default_risk_options_1 = self.scenario["bel_npp_block_1"]["default_risk_options"]
+            repair_options_1 = self.scenario["bel_npp_block_1"]["repair_options"]
+            repair_mode_block_1 = get_repair_mode_for_block(self.scenario["bel_npp_block_1"])
+            min_up_time_1 = self.scenario["bel_npp_block_1"]["min_up_time"]
+            risk_mode_1 = repair_mode_block_1 or bool(default_risk_options_1)
+            min_down_time_1 = self.scenario["bel_npp_block_1"]["min_down_time"]
+            allow_no_cost_mode_1 = self.scenario["bel_npp_block_1"]["allow_no_cost_mode"]
+            main_risk_all_types_1 = get_profile_for_all_repair_types(start_year, end_year + 1, npp_block_1_events)
 
-
-        repair_options_1 = self.scenario["bel_npp_block_1"]["repair_options"]
-        repair_options_2 = self.scenario["bel_npp_block_2"]["repair_options"]
-        repair_mode_block_1 = get_repair_mode_for_block(self.scenario["bel_npp_block_1"])
-        repair_mode_block_2 = get_repair_mode_for_block(self.scenario["bel_npp_block_2"])
-        min_up_time_1 = self.scenario["bel_npp_block_1"]["min_up_time"]
-        min_up_time_2 = self.scenario["bel_npp_block_2"]["min_up_time"]
-        min_down_time_1 = self.scenario["bel_npp_block_1"]["min_down_time"]
-        min_down_time_2 = self.scenario["bel_npp_block_2"]["min_down_time"]
-        risk_mode_1 = repair_mode_block_1 or bool(default_risk_options_1)
-        risk_mode_2 = repair_mode_block_2 or bool(default_risk_options_2)
-        allow_no_cost_mode_1 = self.scenario["bel_npp_block_1"]["allow_no_cost_mode"]
-        allow_no_cost_mode_2 = self.scenario["bel_npp_block_2"]["allow_no_cost_mode"]
+        if status_2:
+            power_2 = self.scenario["bel_npp_block_2"]["nominal_power"]
+            var_cost_2 = self.scenario["bel_npp_block_2"]["var_cost"]
+            npp_block_2_events = self.scenario["bel_npp_block_2"]["events"]
+            upper_bound_risk_2 = self.scenario["bel_npp_block_2"]["upper_bound_risk"]
+            default_risk_options_2 = self.scenario["bel_npp_block_2"]["default_risk_options"]
+            min_up_time_2 = self.scenario["bel_npp_block_2"]["min_up_time"]
+            min_down_time_2 = self.scenario["bel_npp_block_2"]["min_down_time"]
+            repair_options_2 = self.scenario["bel_npp_block_2"]["repair_options"]
+            repair_mode_block_2 = get_repair_mode_for_block(self.scenario["bel_npp_block_2"])
+            risk_mode_2 = repair_mode_block_2 or bool(default_risk_options_2)
+            allow_no_cost_mode_2 = self.scenario["bel_npp_block_2"]["allow_no_cost_mode"]
+            main_risk_all_types_2 = get_profile_for_all_repair_types(start_year, end_year + 1, npp_block_2_events)
            
-        main_risk_all_types_1 = get_risk_events_profile_for_all_repair_types(start_year, end_year + 1, npp_block_1_events)
-        main_risk_all_types_2 = get_risk_events_profile_for_all_repair_types(start_year, end_year + 1, npp_block_2_events)
-           
-        # plot_array(fix_risk_lst_1)
-        # plot_array(fix_risk_lst_2)
            
         if status_1:
             bel_npp_block_1 = self.source_factory.create_npp_block(
@@ -114,19 +112,21 @@ class Custom_model:
     def add_new_npp(self):
         
         status_1 = self.scenario["new_npp_block_1"]["status"]
-        power_1 = self.scenario["new_npp_block_1"]["nominal_power"]
-        var_cost_1 = self.scenario["new_npp_block_1"]["var_cost"]
-        start_year, end_year = self.scenario["years"][0], self.scenario["years"][-1]
-        npp_block_1_events = self.scenario["new_npp_block_1"]["events"]
-        upper_bound_risk_1 = self.scenario["new_npp_block_1"]["upper_bound_risk"]
-        default_risk_options_1 = self.scenario["new_npp_block_1"]["default_risk_options"]
-        main_risk_all_types_1 = get_risk_events_profile_for_all_repair_types(start_year, end_year + 1, npp_block_1_events)
-        repair_options_1 = self.scenario["new_npp_block_1"]["repair_options"]
-        repair_mode_block_1 = get_repair_mode_for_block(self.scenario["new_npp_block_1"])
-        risk_mode_1 = repair_mode_block_1 or bool(default_risk_options_1)  
-        min_up_time_1 = self.scenario["new_npp_block_1"]["min_up_time"]
-        min_down_time_1 = self.scenario["new_npp_block_1"]["min_down_time"]
-        allow_no_cost_mode_1 = self.scenario["new_npp_block_1"]["allow_no_cost_mode"]    
+        
+        if status_1:
+            power_1 = self.scenario["new_npp_block_1"]["nominal_power"]
+            var_cost_1 = self.scenario["new_npp_block_1"]["var_cost"]
+            start_year, end_year = self.scenario["years"][0], self.scenario["years"][-1]
+            npp_block_1_events = self.scenario["new_npp_block_1"]["events"]
+            upper_bound_risk_1 = self.scenario["new_npp_block_1"]["upper_bound_risk"]
+            default_risk_options_1 = self.scenario["new_npp_block_1"]["default_risk_options"]
+            main_risk_all_types_1 = get_profile_for_all_repair_types(start_year, end_year + 1, npp_block_1_events)
+            repair_options_1 = self.scenario["new_npp_block_1"]["repair_options"]
+            repair_mode_block_1 = get_repair_mode_for_block(self.scenario["new_npp_block_1"])
+            risk_mode_1 = repair_mode_block_1 or bool(default_risk_options_1)  
+            min_up_time_1 = self.scenario["new_npp_block_1"]["min_up_time"]
+            min_down_time_1 = self.scenario["new_npp_block_1"]["min_down_time"]
+            allow_no_cost_mode_1 = self.scenario["new_npp_block_1"]["allow_no_cost_mode"]    
                 
         if status_1:
             new_npp_block_1 = self.source_factory.create_npp_block(

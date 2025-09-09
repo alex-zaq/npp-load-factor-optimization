@@ -1,176 +1,28 @@
+from src.npp_load_factor_calculator.utilites import (
+    get_profile_for_all_repair_types,
+    plot_array_from_dict,
+    plot_array_from_dict_cumsum,
+)
 from src.npp_load_factor_calculator import Block_grouper, Oemof_model, Result_viewer
 from src.npp_load_factor_calculator.result_viewer import Control_block_viewer
+from src.npp_load_factor_calculator.scenarios.scen_1 import (
+    year_1_block_1_risk_1_repair_1,
+)
+from src.npp_load_factor_calculator.scenarios.scen_2 import (
+    year_1_block_1_risk_2_repair_2,
+)
 from src.npp_load_factor_calculator.solution_processor import Solution_processor
-from src.npp_load_factor_calculator.utilites import all_months
 
-bel_npp_block_1_events = {
-    "event_1": {
-        "start_datetime": "2025-01-01 00:00:00",
-        "risk_increase": 0.1,
-        "duration_hours": 1,
-        "repair_types": ("light", "medium", "heavy"),
-    },
-    "event_2": {
-        "start_datetime": "2025-02-01 00:00:00",
-        "risk_increase": 0.2,
-        "duration_hours": 1,
-        "repair_types": ("light", "medium","heavy"),
-        # "repair_types": ("medium","heavy"),
-    },
-    "event_3": {
-        "start_datetime": "2025-03-15 06:00:00",
-        "risk_increase": 0.3,
-        "duration_hours": 1,
-        "repair_types": ("light", "medium", "heavy"),
-        # "repair_types": ("heavy",),
-    },
-    "event_4": {
-        "start_datetime": "2025-04-22 18:00:00",
-        "risk_increase": 0.4,
-        "duration_hours": 1,
-        "repair_types": ("light", "medium", "heavy"),
-        # "repair_types": ("heavy",),
-    },
-    "event_5": {
-        "start_datetime": "2025-05-01 12:00:00",
-        "risk_increase": 0.5,
-        "duration_hours": 1,
-        "repair_types": ("light", "medium", "heavy"),
-    },
-    "event_6": {
-        "start_datetime": "2025-06-11 09:00:00",
-        "risk_increase": 0.3,
-        "duration_hours": 1,
-        "repair_types": ("light", "medium", "heavy"),
-    },
-    "event_7": {
-        "start_datetime": "2025-07-01 00:00:00",
-        "risk_increase": 0.2,
-        "duration_hours": 1,
-        "repair_types": ("light", "medium", "heavy"),
-    },
-    "event_8": {
-        "start_datetime": "2025-08-15 06:00:00",
-        "risk_increase": 0.4,
-        "duration_hours": 1,
-        "repair_types": ("light", "medium", "heavy"),
-    },
-    "event_9": {
-        "start_datetime": "2025-09-22 18:00:00",
-        "risk_increase": 0.5,
-        "duration_hours": 1,
-        "repair_types": ("light", "medium", "heavy"),
-    },
-    "event_10": {
-        "start_datetime": "2025-10-01 12:00:00",
-        "risk_increase": 0.6,
-        "duration_hours": 1,
-        "repair_types": ("light", "medium", "heavy"),
-    },
-    "event_11": {
-        "start_datetime": "2025-11-11 09:00:00",
-        "risk_increase": 0.4,
-        "duration_hours": 1,
-        "repair_types": ("light", "medium", "heavy"),
-    },
-    "event_12": {
-        "start_datetime": "2025-12-01 00:00:00",
-        "risk_increase": 0.7,
-        "duration_hours": 1,
-        "repair_types": ("light", "medium", "heavy"),
-    },
-}
+scenario, events = year_1_block_1_risk_1_repair_1["scenario"], year_1_block_1_risk_1_repair_1["events"]
+# scenario, events = year_1_block_1_risk_2_repair_2["scenario"], year_1_block_1_risk_2_repair_2["events"]
+
+year = scenario["years"][0]
+
+# main_risk_all_types_1 =  get_profile_for_all_repair_types(year, year + 1, events)
 
 
-bel_npp_block_2_events = {}
-new_npp_block_1_events = {}
-
-
-
-repair_options = {
-    "light": {
-        "id": 0,
-        "status": False,
-        "cost": 0.1,
-        "duration": 7,
-        "risk_reducing": 0.1,
-        "start_day": {"status": True, "days": [1, 15]},
-        "max_count_in_year": {"status": True, "count": 1},
-        "avail_months": all_months,
-        "npp_stop": False,
-    },
-    "medium": {
-        "id": 1,
-        "status": False,
-        "cost": 0.2,
-        "duration": 14,
-        "risk_reducing": 0.2,
-        "start_day": {"status": True, "days": [1, 15]},
-        "max_count_in_year": {"status": True, "count": 1},
-        "avail_months": all_months,
-        "npp_stop": True,
-    },
-    "heavy": {
-        "id": 2,
-        "status": False,
-        "cost": 0.3,
-        "duration": 21,
-        "risk_reducing": 0.3,
-        "start_day": {"status": True, "days": [1, 15]},
-        "max_count_in_year": {"status": True, "count": 1},
-        "avail_months": all_months,
-        "npp_stop": True,
-    },
-}
-
-
-scen_1 = {
-        "№": 1,
-        "name": "test",
-        "years": [2025],
-        "bel_npp_block_1": {
-            "status": True,
-            "nominal_power": 1170,
-            # "var_cost": -56.5,
-            "var_cost": -56.5,
-            # "risk_per_hour": 0.01,
-            "min_up_time": 0,
-            "min_down_time": 0,
-            "upper_bound_risk": 50,
-            "allow_no_cost_mode": True,
-            "default_risk_options": {"light": 0.5},
-            "events": bel_npp_block_1_events,
-            "repair_options": repair_options,
-        },
-        "bel_npp_block_2": {
-            "status": False,
-            "nominal_power": 1170,
-            "var_cost": -56.5,
-            "min_up_time": 0,
-            "min_down_time": 0,
-            "allow_no_cost_mode": True,
-            "upper_bound_risk": 50,
-            "default_risk_options": {"light": 0.5},
-            "events": bel_npp_block_2_events,
-            "repair_options": repair_options,
-        },
-       "new_npp_block_1": {
-            "status": False,
-            "nominal_power": 1170,
-            "var_cost": -56.5,
-            "min_up_time": 0,
-            "min_down_time": 0,
-            "allow_no_cost_mode": True,
-            "upper_bound_risk": 0.5,
-            "default_risk_options": {"light": 0.5},
-            "events": new_npp_block_1_events,
-            "repair_options": repair_options,
-        },
-}
-
-
-scenario = scen_1
-
+# plot_array_from_dict(main_risk_all_types_1)
+# plot_array_from_dict_cumsum(main_risk_all_types_1)
 
 oemof_model = Oemof_model(
     scenario = scenario,
@@ -283,6 +135,7 @@ print("done")
 # введение в oemof в контексте риск-мониаторинга, возможности и ограничения
 # используемые компоненты
 # общий принцип работы и расчетная схема (акцент на условности расчета)
+# таблица настроек сценария
 # исходные данные
 # используемое ПО
 # серия примеров расчета (графики: работа АЭС, события риска, выполенные ремонты, изменения раска во времени, деньги за ремонты)
@@ -305,6 +158,7 @@ print("done")
 
 # переключатель топлива для converter с учетом возмоного потребления одновременно с двух storage
 # отображение вспомогательных графиков
+# обзор событий разным цветом какие ремонты могут покрыть
 
 
 # фиксировать ремонты для показа большей целевой функции

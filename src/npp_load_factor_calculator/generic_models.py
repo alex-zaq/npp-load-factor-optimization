@@ -3,9 +3,10 @@ import oemof.solph as solph
 
 from src.npp_load_factor_calculator.utilites import (
     check_sequential_years,
+    get_combinations,
     get_profile_by_period_for_charger,
     get_profile_with_first_day,
-    get_risk_events_profile_for_all_repair_types,
+    get_profile_for_all_repair_types,
     get_time_pairs_lst,
     get_valid_profile_by_months,
     hours_between_years,
@@ -54,11 +55,12 @@ class Generic_source:
     def __init__(self, oemof_es):
         self.oemof_es = oemof_es
         self.constraints = {
-            "default_risk_constr": set(),
-            "storage_charge_discharge_constr": set(),
-            "source_converter_n_n_plus_1_constr": set(),
-            "repairing_in_single_npp":  set(),
-            "repairing_type_for_different_npp": set(),
+            "default_risk_equate_status_constr": list(),
+            "storage_charge_discharge_upper_limit_constr": list(),
+            "source_converter_n_n_plus_1_equate_status_constr": list(),
+            "repairing_in_single_npp_upper_limit_constr":  list(),
+            "repairing_type_for_different_npp_upper_limit_constr": list(),
+            "sink_peak_converter_equate_status_constr": list()
         }
                 
     def set_years(self, years):
@@ -183,14 +185,13 @@ class Generic_source:
                     npp_block,
                     default_risk_options,
                     )
-            npp_block.default_risk_nodes = default_block_nodes
+                npp_block.default_risk_nodes = default_block_nodes
         
             if repair_mode:
                 repair_nodes = self._get_repair_nodes(
                     npp_block,
                     repair_options,
                     allow_free_cover_peak_mode,
-                    main_risk_all_types,
                 )
                 npp_block.repair_nodes = repair_nodes
         
@@ -200,7 +201,7 @@ class Generic_source:
         keyword_dict = {
             repair_name: {(label, repair_name, "npp_stop"): True}
             for repair_name in repair_options
-            if repair_options[repair_name]["npp_stop"]
+            if repair_options[repair_name]["status"] and repair_options[repair_name]["npp_stop"] 
         }
         custom_attributes = {
             f"{k}_{list(v.keys())[0][2]}": True for k, v in keyword_dict.items()
@@ -225,7 +226,7 @@ class Generic_source:
             )
         source_default_risk.outputs_pair = [(source_default_risk, risk_bus_in)]
         default_risk_nodes = {"source_default_risk": source_default_risk}
-        self.constraints["default_risk_constr"].add((npp_block.outputs_pair[0], source_default_risk.outputs_pair[0]))
+        self.constraints["default_risk_equate_status_constr"].append((npp_block.outputs_pair[0], source_default_risk.outputs_pair[0]))
         return default_risk_nodes
 
 
@@ -236,15 +237,13 @@ class Generic_source:
         storage_factory = Generic_storage(self.oemof_es)
         main_risk_all_types = npp_block.main_risk_all_types
         label = npp_block.label
-        # можно поставить огр. одну storage
-        # можно ли не задавать емкость
         for r_names_tuple, profile in main_risk_all_types.items():
             repairs_str = set_label(*r_names_tuple)
             main_risk_storage_in_bus = bus_factory.create_bus(set_label(label, "main_risk_bus", repairs_str))
             main_risk_storage_out_bus = bus_factory.create_bus(set_label(label, "risk_bus_out", repairs_str))
             source = self.create_source_fixed(
                 set_label(label, "risk_source", repairs_str),
-                main_risk_storage_out_bus,
+                main_risk_storage_in_bus,
                 profile
             )
             storage = storage_factory.create_storage(
@@ -277,9 +276,10 @@ class Generic_source:
         general_converters_bus = bus_factory.create_bus(set_label(label, "general_converters_bus"))
         sink_for_converters = sink_factory.create_sink(set_label(label, "sink_for_converters"), general_converters_bus)   
         repair_nodes = {"sink_for_converters": sink_for_converters}
-        
+       
+        filtered_repair_options = {k:v for k,v in repair_options.items() if v["status"]}
            
-        for repair_name in repair_options:
+        for repair_name in filtered_repair_options:
             
             repair_nodes[repair_name] = {}
             
@@ -289,29 +289,31 @@ class Generic_source:
             
             max_count_status = repair_options[repair_name]["max_count_in_year"]["status"]
             
-            max_power_profile_source = self._get_source_profile(s, e, repair_options[repair_name])
-            repair_avail_profile = get_valid_profile_by_months(s, e, repair_options[repair_name]["avail_months"])
-            power, startup_cost, minuptime, capacity = self._get_repair_block_options(repair_options, repair_name)
+            source_repair_profile = self._get_source_profile(s, e, repair_options[repair_name])
+            converter_avail_max_profile = get_valid_profile_by_months(s, e, repair_options[repair_name]["avail_months"])
+            power, startup_cost, minuptime, storage_repair_capacity = self._get_repair_block_options(repair_options, repair_name)
 
-                       
+            # plot_array(source_repair_profile)
+            # plot_array(converter_avail_max_profile)
             
             storage_repair_control_bus = bus_factory.create_bus(set_label(label, repair_name, "storage_repair_control_bus"))
             storage_repair_fuel_bus = bus_factory.create_bus(set_label(label, repair_name, "storage_repair_fuel_bus"))
             
             source_repair = self.create_source_with_max_profile(
-                storage_repair_label,
+                label= storage_repair_label,
                 output_bus=storage_repair_fuel_bus,
-                max_profile=max_power_profile_source,
-                ) # доступные часы зарядки
+                max_profile=source_repair_profile,
+                )
 
+            # эта storage будет ограничивать ремонт на мал. периоде
             storage_repair = storage_factory.create_storage_for_npp(
-                storage_repair_label,
+                label=storage_repair_label,
                 input_bus=storage_repair_fuel_bus,
                 output_bus=storage_repair_control_bus,
-                capacity=capacity,
-            ) # constraint нельзя одновременно заряжать и разряжать
+                capacity=storage_repair_capacity,
+            ) 
 
-                
+            # только если период от 2 лет
             if max_count_status:
                 
                 storage_period_label = set_label(label, repair_name, "storage_period")
@@ -320,6 +322,7 @@ class Generic_source:
                 storage_period_fuel_bus = bus_factory.create_bus(set_label(label, repair_name, "storage_period_fuel_bus"))
                 storage_period_control_bus = bus_factory.create_bus(set_label(label, repair_name, "storage_period_control_bus"))
 
+                # эта storage будет ограничивать ремонт на большом периоде
                 storage_period = storage_factory.create_storage_period_level(
                     storage_period_label,
                     input_bus=storage_period_fuel_bus,
@@ -344,22 +347,24 @@ class Generic_source:
                 storage_period_control_bus = None
                 
 
-            converter_repair = converter_factory.create_converter_double_input(
+            converter_repair = converter_factory.create_converter_multi_input(
                 npp_block,
                 repair_name,
                 power,
                 storage_repair_control_bus,
                 storage_period_control_bus,
                 general_converters_bus,
-                repair_avail_profile,
+                converter_avail_max_profile,
                 minuptime,
                 startup_cost,
             )  # constraint нельзя одновременно ремонтировать несколько аэс, доступные месяцы работы
 
 
             if allow_free_cover_peak_mode:
+                
+                # здесь список зеркальных синков, которые компенсируют события риска
                 sink_peak_lst = self._get_sink_for_risk_peak(npp_block, repair_name, npp_block.main_risk_nodes)
-                self.constraints["sink_peak_converter_constr"] = self.get_sink_peak_constraints(sink_peak_lst, converter_repair)
+                self.constraints["sink_peak_converter_equate_status_constr"] = self._get_sink_peak_constraints(sink_peak_lst, converter_repair)
                 repair_nodes[repair_name] |= {"sink_peak_lst": sink_peak_lst}
 
 
@@ -372,23 +377,25 @@ class Generic_source:
 
             # начало ремонта в точные даты
             # check
+            
+            # если storage зарядился то на следующем шаге ремонт должен происходить
             start_time_pairs_lst = get_time_pairs_lst(s, e, repair_options[repair_name])
-            self.constraints["source_converter_n_n_plus_1_constr"].add(
-                [source_repair.outputs_pair[0], converter_repair.outputs_pair[0], start_time_pairs_lst]) 
+            self.constraints["source_converter_n_n_plus_1_equate_status_constr"].append(
+                (source_repair.outputs_pair[0], converter_repair.outputs_pair[0], start_time_pairs_lst)) 
             # только в соседних точках (во всех нельзя т.к. во время ремонта несовм. статусы)
             
-            self.constraints["repairing_type_for_different_npp"].add(converter_repair.keywords["no_parralel"])
-            self.constraints["repairing_in_single_npp"].add(converter_repair.keywords["npp_stop"])
-            self.constraints["storage_charge_discharge_constr"].add(storage_repair.keyword)
+            self.constraints["repairing_type_for_different_npp_upper_limit_constr"].append(converter_repair.keywords["no_parralel"]) if converter_repair.keywords["no_parralel"] else None
+            self.constraints["repairing_in_single_npp_upper_limit_constr"].append(converter_repair.keywords["npp_stop"]) if converter_repair.keywords["npp_stop"] else None
+            self.constraints["storage_charge_discharge_upper_limit_constr"].append(storage_repair.keyword)
             
             
         return repair_nodes
     
     
     def _get_sink_peak_constraints(self, sink_peak_lst, converter_repair):
-        res = set()
+        res = list()
         for sink_peak in sink_peak_lst:
-            res.add((sink_peak.inputs_pair[0], converter_repair.outputs_pair[0]))
+            res.append((sink_peak.inputs_pair[0], converter_repair.outputs_pair[0]))
         return res
     
 
@@ -411,14 +418,14 @@ class Generic_source:
         for repair_types_tuple, data in filtered_main_risk_nodes.items():
             source_main_risk = data["source"]
             profile = data["profile"]
-            main_risk_out_bus = source_main_risk["outputs_pair"][0][1]
+            main_risk_out_bus = source_main_risk.outputs_pair[0][1]
             sink_peak = solph.components.Sink(
                 label=set_label(label, "sink_peak", *repair_types_tuple),
                 inputs={
                     main_risk_out_bus: solph.Flow(
                         nominal_value=1,
                         max=profile,
-                        min=0,
+                        min=1,
                         nonconvex=solph.NonConvex(),
                     )
                 },
@@ -434,7 +441,7 @@ class Generic_source:
         start_day = repair_options["start_day"]
         source_profile_status = start_day["status"]
         if source_profile_status:
-            source_profile = get_profile_by_period_for_charger(s, e, start_day)
+            source_profile = get_profile_by_period_for_charger(s, e, start_day["days"])
         else:
             source_profile = np.full(hours_between_years(s, e), 1)
         return source_profile
@@ -507,6 +514,7 @@ class Generic_storage:
             inputs={
                 input_bus: solph.Flow(
                     nominal_value=1e8,
+                    min=0,
                     nonconvex=solph.NonConvex(),
                     custom_attributes={keyword : True},
                 )
@@ -514,6 +522,7 @@ class Generic_storage:
             outputs={
                 output_bus: solph.Flow(
                     nominal_value=1e8,
+                    min=0,
                     nonconvex=solph.NonConvex(),
                     custom_attributes={keyword : True},
                 )
@@ -525,7 +534,7 @@ class Generic_storage:
         storage.outputs_pair = [(storage, output_bus)]
         storage.keyword = keyword
 
-        self.oemof_es.add(storage)
+        self.es.add(storage)
         return storage
  
  
@@ -536,14 +545,14 @@ class Generic_storage:
         input_bus,
         output_bus,
         capacity,
-        initial_storage_level,
+        # initial_storage_level,
     ):
               
            
         storage = solph.components.GenericStorage(
             label=label,
             nominal_storage_capacity=capacity,
-            initial_storage_level=initial_storage_level,
+            # initial_storage_level=initial_storage_level,
             inputs={input_bus: solph.Flow()},
             outputs={output_bus: solph.Flow()},
             balanced=False
@@ -565,7 +574,7 @@ class Generic_converter:
     def create_converter(self, label, input_bus, output_bus):
         pass
 
-    def create_converter_double_input(
+    def create_converter_multi_input(
         self,
         npp_block,
         repair_name,
@@ -584,13 +593,18 @@ class Generic_converter:
         npp_stop_keyword, no_parralel_keyword = self._get_npp_converter_keywords(repair_name, npp_block.npp_keyword_dict)
         custom_attributes = self._get_custom_attributes(npp_stop_keyword, no_parralel_keyword)
         
-        bus_factory = Generic_bus(self.oemof_es)
-        main_input_bus = bus_factory.create_bus(set_label(converter_label, "main_input_bus"))
         
-        inner_converters = self._add_converter_different_output_bus(converter_label, main_input_bus, repair_name, npp_block.main_risk_nodes)
+        bus_factory = Generic_bus(self.oemof_es)
+        main_risk_reducing_input_bus = bus_factory.create_bus(set_label(converter_label, "main_input_bus"))
+        inner_converters = self._add_converter_different_output_bus(
+            converter_label,
+            main_risk_reducing_input_bus,
+            repair_name,
+            npp_block.main_risk_nodes)
         
         inputs = {}
-        inputs[main_input_bus] = solph.Flow()
+        inputs[main_risk_reducing_input_bus] = solph.Flow()
+        inputs[storage_repair_control_bus] = solph.Flow()
         if storage_period_control_bus is not None:
             inputs[storage_period_control_bus] = solph.Flow()
         
@@ -623,18 +637,28 @@ class Generic_converter:
     
     def _add_converter_different_output_bus(self, converter_label, main_input_bus, repair_name, main_risk_nodes):
         converters = []
+                
         filtered_main_risk_nodes = {k:v for k,v in main_risk_nodes.items() if repair_name in k}
-        for repair_names_tuple, data in filtered_main_risk_nodes.items():
-            storage_output_bus = data["storage"].outputs_pair[0][1]
+
+        all_comb_filtered_main_risk_nodes = get_combinations(list(filtered_main_risk_nodes.keys()))
+
+        for input_comnbinaions in all_comb_filtered_main_risk_nodes:
+            inputs = {}
+            for input_combination in input_comnbinaions:
+                data = filtered_main_risk_nodes[input_combination]
+                storage_output_bus = data["storage"].outputs_pair[0][1]
+                inputs[storage_output_bus] = solph.Flow()
+
             converter = solph.components.Converter(
-                label=set_label(converter_label, *repair_names_tuple),
-                inputs={storage_output_bus: solph.Flow()},
+                label=set_label(converter_label, *input_combination),
+                inputs=inputs,
                 outputs={main_input_bus: solph.Flow()},
             )
-            converter.inputs_pair = [(storage_output_bus, converter)]
+            converter.inputs_pair = [(input_bus, converter) for input_bus,_ in converter.inputs.items()]
             converter.outputs_pair = [(converter, main_input_bus)]
             converters.append(converter)
             self.oemof_es.add(converter)
+           
         return converters
     
     
