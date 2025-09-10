@@ -1,31 +1,122 @@
-from src.npp_load_factor_calculator.utilites import (
-    get_profile_for_all_repair_types,
-    plot_array_from_dict,
-    plot_array_from_dict_cumsum,
-)
+from datetime import datetime as dt
+
 from src.npp_load_factor_calculator import Block_grouper, Oemof_model, Result_viewer
 from src.npp_load_factor_calculator.result_viewer import Control_block_viewer
-from src.npp_load_factor_calculator.scenarios.scen_1 import (
-    year_1_block_1_risk_1_repair_1,
-)
-from src.npp_load_factor_calculator.scenarios.scen_2 import (
-    year_1_block_1_risk_2_repair_2,
-)
 from src.npp_load_factor_calculator.solution_processor import Solution_processor
+from src.npp_load_factor_calculator.utilites import all_months, days_to_hours, get_r
 
-scenario, events = year_1_block_1_risk_1_repair_1["scenario"], year_1_block_1_risk_1_repair_1["events"]
-# scenario, events = year_1_block_1_risk_2_repair_2["scenario"], year_1_block_1_risk_2_repair_2["events"]
+repair_options = {
+    "maintence-1": {
+        "id": 0,
+        "status": True,
+        "cost": 1e6,
+        "duration": days_to_hours(1),
+        "min_downtime": days_to_hours(30),
+        "risk_reset": (),
+        "risk_reducing": {
+            "r1": get_r(5),
+            "r2": get_r(5),
+            "r3": get_r(5),
+            },
+        "npp_stop": False,
+    },
+    "maintence-2": {
+        "id": 1,
+        "status": True,
+        "cost": 1e6,
+        "duration": days_to_hours(1),
+        "min_downtime": days_to_hours(30),
+        "risk_reset": (),
+        "risk_reducing": {
+            "r1": 0.3,
+            },
+        "npp_stop": False,
+    },
+    
+    "light": {
+        "id": 2,
+        "status": True,
+        "cost": 5e6,
+        "duration": days_to_hours(5),
+        "min_downtime": days_to_hours(30),
+        "risk_reset": (),
+        "risk_reducing": {
+            "r2": 0.3,
+            },
+        "npp_stop": True,
+    },
+    "medium-1": {
+        "id": 3,
+        "status": False,
+        "cost": 15e6,
+        "duration": days_to_hours(15),
+        "min_downtime": days_to_hours(30),
+        "risk_reset": ("r1",),
+        "risk_reducing": {
+            "r1": get_r(50),
+            "r2": get_r(40),
+            "r3": 0,
+            },
+        "npp_stop": True,
+    },
+    "medium-2": {
+        "id": 4,
+        "status": False,
+        "cost": 15e6,
+        "duration": days_to_hours(15),
+        "min_downtime": days_to_hours(30),
+        "risk_reset": ("r1", "r2"),
+        "risk_reducing": {},
+        "npp_stop": True,
+    },
+    "capital": {
+        "id": 5,
+        "status": False,
+        "cost": 50e6,
+        "duration": days_to_hours(25),
+        "min_downtime": days_to_hours(30),
+        "risk_reset": ("r1", "r2", "r3"),
+        "risk_reducing": {},
+        "npp_stop": True,
+    },
+}
 
-year = scenario["years"][0]
 
-# main_risk_all_types_1 =  get_profile_for_all_repair_types(year, year + 1, events)
+scen = {
+        "№": 1,
+        "name": "test",
+        "years": [2025],
+        "bel_npp_block_1": {
+            "status": True,
+            "nominal_power": 1170,
+            "var_cost": -56.5,
+            "planning_outage_duration": days_to_hours(30),
+            "start_of_month": False,
+            "allow_months": all_months - set("jan"),
+            "fixed_outage_month": "june",
+            "risk_increasing": {
+                "r1": {"value": get_r(0.1), "max": 1},
+                "r2": {"value": get_r(0.1), "max": 1},
+                "r3": {"value": get_r(0.1), "max": 1},
+                },
+            "repair_options": repair_options,
+        },
+        "bel_npp_block_2": {
+            "status": False,
+        },
+        "new_npp_block_1": {
+            "status": False,
+        },
+}
 
 
-# plot_array_from_dict(main_risk_all_types_1)
-# plot_array_from_dict_cumsum(main_risk_all_types_1)
+
+
+
+
 
 oemof_model = Oemof_model(
-    scenario = scenario,
+    scenario = scen,
     solver_settings = {
         "solver": "cplex",
         "solver_verbose": True,
@@ -157,7 +248,7 @@ print("done")
 
 
 # почасовой вклад в риск (сразу все риски)
-# возможность изменеие кпд переключателй топлива для учета разного вклада в понижение рисков
+# возможность изменение кпд переключателей топлива для учета разного вклада в понижение рисков
 # для ремонтов требущих отключение блока добавить промежуточный блок со связья блоком (upper 1)
 # запрет на одновременность работы промежуточных блоков
 # для учета требования 30 дневной остановки добавить storage c mindowntime и фикс. source

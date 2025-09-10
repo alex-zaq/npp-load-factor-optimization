@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 
-all_months = [
+all_months = set(
     "Jan",
     "Feb",
     "Mar",
@@ -21,7 +21,7 @@ all_months = [
     "Oct",
     "Nov",
     "Dec",
-]
+)
 
 
 start_day_by_month = {
@@ -315,3 +315,15 @@ def get_combinations(a):
     for r in range(1, len(a) + 1):
         combinations.extend(itertools.combinations(a, r))
     return combinations
+
+
+def get_r(val):
+    return val/30/24
+    
+def days_to_hours(val):
+    return val * 24 * 60
+
+    
+def months_to_hours(val):
+    return val * 24 * 60
+
