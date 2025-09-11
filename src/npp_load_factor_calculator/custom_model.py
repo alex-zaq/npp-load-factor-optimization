@@ -37,7 +37,7 @@ class Custom_model:
         
     def add_bel_npp(self):
                                
-        start_year, end_year = self.scenario["years"][0], self.scenario["years"][-1]
+        # start_year, end_year = self.scenario["years"][0], self.scenario["years"][-1]
 
         status_1 = self.scenario["bel_npp_block_1"]["status"]
         status_2 = self.scenario["bel_npp_block_2"]["status"]
@@ -45,30 +45,16 @@ class Custom_model:
         if status_1:
             power_1 = self.scenario["bel_npp_block_1"]["nominal_power"]
             var_cost_1 = self.scenario["bel_npp_block_1"]["var_cost"]
-            npp_block_1_events = self.scenario["bel_npp_block_1"]["events"]
-            upper_bound_risk_1 = self.scenario["bel_npp_block_1"]["upper_bound_risk"]
-            default_risk_options_1 = self.scenario["bel_npp_block_1"]["default_risk_options"]
+            risk_options_1 = self.scenario["bel_npp_block_1"]["risk_options"]
             repair_options_1 = self.scenario["bel_npp_block_1"]["repair_options"]
-            repair_mode_block_1 = get_repair_mode_for_block(self.scenario["bel_npp_block_1"])
-            min_up_time_1 = self.scenario["bel_npp_block_1"]["min_up_time"]
-            risk_mode_1 = repair_mode_block_1 or bool(default_risk_options_1)
-            min_down_time_1 = self.scenario["bel_npp_block_1"]["min_down_time"]
-            allow_no_cost_mode_1 = self.scenario["bel_npp_block_1"]["allow_no_cost_mode"]
-            main_risk_all_types_1 = get_profile_for_all_repair_types(start_year, end_year + 1, npp_block_1_events)
+            outage_options_1 = self.scenario["bel_npp_block_1"]["outage_options"]
 
         if status_2:
             power_2 = self.scenario["bel_npp_block_2"]["nominal_power"]
             var_cost_2 = self.scenario["bel_npp_block_2"]["var_cost"]
-            npp_block_2_events = self.scenario["bel_npp_block_2"]["events"]
-            upper_bound_risk_2 = self.scenario["bel_npp_block_2"]["upper_bound_risk"]
-            default_risk_options_2 = self.scenario["bel_npp_block_2"]["default_risk_options"]
-            min_up_time_2 = self.scenario["bel_npp_block_2"]["min_up_time"]
-            min_down_time_2 = self.scenario["bel_npp_block_2"]["min_down_time"]
+            risk_options_2 = self.scenario["bel_npp_block_2"]["risk_options"]
             repair_options_2 = self.scenario["bel_npp_block_2"]["repair_options"]
-            repair_mode_block_2 = get_repair_mode_for_block(self.scenario["bel_npp_block_2"])
-            risk_mode_2 = repair_mode_block_2 or bool(default_risk_options_2)
-            allow_no_cost_mode_2 = self.scenario["bel_npp_block_2"]["allow_no_cost_mode"]
-            main_risk_all_types_2 = get_profile_for_all_repair_types(start_year, end_year + 1, npp_block_2_events)
+            outage_options_2 = self.scenario["bel_npp_block_2"]["outage_options"]
            
            
         if status_1:
@@ -77,15 +63,9 @@ class Custom_model:
                 nominal_power=power_1,
                 output_bus=self.el_bus,
                 var_cost=var_cost_1,
-                risk_mode=risk_mode_1,
-                repair_mode=repair_mode_block_1,
-                default_risk_options=default_risk_options_1,
-                allow_free_cover_peak_mode=allow_no_cost_mode_1,
-                min_up_time=min_up_time_1,
-                min_down_time=min_down_time_1,
-                max_risk_level=upper_bound_risk_1,
-                main_risk_all_types=main_risk_all_types_1,
+                risk_options=risk_options_1,
                 repair_options=repair_options_1,
+                outage_options=outage_options_1
             )
             self.block_db.add_block("аэс", bel_npp_block_1)
         
@@ -95,15 +75,9 @@ class Custom_model:
                 nominal_power = power_2,
                 output_bus = self.el_bus,
                 var_cost = var_cost_2,
-                risk_mode = risk_mode_2,
-                repair_mode = repair_mode_block_2,
-                default_risk_options = default_risk_options_2,
-                allow_free_cover_peak_mode = allow_no_cost_mode_2,
-                min_up_time = min_up_time_2,
-                min_down_time = min_down_time_2,
-                max_risk_level = upper_bound_risk_2,
-                main_risk_all_types = main_risk_all_types_2,
-                repair_options = repair_options_2
+                risk_options = risk_options_2,
+                repair_options = repair_options_2,
+                outage_options = outage_options_2
             )
             self.block_db.add_block("аэс", bel_npp_block_2)
 
@@ -114,19 +88,12 @@ class Custom_model:
         status_1 = self.scenario["new_npp_block_1"]["status"]
         
         if status_1:
-            power_1 = self.scenario["new_npp_block_1"]["nominal_power"]
-            var_cost_1 = self.scenario["new_npp_block_1"]["var_cost"]
-            start_year, end_year = self.scenario["years"][0], self.scenario["years"][-1]
-            npp_block_1_events = self.scenario["new_npp_block_1"]["events"]
-            upper_bound_risk_1 = self.scenario["new_npp_block_1"]["upper_bound_risk"]
-            default_risk_options_1 = self.scenario["new_npp_block_1"]["default_risk_options"]
-            main_risk_all_types_1 = get_profile_for_all_repair_types(start_year, end_year + 1, npp_block_1_events)
-            repair_options_1 = self.scenario["new_npp_block_1"]["repair_options"]
-            repair_mode_block_1 = get_repair_mode_for_block(self.scenario["new_npp_block_1"])
-            risk_mode_1 = repair_mode_block_1 or bool(default_risk_options_1)  
-            min_up_time_1 = self.scenario["new_npp_block_1"]["min_up_time"]
-            min_down_time_1 = self.scenario["new_npp_block_1"]["min_down_time"]
-            allow_no_cost_mode_1 = self.scenario["new_npp_block_1"]["allow_no_cost_mode"]    
+            power_1 = self.scenario["bel_npp_block_1"]["nominal_power"]
+            var_cost_1 = self.scenario["bel_npp_block_1"]["var_cost"]
+            risk_options_1 = self.scenario["bel_npp_block_1"]["risk_options"]
+            repair_options_1 = self.scenario["bel_npp_block_1"]["repair_options"]
+            outage_options_1 = self.scenario["bel_npp_block_1"]["outage_options"]
+  
                 
         if status_1:
             new_npp_block_1 = self.source_factory.create_npp_block(
@@ -134,15 +101,9 @@ class Custom_model:
                 nominal_power=power_1,
                 output_bus=self.el_bus,
                 var_cost=var_cost_1,
-                risk_mode=risk_mode_1,
-                repair_mode=repair_mode_block_1,
-                default_risk_options=default_risk_options_1,
-                allow_free_cover_peak_mode=allow_no_cost_mode_1,
-                min_up_time=min_up_time_1,
-                min_down_time=min_down_time_1,
-                max_risk_level=upper_bound_risk_1,
-                main_risk_all_types=main_risk_all_types_1,
+                risk_options=risk_options_1,
                 repair_options=repair_options_1,
+                outage_options=outage_options_1
             )
             self.block_db.add_block("аэс", new_npp_block_1)
         

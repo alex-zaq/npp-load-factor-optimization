@@ -1,6 +1,7 @@
 import numpy as np
 import oemof.solph as solph
 
+from npp_load_factor_calculator.wrappers.wrapper_source import Wrapper_source
 from src.npp_load_factor_calculator.utilites import (
     check_sequential_years,
     get_combinations,
@@ -53,7 +54,7 @@ class Generic_sink:
 class Generic_source:
 
     def __init__(self, oemof_es):
-        self.oemof_es = oemof_es
+        self.es = oemof_es
         self.constraints = {
             "default_risk_equate_status_constr": list(),
             "storage_charge_discharge_upper_limit_constr": list(),
@@ -88,7 +89,7 @@ class Generic_source:
         )
         source.inputs_pair = None
         source.outputs_pair = [(source, output_bus)]
-        self.oemof_es.add(source)
+        self.es.add(source)
         return source
     
     
@@ -103,7 +104,7 @@ class Generic_source:
         )
         source.inputs_pair = None
         source.outputs_pair = [(source, output_bus)]
-        self.oemof_es.add(source)
+        self.es.add(source)
         return source
         
     
@@ -120,12 +121,61 @@ class Generic_source:
         )
         source.inputs_pair = None
         source.outputs_pair = [(source, output_bus)]
-        self.oemof_es.add(source)
+        self.es.add(source)
         return source    
     
-    
+            #     "capital": {
+            #     "id": 5,
+            #     "status": False,
+            #     "cost": 50e6,
+            #     "duration": days_to_hours(25),
+            #     "min_downtime": days_to_hours(30),
+            #     "risk_reset": ("r1", "r2", "r3"),
+            #     "risk_reducing": {},
+            #     "npp_stop": True,
+            #     "forced_freq_year": 1,
+            # },
+            # "risk_options": {
+            #     "r1": {"value": get_r(0.1), "max": 1},
+            #     "r2": {"value": get_r(0.1), "max": 1},
+            #     "r3": {"value": get_r(0.1), "max": 1},
+            #     },
+            # "outage_options": {
+            #     "start_of_month": False,
+            #     "allow_months": all_months - set("jan"),
+            #     "fixed_outage_month": "june",
+            #     "planning_outage_duration": days_to_hours(30),
+            # },
+            
+              
+    def add_outage_options(self, npp_block_builder, outage_options):
+        
+        s, e = self.start_year, self.end_year
+        
+        max_power_profile = get_max_power_profile_by_month(outage_options["allow_months"])
+
+
+        
+
+        npp_block_builder.add_min_inactive_status({
+            1:{"start": 0, "finish": days_to_hours(30), "length": },
+        })
+
+
+
+
+        npp_block_builder.update_options({"max_power_profile": max_power_profile})
+
 
     
+    
+    
+    def add_repair_options(self, npp_block_builder, repair_options):
+        pass
+    
+    def add_risk_options(self, npp_block_builder, risk_options):
+        pass
+                
 
     def create_npp_block(
         self,
@@ -133,20 +183,36 @@ class Generic_source:
         nominal_power,
         output_bus,
         var_cost,
-        risk_mode,
-        repair_mode,
-        default_risk_options,
-        allow_free_cover_peak_mode,
-        min_up_time,
-        min_down_time,
-        max_risk_level,
-        main_risk_all_types,
+        risk_options,
         repair_options,
+        outage_options,
     ):
         
-        keyword_dict, custom_attributes = self._get_npp_keyword_dict_and_custom_attributes(label, repair_options)
+        npp_block_builder = Wrapper_source(self.es)
         
-        npp_block = solph.components.Source(
+        npp_block_builder.set_options({
+            
+        })
+        
+        self.add_outage_options(npp_block_builder, outage_options)
+        
+        self.add_repair_options(npp_block_builder, repair_options)
+        
+        self.add_risk_options(npp_block_builder, risk_options)
+        
+        
+        npp_block = npp_block_builder.build()
+        
+        return npp_block
+        
+        
+        
+        
+        
+        
+        # keyword_dict, custom_attributes = self._get_npp_keyword_dict_and_custom_attributes(label, repair_options)
+        
+        npp_block_builder = solph.components.Source(
             label=label,
             outputs={
                 output_bus: solph.Flow(
@@ -155,47 +221,47 @@ class Generic_source:
                     min=1,
                     variable_costs=var_cost,
                     nonconvex=solph.NonConvex(
-                        minimum_uptime=min_up_time,
-                        minimum_downtime=min_down_time
+                        # minimum_uptime=min_up_time,
+                        # minimum_downtime=min_down_time
                         
                         ),
-                    custom_attributes=custom_attributes,
+                    # custom_attributes=custom_attributes,
                 )
             },
         )
                 
-        npp_block.inputs_pair = None 
-        npp_block.outputs_pair = [(npp_block, output_bus)]
-        npp_block.npp_keyword_dict = keyword_dict
-        npp_block.risk_mode = risk_mode
-        npp_block.repair_mode = repair_mode
-        npp_block.default_risk_mode = bool(default_risk_options)
-        npp_block.main_risk_all_types = main_risk_all_types
-        self.oemof_es.add(npp_block)
+        # npp_block.inputs_pair = None 
+        # npp_block.outputs_pair = [(npp_block, output_bus)]
+        # npp_block.npp_keyword_dict = keyword_dict
+        # npp_block.risk_mode = risk_mode
+        # npp_block.repair_mode = repair_mode
+        # npp_block.default_risk_mode = bool(default_risk_options)
+        # npp_block.main_risk_all_types = main_risk_all_types
+        # self.oemof_es.add(npp_block)
         
-        if risk_mode:
-            main_risk_nodes = self._get_storage_main_risk_dict(
-                npp_block,
-                max_risk_level
-                )
-            npp_block.main_risk_nodes = main_risk_nodes
-            #  добавить присвоения npp из всех методов
-            if default_risk_options:
-                default_block_nodes = self._get_default_risk_blocks(
-                    npp_block,
-                    default_risk_options,
-                    )
-                npp_block.default_risk_nodes = default_block_nodes
+        # if risk_mode:
+        #     main_risk_nodes = self._get_storage_main_risk_dict(
+        #         npp_block,
+        #         max_risk_level
+        #         )
+        #     npp_block.main_risk_nodes = main_risk_nodes
+        #     #  добавить присвоения npp из всех методов
+        #     if default_risk_options:
+        #         default_block_nodes = self._get_default_risk_blocks(
+        #             npp_block,
+        #             default_risk_options,
+        #             )
+        #         npp_block.default_risk_nodes = default_block_nodes
         
-            if repair_mode:
-                repair_nodes = self._get_repair_nodes(
-                    npp_block,
-                    repair_options,
-                    allow_free_cover_peak_mode,
-                )
-                npp_block.repair_nodes = repair_nodes
+        #     if repair_mode:
+        #         repair_nodes = self._get_repair_nodes(
+        #             npp_block,
+        #             repair_options,
+        #             allow_free_cover_peak_mode,
+        #         )
+        #         npp_block.repair_nodes = repair_nodes
         
-        return npp_block
+        return npp_block_builder
 
     def _get_npp_keyword_dict_and_custom_attributes(self, label, repair_options):
         keyword_dict = {
@@ -233,8 +299,8 @@ class Generic_source:
     def _get_storage_main_risk_dict(self, npp_block, max_risk_level):
         storages = []
         main_risk_nodes = {}
-        bus_factory = Generic_bus(self.oemof_es)
-        storage_factory = Generic_storage(self.oemof_es)
+        bus_factory = Generic_bus(self.es)
+        storage_factory = Generic_storage(self.es)
         main_risk_all_types = npp_block.main_risk_all_types
         label = npp_block.label
         for r_names_tuple, profile in main_risk_all_types.items():
@@ -266,10 +332,10 @@ class Generic_source:
         allow_free_cover_peak_mode,
     ):
        
-        bus_factory = Generic_bus(self.oemof_es)   
-        storage_factory = Generic_storage(self.oemof_es)
-        converter_factory = Generic_converter(self.oemof_es)
-        sink_factory = Generic_sink(self.oemof_es)
+        bus_factory = Generic_bus(self.es)   
+        storage_factory = Generic_storage(self.es)
+        converter_factory = Generic_converter(self.es)
+        sink_factory = Generic_sink(self.es)
         label = npp_block.label
         s,e = self.start_year, self.end_year
            
@@ -432,7 +498,7 @@ class Generic_source:
             )
             sink_peak.inputs_pair = [(main_risk_out_bus, sink_peak)]
             sink_peak_lst.append(sink_peak)
-            self.oemof_es.add(sink_peak)
+            self.es.add(sink_peak)
         
         return sink_peak_lst
     

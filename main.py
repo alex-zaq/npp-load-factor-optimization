@@ -13,11 +13,7 @@ repair_options = {
         "duration": days_to_hours(1),
         "min_downtime": days_to_hours(30),
         "risk_reset": (),
-        "risk_reducing": {
-            "r1": get_r(5),
-            "r2": get_r(5),
-            "r3": get_r(5),
-            },
+        "risk_reducing": {"r2": get_r(0.3)},
         "npp_stop": False,
     },
     "maintence-2": {
@@ -27,9 +23,7 @@ repair_options = {
         "duration": days_to_hours(1),
         "min_downtime": days_to_hours(30),
         "risk_reset": (),
-        "risk_reducing": {
-            "r1": 0.3,
-            },
+        "risk_reducing": {"r1": get_r(0.3)},
         "npp_stop": False,
     },
     
@@ -39,10 +33,8 @@ repair_options = {
         "cost": 5e6,
         "duration": days_to_hours(5),
         "min_downtime": days_to_hours(30),
-        "risk_reset": (),
-        "risk_reducing": {
-            "r2": 0.3,
-            },
+        "risk_reset": ("r1",),
+        "risk_reducing": {"r2": 0.3},
         "npp_stop": True,
     },
     "medium-1": {
@@ -51,12 +43,8 @@ repair_options = {
         "cost": 15e6,
         "duration": days_to_hours(15),
         "min_downtime": days_to_hours(30),
-        "risk_reset": ("r1",),
-        "risk_reducing": {
-            "r1": get_r(50),
-            "r2": get_r(40),
-            "r3": 0,
-            },
+        "risk_reset": ("r1","r2"),
+        "risk_reducing": {},
         "npp_stop": True,
     },
     "medium-2": {
@@ -65,7 +53,7 @@ repair_options = {
         "cost": 15e6,
         "duration": days_to_hours(15),
         "min_downtime": days_to_hours(30),
-        "risk_reset": ("r1", "r2"),
+        "risk_reset": ("r1", "r2", "r3"),
         "risk_reducing": {},
         "npp_stop": True,
     },
@@ -78,6 +66,7 @@ repair_options = {
         "risk_reset": ("r1", "r2", "r3"),
         "risk_reducing": {},
         "npp_stop": True,
+        "forced_freq_year": 1,
     },
 }
 
@@ -90,11 +79,13 @@ scen = {
             "status": True,
             "nominal_power": 1170,
             "var_cost": -56.5,
-            "planning_outage_duration": days_to_hours(30),
-            "start_of_month": False,
-            "allow_months": all_months - set("jan"),
-            "fixed_outage_month": "june",
-            "risk_increasing": {
+            "outage_options": {
+                "start_of_month": False,
+                "allow_months": all_months - set("jan"),
+                "fixed_outage_month": "june",
+                "planning_outage_duration": days_to_hours(30),
+            },
+            "risk_options": {
                 "r1": {"value": get_r(0.1), "max": 1},
                 "r2": {"value": get_r(0.1), "max": 1},
                 "r3": {"value": get_r(0.1), "max": 1},
