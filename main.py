@@ -82,8 +82,8 @@ scen = {
             "outage_options": {
                 "start_of_month": False,
                 "allow_months": all_months - set("jan"),
-                "fixed_outage_month": "june",
                 "planning_outage_duration": days_to_hours(30),
+                "fixed_outage_months":  set("june"),
             },
             "risk_options": {
                 "r1": {"value": get_r(0.1), "max": 1},

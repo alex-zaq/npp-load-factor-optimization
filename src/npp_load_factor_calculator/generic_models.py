@@ -1,7 +1,9 @@
 import numpy as np
 import oemof.solph as solph
 
-from npp_load_factor_calculator.wrappers.wrapper_source import Wrapper_source
+from src.npp_load_factor_calculator.wrappers.wrapper_converter import Wrapper_converter
+from src.npp_load_factor_calculator.wrappers.wrapper_sink import Wrapper_sink
+from src.npp_load_factor_calculator.wrappers.wrapper_source import Wrapper_source
 from src.npp_load_factor_calculator.utilites import (
     check_sequential_years,
     get_combinations,
@@ -143,7 +145,7 @@ class Generic_source:
             # "outage_options": {
             #     "start_of_month": False,
             #     "allow_months": all_months - set("jan"),
-            #     "fixed_outage_month": "june",
+            #     "fixed_outage_months": "june",
             #     "planning_outage_duration": days_to_hours(30),
             # },
             
@@ -151,31 +153,109 @@ class Generic_source:
     def add_outage_options(self, npp_block_builder, outage_options):
         
         s, e = self.start_year, self.end_year
+
+        if outage_options["fixed_outage_month"]:
+            fix_profile = get_selected_month_profile(s, e, outage_options["fixed_outage_months"])
+            npp_block_builder.update_options({"fixed_outage_months": fix_profile })
+            return
         
-        max_power_profile = get_max_power_profile_by_month(outage_options["allow_months"])
+        max_power_profile = get_max_power_profile_by_month(s,e,outage_options["allow_months"])
+        inactive_hours = outage_options["planning_outage_duration"]
+        allowed_start_points = get_month_start_points(s, e)
+        min_inactive_intervals = {(first_year_hour(y), last_year_hour(y)): inactive_hours for y in range(s, e)}
+        npp_block_builder.add_min_inactive_status(min_inactive_intervals, allowed_start_points)
+
+        npp_block_builder.update_options({"max_profile_output": max_power_profile})
 
 
+    def add_risk_options(self, npp_block_builder, risk_options):
         
-
-        npp_block_builder.add_min_inactive_status({
-            1:{"start": 0, "finish": days_to_hours(30), "length": },
-        })
-
-
-
-
-        npp_block_builder.update_options({"max_power_profile": max_power_profile})
-
-
-    
-    
+        bus_factory = Generic_bus(self.es)
+        storage_factory = Generic_storage(self.es)
+        
+        risk_bus_lst = []
+        for risk_name, risk_data in risk_options.items():
+            npp_label = npp_block_builder.label
+            risk_bus = bus_factory.create_bus(f"{npp_label}_{risk_name}")           
+            risk_source_builer = Wrapper_source(self.es, f"{npp_label}_{risk_name}")
+            risk_source_builer.update_options({
+                "nominal_power": risk_data["value"],
+                "output_bus": risk_bus,
+            })
+            risk_source_builer.create_pair_keywords_single_status(npp_block_builder)
+            risk_source_builer.build()
+            
+            risk_control_bus = bus_factory.create_bus(f"{npp_label}_{risk_name}_out_bus")
+            risk_bus_lst.append(risk_bus)    
+            storage_factory.create_storage(
+                label = f"{npp_label}_{risk_name}_storage",
+                input_bus = risk_bus,
+                output_bus = risk_control_bus,
+                capacity = risk_data["max"],
+            )
+            
+        npp_block_builder.set_info("risk_bus_lst", risk_bus_lst)
+            
     
     def add_repair_options(self, npp_block_builder, repair_options):
-        pass
     
-    def add_risk_options(self, npp_block_builder, risk_options):
-        pass
+        repair_options_active = {k: v for k, v in repair_options.items() if v["status"]}
+        repair_options_npp_stop = {k: v for k, v in repair_options_active.items() if v["npp_stop"]}
+        repair_options_npp_no_stop = {k: v for k, v in repair_options_active.items() if  not v["npp_stop"]}
+    
+    
+        if repair_options_npp_stop:
                 
+            bus_factory = Generic_bus(self.es)
+            control_npp_stop_bus = bus_factory.create_bus(f"{npp_block_builder.label}_control_npp_stop_bus")
+
+            control_npp_stop_converter = Wrapper_converter(self.es, f"{npp_block_builder.label}_control_npp_stop_converter" )
+            control_npp_stop_converter.create_pair_keywords_for_output(npp_block_builder)
+            control_npp_stop_converter.add_output_keyword("single_npp_stop_model")
+            control_npp_stop_converter.update_options({"output_bus": control_npp_stop_bus})
+            control_npp_stop_converter.build()
+            
+            risk_bus_lst = npp_block_builder.get_info("risk_bus_lst")
+            
+            sink_bus= {}
+            for risk_bus in risk_bus_lst:
+                sink_label = f"{npp_block_builder.label}_{risk_bus}_sink"
+                sink_bus[sink_label] = Wrapper_sink(self.es, sink_label)
+                sink_bus[sink_label].update_options({"input_bus": risk_bus, "nominal_power": 1e8, "non_convex": True})
+        
+        
+            for name, options in repair_options_npp_stop.items():
+                
+                risk_reducing, risk_reset = options["risk_reducing"], options["risk_reset"]
+                
+                assert bool(risk_reducing) != bool(risk_reset)
+                
+                if risk_reset:
+                    for risk in risk_reset:
+                        pass
+
+                if risk_reducing:
+                    options["input_bus"] = control_npp_stop_bus
+                    
+               
+               
+               
+                
+            
+        for name, options in repair_options_npp_no_stop.items():
+            
+            risk_reducing, risk_reset = options["risk_reducing"], options["risk_reset"]
+            
+            assert bool(risk_reducing) != bool(risk_reset)
+            
+            if risk_reset:
+                options["output_bus"] = control_npp_stop_bus
+
+
+            if risk_reducing:
+                options["input_bus"] = control_npp_stop_bus
+                
+
 
     def create_npp_block(
         self,
@@ -188,17 +268,21 @@ class Generic_source:
         outage_options,
     ):
         
-        npp_block_builder = Wrapper_source(self.es)
+        npp_block_builder = Wrapper_source(self.es, label)
         
-        npp_block_builder.set_options({
-            
+        
+        npp_block_builder.update_options({
+            "nominal_power": nominal_power,
+            "output_bus": output_bus,
+            "var_cost": var_cost
         })
         
         self.add_outage_options(npp_block_builder, outage_options)
         
+        self.add_risk_options(npp_block_builder, risk_options)
+        
         self.add_repair_options(npp_block_builder, repair_options)
         
-        self.add_risk_options(npp_block_builder, risk_options)
         
         
         npp_block = npp_block_builder.build()

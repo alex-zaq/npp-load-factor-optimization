@@ -2,20 +2,45 @@ from collections import deque
 
 from oemof import solph
 
+from src.npp_load_factor_calculator.generic_models import Generic_bus
+from src.npp_load_factor_calculator.wrappers.wrapper_base import Wrapper_base
 
-class Wrapper_sink:
+
+class Wrapper_sink(Wrapper_base):
     
-    def __init__(self, es):
-        self.es = es
-        self.queue = deque()
-    
-    def set_options(self, options):
-        pass
-    
+    def __init__(self, es, label):
+        super().__init__(es, label)
+ 
         
-    def add_general_status(wrapper_block):
-        pass
-    
-    
-    def build():
-        pass
+    def _get_pair_after_building(self):
+        input_bus = self.options["input_bus"]
+        sink = self.build()
+        return input_bus, sink
+                
+        
+    def _get_input_dict(self):
+        input_bus = self.options["input_bus"]
+        nominal_power = self.options["nominal_power"]   
+        custom_attributes = self.keywords["input"] if self.keywords["input"] else None 
+        res = {input_bus: solph.Flow(nominal_power, custom_attributes=custom_attributes)}
+        return res
+               
+    def build(self):
+        if self.block:
+            return self.block
+        
+        inputs = self._get_inputs()
+        
+        self.block = solph.components.Sink(
+            name=self.label,
+            inputs=inputs,
+       ) 
+        
+        self.es.add(self.block)
+        self._set_info_to_block()
+        self._apply_constraints()
+
+        return self.block
+        
+        
+        
