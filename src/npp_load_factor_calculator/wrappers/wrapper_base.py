@@ -53,16 +53,20 @@ class Wrapper_base:
 
     def create_pair_equal_status(self, wrapper_block):
         self.constraints["equal_status"].append(wrapper_block)
-       
-    # bad
-    def add_min_inactive_time_in_period(self, duration, periods_lst):
+              
+    def add_min_inactive_time_in_period(self, duration, max_profile_mask):
+
+        charger_power = 1
+        storage_capacity = charger_power * duration
+        fix_profile = np.array(max_profile_mask) * storage_capacity
+
 
         bus_factory = Generic_bus(self.es)
         sink_bus = bus_factory.create_bus(f"{self.label}_sink_bus")
     
         sink = solph.components.sink(
             name=f"{self.label}_min_inactive_sink",
-            inputs={sink_bus: solph.Flow(nominal_value=1, fix = 0)},
+            inputs={sink_bus: solph.Flow(nominal_value=1, fix = fix_profile)},
         )
         sink.inputs_pair = [(sink_bus, sink)]
         self.es.add(sink)
@@ -70,9 +74,9 @@ class Wrapper_base:
         storage_in_bus = bus_factory.create_bus(f"{self.label}_storage_in_bus")
         storage = solph.components.GenericStorage(
             label=f"{self.label}_min_inactive_storage",
-            nominal_storage_capacity=0,
-            inputs={storage_in_bus: solph.Flow(nominal_value=1, fix = 0)},
-            outputs={sink_bus: solph.Flow(nominal_value=1, fix = 0)},
+            nominal_storage_capacity=storage_capacity,
+            inputs={storage_in_bus: solph.Flow()},
+            outputs={sink_bus: solph.Flow()},
             balanced=False
         )
         storage.inputs_pair = [(storage_in_bus, storage)]
@@ -82,12 +86,12 @@ class Wrapper_base:
         
         wrapper_charger_builder = Wrapper_source(self.es, f"{self.label}_min_inactive_control_source")
         wrapper_charger_builder.update_options({
-            "nominal_power": 1,
+            "nominal_power": charger_power,
             "output_bus": storage_in_bus,
-            "nonconvex": True,
-            "min": 0,
+            "min_uptime": duration,
+            "min": 1,
             })
-        wrapper_charger_builder.create_pair_equal_status(self)
+        wrapper_charger_builder.create_pair_keywords_no_equal_status(self)
         wrapper_charger_builder.build()
 
     def add_max_up_time(self, max_uptime):
