@@ -13,7 +13,7 @@ class Wrapper_converter(Wrapper_base):
         super().__init__(es, label)
         
         
-    def _get_pair_after_building(self):
+    def get_pair_after_building(self):
         output_bus = self.options["output_bus"]
         converter = self.build()
         return converter, output_bus
@@ -47,14 +47,27 @@ class Wrapper_converter(Wrapper_base):
         sink = solph.Sink(label=f"{self.label}_sink_for_output_bus", inputs={bus: solph.Flow()})
         self.es.add(sink)
 
-    def _get_inputs(self):
-        inputs = {self.options["input_bus"]: solph.Flow()}
-        if "bus_for_input_combinations" in self.options:
-            inputs = {self.options["bus_for_input_combinations"]: solph.Flow()}
-        return inputs
+
+    def add_keyword_to_flow(self, keyword):
+        if self._output_flow:
+            setattr(self._output_flow, keyword, True)
+        else:
+            self.keywords[keyword] = True
+
+
+    def get_main_flow(self):
+        if hasattr(self, "_output_flow"):
+            return self._output_flow
+        else:
+            return None
+                
+
+    def _get_input_flow(self):
+        input_flow = solph.Flow()
+        return input_flow
     
-    def _get_outputs(self):
-        outputs = {self.options["output_bus"]: solph.Flow(
+    def _get_output_flow(self):
+        output_flow = solph.Flow(
                 nominal_value=self.options["nominal_power"],
                 min = self.options["min"],
                 max = self.options["max"],
@@ -63,23 +76,30 @@ class Wrapper_converter(Wrapper_base):
                    startup_costs=self.options.get("startup_costs",0),
                    shutdown_costs=self.options.get("shutdown_costs",0),
                     ),
-                )}
-        return outputs
+                custom_attributes=self.keywords
+                )
+        return output_flow
 
             
     def build(self):
         if self.block:
             return self.block
         
-        inputs = self._get_inputs()
-        outputs = self._get_outputs()
+        self._input_flow = self._get_input_flow()
+        self._output_flow = self._get_output_flow()
 
+         
+        input_bus = self.options.get("bus_for_input_combinations", self.options["input_bus"])
+        output_bus = self.options["output_bus"]
 
         self.block = solph.components.Converter(
             label=self.label,
-            inputs=inputs,
-            outputs=outputs,
+            inputs={input_bus: self.input_flow},
+            outputs={output_bus: self.output_flow},
         )
+        
+        self.block.inputs_pair = [(input_bus, self.block)]
+        self.block.outputs_pair = [(self.block, output_bus)]        
 
         self.es.add(self.block)
         self._set_info_to_block()

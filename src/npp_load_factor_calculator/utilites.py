@@ -1,14 +1,14 @@
-from collections import Counter
 import datetime
 import itertools
 import os
+from collections import Counter
 
 import matplotlib
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 
-all_months = set(
+all_months = {
     "Jan",
     "Feb",
     "Mar",
@@ -21,7 +21,7 @@ all_months = set(
     "Oct",
     "Nov",
     "Dec",
-)
+}
 
 
 start_day_by_month = {

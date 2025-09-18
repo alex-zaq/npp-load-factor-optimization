@@ -12,29 +12,43 @@ class Wrapper_sink(Wrapper_base):
         super().__init__(es, label)
  
         
-    def _get_pair_after_building(self):
+    def get_pair_after_building(self):
         input_bus = self.options["input_bus"]
         sink = self.build()
         return input_bus, sink
-                
+          
+    def add_keyword_to_flow(self, keyword):
+        if self._input_flow:
+            setattr(self._input_flow, keyword, True)
+        else:
+            self.keywords[keyword] = True
+             
+    def get_main_flow(self):
+        if hasattr(self, "_input_flow"):
+            return self._input_flow
+        else:
+            return None
         
-    def _get_input_dict(self):
-        input_bus = self.options["input_bus"]
+    def _get_input_flow(self):
         nominal_power = self.options["nominal_power"]   
         custom_attributes = self.keywords["input"] if self.keywords["input"] else None 
-        res = {input_bus: solph.Flow(nominal_power, custom_attributes=custom_attributes)}
-        return res
+        input_flow =  solph.Flow(nominal_power, custom_attributes=custom_attributes)
+        return input_flow
                
     def build(self):
         if self.block:
             return self.block
         
-        inputs = self._get_inputs()
+        self._input_flow = self._get_input_flow()
+
+        input_bus = self.options["input_bus"]
         
         self.block = solph.components.Sink(
             name=self.label,
-            inputs=inputs,
+            inputs={input_bus: self._input_flow},
        ) 
+        
+        self.block.inputs_pair = [(input_bus, self.block)]
         
         self.es.add(self.block)
         self._set_info_to_block()

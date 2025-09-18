@@ -1,70 +1,30 @@
 import numpy as np
 import oemof.solph as solph
 
+from src.npp_load_factor_calculator.utilites import (
+    check_sequential_years,
+)
 from src.npp_load_factor_calculator.wrappers.wrapper_converter import Wrapper_converter
 from src.npp_load_factor_calculator.wrappers.wrapper_sink import Wrapper_sink
 from src.npp_load_factor_calculator.wrappers.wrapper_source import Wrapper_source
-from src.npp_load_factor_calculator.utilites import (
-    check_sequential_years,
-    get_combinations,
-    get_profile_by_period_for_charger,
-    get_profile_with_first_day,
-    get_profile_for_all_repair_types,
-    get_time_pairs_lst,
-    get_valid_profile_by_months,
-    hours_between_years,
-    plot_array,
-    set_label,
-)
 
 
 class Generic_bus:
 
     def __init__(self, oemof_es):
-        self.oemof_es = oemof_es
+        self.es = oemof_es
         
-    def create_bus(self, label):
-        bus = solph.Bus(label = label)
-        self.oemof_es.add(bus)
+    def create_bus(self, label, balanced = True):
+        bus = solph.Bus(label = label, balanced = balanced)
+        self.es.add(bus)
         return bus
-        
 
-    def create_bus_with_flow_constraints(self, label, input_flow, output_flow):
-        pass    
-
-
-class Generic_sink:
-
-    def __init__(self, oemof_es):
-        self.oemof_es = oemof_es
-        
-    def create_sink(self, label, input_bus):
-        
-        sink = solph.components.Sink(
-            label = label,
-            inputs = {input_bus: solph.Flow()}
-        )
-        
-        sink.inputs_pair = [(input_bus, sink)]
-        sink.outputs_pair = None
-        
-        self.oemof_es.add(sink)
-        
-        return sink
     
         
 class Generic_source:
 
     def __init__(self, oemof_es):
         self.es = oemof_es
-        self.constraints = {
-            "default_risk_equate_status_constr": list(),
-            "storage_charge_discharge_upper_limit_constr": list(),
-            "source_converter_n_n_plus_1_equate_status_constr": list(),
-            "repairing_in_single_npp_upper_limit_constr":  list(),
-            "repairing_type_for_different_npp_upper_limit_constr": list(),
-            "sink_peak_converter_equate_status_constr": list()
-        }
                 
     def set_years(self, years):
         
@@ -78,53 +38,6 @@ class Generic_source:
             self.start_year = years[0]
             self.end_year = years[1]
 
-
-    def get_constraints(self):
-        return self.constraints
-    
-    
-    def create_source_with_max_profile(self, label, output_bus, max_profile):
-        
-        source = solph.components.Source(
-            label = label,
-            outputs = {output_bus: solph.Flow(nominal_value=1e6, min=0, max=max_profile, nonconvex=solph.NonConvex())}
-        )
-        source.inputs_pair = None
-        source.outputs_pair = [(source, output_bus)]
-        self.es.add(source)
-        return source
-    
-    
-    def create_source_fixed(self, label, output_bus, fixed_pow_lst):
-                
-        source = solph.components.Source(
-            label = label,
-            outputs = {output_bus: solph.Flow(
-                nominal_value=1,
-                fix=fixed_pow_lst
-            )}
-        )
-        source.inputs_pair = None
-        source.outputs_pair = [(source, output_bus)]
-        self.es.add(source)
-        return source
-        
-    
-    def create_source_nonconvex(self, label, output_bus, power, min_val, max_val):
-        
-        source = solph.components.Source(
-            label = label,
-            outputs = {output_bus: solph.Flow(
-                nominal_value=power,
-                min=min_val,
-                max=max_val,
-                nonconvex=solph.NonConvex()
-            )}
-        )
-        source.inputs_pair = None
-        source.outputs_pair = [(source, output_bus)]
-        self.es.add(source)
-        return source    
     
             #     "capital": {
             #     "id": 5,
@@ -152,6 +65,9 @@ class Generic_source:
               
     def add_outage_options(self, npp_block_builder, outage_options):
         
+        if not outage_options["status"]:
+            return
+        
         s, e = self.start_year, self.end_year
 
         if outage_options["fixed_outage_month"]:
@@ -159,101 +75,201 @@ class Generic_source:
             npp_block_builder.update_options({"fixed_outage_months": fix_profile })
             return
         
-        max_power_profile = get_max_power_profile_by_month(s,e,outage_options["allow_months"])
-        inactive_hours = outage_options["planning_outage_duration"]
-        allowed_start_points = get_month_start_points(s, e)
-        min_inactive_intervals = {(first_year_hour(y), last_year_hour(y)): inactive_hours for y in range(s, e)}
-        npp_block_builder.add_min_inactive_status(min_inactive_intervals, allowed_start_points)
-
+        max_power_profile = get_max_power_profile_by_month(s, e, outage_options["allow_months"])
         npp_block_builder.update_options({"max_profile_output": max_power_profile})
+        
+        if outage_options["start_of_month"]:
+            mask_profile = get_month_start_points(s, e)
+            npp_block_builder.add_status_on_intervals(mask_profile)
+        
+
+        planning_outage_duration = outage_options["planning_outage_duration"]
+        min_inactive_intervals = {(first_year_hour(y), last_year_hour(y)): planning_outage_duration for y in range(s, e)}
+        
+        for first_hour, last_hour, planning_outage_duration in min_inactive_intervals.items():
+            # bad
+            npp_block_builder.add_min_inactive_time_in_period(first_hour, last_hour, planning_outage_duration)
+
 
 
     def add_risk_options(self, npp_block_builder, risk_options):
         
+        if not risk_options["status"]:
+            return
+        
+        
         bus_factory = Generic_bus(self.es)
         storage_factory = Generic_storage(self.es)
         
-        risk_bus_lst = []
+        risk_out_bus_dict = {}
         for risk_name, risk_data in risk_options.items():
             npp_label = npp_block_builder.label
             risk_bus = bus_factory.create_bus(f"{npp_label}_{risk_name}")           
-            risk_source_builer = Wrapper_source(self.es, f"{npp_label}_{risk_name}")
-            risk_source_builer.update_options({
+            risk_source_builder = Wrapper_source(self.es, f"{npp_label}_{risk_name}")
+            risk_source_builder.update_options({
                 "nominal_power": risk_data["value"],
                 "output_bus": risk_bus,
             })
-            risk_source_builer.create_pair_keywords_single_status(npp_block_builder)
-            risk_source_builer.build()
+            npp_block_builder.create_pair_equal_status(risk_source_builder)
+            risk_source_builder.build()
             
-            risk_control_bus = bus_factory.create_bus(f"{npp_label}_{risk_name}_out_bus")
-            risk_bus_lst.append(risk_bus)    
+            risk_out_bus = bus_factory.create_bus(f"{npp_label}_{risk_name}_outbus")
+            risk_out_bus_dict[risk_name] = risk_out_bus  
             storage_factory.create_storage(
                 label = f"{npp_label}_{risk_name}_storage",
                 input_bus = risk_bus,
-                output_bus = risk_control_bus,
-                capacity = risk_data["max"],
+                output_bus = risk_out_bus,
+                capacity = risk_data["max_risk"],
             )
             
-        npp_block_builder.set_info("risk_bus_lst", risk_bus_lst)
+        npp_block_builder.set_info("risk_out_bus_lst", risk_out_bus_dict)
             
+            #     "capital": {
+            #     "id": 5,
+            #     "status": False,
+            #     "cost": 50e6,
+            #     "duration": days_to_hours(25),
+            #     "min_downtime": days_to_hours(30),
+            #     "risk_reset": ("r1", "r2", "r3"),
+            #     "risk_reducing": {},
+            #     "npp_stop": True,
+            #     "forced_freq_year": 1,
+            # },
     
     def add_repair_options(self, npp_block_builder, repair_options):
     
-        repair_options_active = {k: v for k, v in repair_options.items() if v["status"]}
-        repair_options_npp_stop = {k: v for k, v in repair_options_active.items() if v["npp_stop"]}
-        repair_options_npp_no_stop = {k: v for k, v in repair_options_active.items() if  not v["npp_stop"]}
+        if not repair_options["status"]:
+            return
+    
+        repairs_active = {k: v for k, v in repair_options.items() if v["status"]}
+        # сделать обязательную работу за период опционально
+
+        repairs_npp_stop = {k: v for k, v in repairs_active.items() if v["npp_stop"]}
+        repairs_npp_no_stop = {k: v for k, v in repairs_active.items() if  not v["npp_stop"]}
+    
+        repairs_npp_stop_reset = {k: v for k, v in repairs_npp_stop.items() if v["risk_reset"]}
+        repairs_npp_stop_reducing = {k: v for k, v in repairs_npp_stop.items() if v["risk_reducing"]}
+        repairs_npp_no_stop_reset = {k: v for k, v in repairs_npp_no_stop.items() if v["risk_reset"]}
+        repairs_npp_no_stop_reducing = {k: v for k, v in repairs_npp_no_stop.items() if v["risk_reducing"]}
     
     
-        if repair_options_npp_stop:
-                
-            bus_factory = Generic_bus(self.es)
-            control_npp_stop_bus = bus_factory.create_bus(f"{npp_block_builder.label}_control_npp_stop_bus")
-
-            control_npp_stop_converter = Wrapper_converter(self.es, f"{npp_block_builder.label}_control_npp_stop_converter" )
-            control_npp_stop_converter.create_pair_keywords_for_output(npp_block_builder)
-            control_npp_stop_converter.add_output_keyword("single_npp_stop_model")
-            control_npp_stop_converter.update_options({"output_bus": control_npp_stop_bus})
-            control_npp_stop_converter.build()
+        risk_out_bus_dict = npp_block_builder.get_info("risk_out_bus_dict")
             
-            risk_bus_lst = npp_block_builder.get_info("risk_bus_lst")
+        all_risk_set = set(risk_out_bus_dict.keys())
+        bus_factory = Generic_bus(self.es)
+        bufer_bus = bus_factory.create_bus(f"{npp_block_builder.label}_bufer_bus", balanced=False)
             
-            sink_bus= {}
-            for risk_bus in risk_bus_lst:
-                sink_label = f"{npp_block_builder.label}_{risk_bus}_sink"
-                sink_bus[sink_label] = Wrapper_sink(self.es, sink_label)
-                sink_bus[sink_label].update_options({"input_bus": risk_bus, "nominal_power": 1e8, "non_convex": True})
-        
-        
-            for name, options in repair_options_npp_stop.items():
-                
-                risk_reducing, risk_reset = options["risk_reducing"], options["risk_reset"]
-                
-                assert bool(risk_reducing) != bool(risk_reset)
-                
-                if risk_reset:
-                    for risk in risk_reset:
-                        pass
+        repair_types_dict = {"npp_stop": {}, "npp_no_stop": {}}
+            
+        if repairs_npp_stop:
 
-                if risk_reducing:
-                    options["input_bus"] = control_npp_stop_bus
+            control_npp_stop_source = Wrapper_source(self.es, f"{npp_block_builder.label}_control_npp_stop_converter" )
+            control_npp_stop_source.update_options({"output_bus": bufer_bus, "nominal_power": 1, "min": 0})
+            control_npp_stop_source.create_pair_keywords_no_equal_status(npp_block_builder)
+            control_npp_stop_source.add_keyword_no_equal_status("single_npp_stop_model")
+            control_npp_stop_source.build()
+                        
+            if repairs_npp_stop_reset:
+                for name, options in repairs_npp_stop_reset.items():
+                    selected_risk_bus_set = all_risk_set & set(options["risk_reset"])
+                    repair_source_builder = Wrapper_source(self.es, f"{npp_block_builder.label}_{name}_repair_source" )
+                    repair_source_builder.update_options({
+                        "output_bus": bufer_bus,
+                        "nominal_power": 1,
+                        "min": 0,
+                        "minup_time": options["duration"],
+                        "startup_cost": options["startup_cost"]
+                    })
+                    repair_source_builder.add_max_up_time(options["duration"])
+                    repair_source_builder.create_pair_equal_status(control_npp_stop_source)
+                    repair_source_builder.build()
+
+                    for selected_risk_bus in selected_risk_bus_set:
+                        sink_builder = Wrapper_sink(self.es, f"{npp_block_builder.label}_{name}_{selected_risk_bus}_sink")
+                        sink_builder.update_options({
+                            "input_bus": risk_out_bus_dict[selected_risk_bus], "nominal_power": 1e10, "min": 0})
+                        sink_builder.create_pair_equal_status(repair_source_builder)
+                        sink_builder.build()
+            
+    
+            if repairs_npp_stop_reducing:
+                for name, options in repairs_npp_stop_reducing.items():
+                    selected_risk_bus_set = all_risk_set & set(options["risk_reducing"])
+                    repair_source_builder = Wrapper_source(self.es, f"{npp_block_builder.label}_{name}_repair_source")
+                    repair_source_builder.update_options({
+                        "output_bus": bufer_bus,
+                        "nominal_power": 1,
+                        "min": 0,
+                        "minup_time": options["duration"],
+                        "startup_cost": options["startup_cost"]
+                    })
+                    repair_source_builder.add_max_up_time(options["duration"])
+                    repair_source_builder.create_pair_equal_status(control_npp_stop_source)
+                    repair_source_builder.build()
+
+                    for selected_risk_bus in selected_risk_bus_set:
+                        sink_builder = Wrapper_sink(self.es, f"{npp_block_builder.label}_{name}_{selected_risk_bus}_sink")
+                        power =  options["risk_reducing"][selected_risk_bus] / options["duration"]
+                        sink_builder.update_options({
+                            "input_bus": risk_out_bus_dict[selected_risk_bus], "nominal_power": power, "min": 1})
+                        sink_builder.create_pair_equal_status(repair_source_builder)
+                        sink_builder.build()
+    
+    
+        if repairs_npp_no_stop:
+            
+            if repairs_npp_no_stop_reset:
+                for name, options in repairs_npp_no_stop_reset.items():
+                    selected_risk_bus_set = all_risk_set & set(options["risk_reset"])
+                    repair_source_builder = Wrapper_source(self.es, f"{npp_block_builder.label}_{name}_repair_source" )
+                    repair_source_builder.update_options({
+                        "output_bus": bufer_bus,
+                        "nominal_power": 1,
+                        "min": 0,
+                        "minup_time": options["duration"],
+                        "startup_cost": options["startup_cost"]
+                    })
+                    repair_source_builder.add_max_up_time(options["duration"])
+                    repair_source_builder.create_pair_equal_status(npp_block_builder)
+                    repair_source_builder.build()
+
+                    for selected_risk_bus in selected_risk_bus_set:
+                        sink_builder = Wrapper_sink(self.es, f"{npp_block_builder.label}_{name}_{selected_risk_bus}_sink")
+                        sink_builder.update_options({
+                            "input_bus": risk_out_bus_dict[selected_risk_bus], "nominal_power": 1e10, "min": 0})
+                        sink_builder.create_pair_equal_status(repair_source_builder)
+                        sink_builder.build()
                     
-               
-               
-               
-                
-            
-        for name, options in repair_options_npp_no_stop.items():
-            
-            risk_reducing, risk_reset = options["risk_reducing"], options["risk_reset"]
-            
-            assert bool(risk_reducing) != bool(risk_reset)
-            
-            if risk_reset:
-                options["output_bus"] = control_npp_stop_bus
+    
+            if repairs_npp_no_stop_reducing:
+                for name, options in repairs_npp_no_stop_reducing.items():
+                    selected_risk_bus_set = all_risk_set & set(options["risk_reducing"])
+                    repair_source_builder = Wrapper_source(self.es, f"{npp_block_builder.label}_{name}_repair_source" )
+                    repair_source_builder.update_options({
+                        "output_bus": bufer_bus,
+                        "nominal_power": 1,
+                        "min": 0,
+                        "minup_time": options["duration"],
+                        "startup_cost": options["startup_cost"]
+                    })
+                    repair_source_builder.add_max_up_time(options["duration"])
+                    repair_source_builder.create_pair_equal_status(npp_block_builder)
+                    repair_source_builder.build()
 
+                    for selected_risk_bus in selected_risk_bus_set:
+                        sink_builder = Wrapper_sink(self.es, f"{npp_block_builder.label}_{name}_{selected_risk_bus}_sink")
+                        power =  options["risk_reducing"][selected_risk_bus] / options["duration"]
+                        sink_builder.update_options({
+                            "input_bus": risk_out_bus_dict[selected_risk_bus], "nominal_power": power, "min": 1})
+                        sink_builder.create_pair_equal_status(repair_source_builder)
+                        sink_builder.build()
+    
 
-            if risk_reducing:
-                options["input_bus"] = control_npp_stop_bus
+            npp_block_builder.set_info("repair_data", repair_types_dict)
+            
+            
+               
+
                 
 
 
@@ -269,8 +285,6 @@ class Generic_source:
     ):
         
         npp_block_builder = Wrapper_source(self.es, label)
-        
-        
         npp_block_builder.update_options({
             "nominal_power": nominal_power,
             "output_bus": output_bus,
@@ -283,319 +297,12 @@ class Generic_source:
         
         self.add_repair_options(npp_block_builder, repair_options)
         
-        
-        
         npp_block = npp_block_builder.build()
         
         return npp_block
-        
-        
-        
-        
-        
-        
-        # keyword_dict, custom_attributes = self._get_npp_keyword_dict_and_custom_attributes(label, repair_options)
-        
-        npp_block_builder = solph.components.Source(
-            label=label,
-            outputs={
-                output_bus: solph.Flow(
-                    nominal_value=nominal_power,
-                    max=1,
-                    min=1,
-                    variable_costs=var_cost,
-                    nonconvex=solph.NonConvex(
-                        # minimum_uptime=min_up_time,
-                        # minimum_downtime=min_down_time
-                        
-                        ),
-                    # custom_attributes=custom_attributes,
-                )
-            },
-        )
-                
-        # npp_block.inputs_pair = None 
-        # npp_block.outputs_pair = [(npp_block, output_bus)]
-        # npp_block.npp_keyword_dict = keyword_dict
-        # npp_block.risk_mode = risk_mode
-        # npp_block.repair_mode = repair_mode
-        # npp_block.default_risk_mode = bool(default_risk_options)
-        # npp_block.main_risk_all_types = main_risk_all_types
-        # self.oemof_es.add(npp_block)
-        
-        # if risk_mode:
-        #     main_risk_nodes = self._get_storage_main_risk_dict(
-        #         npp_block,
-        #         max_risk_level
-        #         )
-        #     npp_block.main_risk_nodes = main_risk_nodes
-        #     #  добавить присвоения npp из всех методов
-        #     if default_risk_options:
-        #         default_block_nodes = self._get_default_risk_blocks(
-        #             npp_block,
-        #             default_risk_options,
-        #             )
-        #         npp_block.default_risk_nodes = default_block_nodes
-        
-        #     if repair_mode:
-        #         repair_nodes = self._get_repair_nodes(
-        #             npp_block,
-        #             repair_options,
-        #             allow_free_cover_peak_mode,
-        #         )
-        #         npp_block.repair_nodes = repair_nodes
-        
-        return npp_block_builder
 
-    def _get_npp_keyword_dict_and_custom_attributes(self, label, repair_options):
-        keyword_dict = {
-            repair_name: {(label, repair_name, "npp_stop"): True}
-            for repair_name in repair_options
-            if repair_options[repair_name]["status"] and repair_options[repair_name]["npp_stop"] 
-        }
-        custom_attributes = {
-            f"{k}_{list(v.keys())[0][2]}": True for k, v in keyword_dict.items()
-        }
-        return keyword_dict, custom_attributes
+
     
-    
-    def _get_default_risk_blocks(self, npp_block, default_risk_options):
-        risk_bus_in = 0
-        label = npp_block.label
-        repair_name, default_risk_pow = default_risk_options.items()[0]
-        main_risk_all_types = npp_block.main_risk_all_types
-        all_repair_types = set(main_risk_all_types.keys())
-        if repair_name not in all_repair_types:
-            raise Exception("There is no such repair type")
-        source_default_risk = self.create_source_nonconvex(
-                set_label(label, "source_default_risk"),
-                output_bus=risk_bus_in,
-                power=default_risk_pow,
-                min_val=1,
-                max_val=1,
-            )
-        source_default_risk.outputs_pair = [(source_default_risk, risk_bus_in)]
-        default_risk_nodes = {"source_default_risk": source_default_risk}
-        self.constraints["default_risk_equate_status_constr"].append((npp_block.outputs_pair[0], source_default_risk.outputs_pair[0]))
-        return default_risk_nodes
-
-
-    def _get_storage_main_risk_dict(self, npp_block, max_risk_level):
-        storages = []
-        main_risk_nodes = {}
-        bus_factory = Generic_bus(self.es)
-        storage_factory = Generic_storage(self.es)
-        main_risk_all_types = npp_block.main_risk_all_types
-        label = npp_block.label
-        for r_names_tuple, profile in main_risk_all_types.items():
-            repairs_str = set_label(*r_names_tuple)
-            main_risk_storage_in_bus = bus_factory.create_bus(set_label(label, "main_risk_bus", repairs_str))
-            main_risk_storage_out_bus = bus_factory.create_bus(set_label(label, "risk_bus_out", repairs_str))
-            source = self.create_source_fixed(
-                set_label(label, "risk_source", repairs_str),
-                main_risk_storage_in_bus,
-                profile
-            )
-            storage = storage_factory.create_storage(
-                label=set_label(label, "storage_main_risk", repairs_str),
-                input_bus=main_risk_storage_in_bus,
-                output_bus=main_risk_storage_out_bus,
-                capacity=None,
-            )
-            main_risk_nodes[r_names_tuple] = {"source": source, "storage": storage, "profile": profile}
-            storages.append(storage)
-        self.constraints["max_risk_level_constr"] = max_risk_level
-        self.constraints["storage_main_risk_lst"] = storages
-        return main_risk_nodes
-
-
-    def _get_repair_nodes(
-        self,
-        npp_block,
-        repair_options,
-        allow_free_cover_peak_mode,
-    ):
-       
-        bus_factory = Generic_bus(self.es)   
-        storage_factory = Generic_storage(self.es)
-        converter_factory = Generic_converter(self.es)
-        sink_factory = Generic_sink(self.es)
-        label = npp_block.label
-        s,e = self.start_year, self.end_year
-           
-        general_converters_bus = bus_factory.create_bus(set_label(label, "general_converters_bus"))
-        sink_for_converters = sink_factory.create_sink(set_label(label, "sink_for_converters"), general_converters_bus)   
-        repair_nodes = {"sink_for_converters": sink_for_converters}
-       
-        filtered_repair_options = {k:v for k,v in repair_options.items() if v["status"]}
-           
-        for repair_name in filtered_repair_options:
-            
-            repair_nodes[repair_name] = {}
-            
-            storage_repair_label = set_label(label, repair_name, "source_repair")
-            storage_repair_label = set_label(label, repair_name, "storage_repair")
-            
-            
-            max_count_status = repair_options[repair_name]["max_count_in_year"]["status"]
-            
-            source_repair_profile = self._get_source_profile(s, e, repair_options[repair_name])
-            converter_avail_max_profile = get_valid_profile_by_months(s, e, repair_options[repair_name]["avail_months"])
-            power, startup_cost, minuptime, storage_repair_capacity = self._get_repair_block_options(repair_options, repair_name)
-
-            # plot_array(source_repair_profile)
-            # plot_array(converter_avail_max_profile)
-            
-            storage_repair_control_bus = bus_factory.create_bus(set_label(label, repair_name, "storage_repair_control_bus"))
-            storage_repair_fuel_bus = bus_factory.create_bus(set_label(label, repair_name, "storage_repair_fuel_bus"))
-            
-            source_repair = self.create_source_with_max_profile(
-                label= storage_repair_label,
-                output_bus=storage_repair_fuel_bus,
-                max_profile=source_repair_profile,
-                )
-
-            # эта storage будет ограничивать ремонт на мал. периоде
-            storage_repair = storage_factory.create_storage_for_npp(
-                label=storage_repair_label,
-                input_bus=storage_repair_fuel_bus,
-                output_bus=storage_repair_control_bus,
-                capacity=storage_repair_capacity,
-            ) 
-
-            # только если период от 2 лет
-            if max_count_status:
-                
-                storage_period_label = set_label(label, repair_name, "storage_period")
-                source_period_label = set_label(label, repair_name, "source_period")
-
-                storage_period_fuel_bus = bus_factory.create_bus(set_label(label, repair_name, "storage_period_fuel_bus"))
-                storage_period_control_bus = bus_factory.create_bus(set_label(label, repair_name, "storage_period_control_bus"))
-
-                # эта storage будет ограничивать ремонт на большом периоде
-                storage_period = storage_factory.create_storage_period_level(
-                    storage_period_label,
-                    input_bus=storage_period_fuel_bus,
-                    output_bus=storage_period_control_bus,
-                    repair_options_name=repair_options[repair_name]
-                )
-
-                max_profile_source_period = get_profile_with_first_day(s, e)
-
-                source_period = self.create_source_with_max_profile(source_period_label, storage_period_fuel_bus, max_profile_source_period)
-                sink_period = sink_factory.create_sink(set_label(label, "sink_for_source_period"), storage_period_fuel_bus)
-
-                repair_nodes[repair_name] |= {
-                    "storage_period": storage_period,
-                    "source_period": source_period,
-                    "sink_period": sink_period,
-                }
-                
-                self.constraints["storage_charge_discharge_constr"].add(storage_period.keyword)
-
-            else: 
-                storage_period_control_bus = None
-                
-
-            converter_repair = converter_factory.create_converter_multi_input(
-                npp_block,
-                repair_name,
-                power,
-                storage_repair_control_bus,
-                storage_period_control_bus,
-                general_converters_bus,
-                converter_avail_max_profile,
-                minuptime,
-                startup_cost,
-            )  # constraint нельзя одновременно ремонтировать несколько аэс, доступные месяцы работы
-
-
-            if allow_free_cover_peak_mode:
-                
-                # здесь список зеркальных синков, которые компенсируют события риска
-                sink_peak_lst = self._get_sink_for_risk_peak(npp_block, repair_name, npp_block.main_risk_nodes)
-                self.constraints["sink_peak_converter_equate_status_constr"] = self._get_sink_peak_constraints(sink_peak_lst, converter_repair)
-                repair_nodes[repair_name] |= {"sink_peak_lst": sink_peak_lst}
-
-
-
-            repair_nodes[repair_name] |= {
-                "storage_repair": storage_repair,
-                "converter_repair": converter_repair,
-                "source_repair": source_repair,
-            }
-
-            # начало ремонта в точные даты
-            # check
-            
-            # если storage зарядился то на следующем шаге ремонт должен происходить
-            start_time_pairs_lst = get_time_pairs_lst(s, e, repair_options[repair_name])
-            self.constraints["source_converter_n_n_plus_1_equate_status_constr"].append(
-                (source_repair.outputs_pair[0], converter_repair.outputs_pair[0], start_time_pairs_lst)) 
-            # только в соседних точках (во всех нельзя т.к. во время ремонта несовм. статусы)
-            
-            self.constraints["repairing_type_for_different_npp_upper_limit_constr"].append(converter_repair.keywords["no_parralel"]) if converter_repair.keywords["no_parralel"] else None
-            self.constraints["repairing_in_single_npp_upper_limit_constr"].append(converter_repair.keywords["npp_stop"]) if converter_repair.keywords["npp_stop"] else None
-            self.constraints["storage_charge_discharge_upper_limit_constr"].append(storage_repair.keyword)
-            
-            
-        return repair_nodes
-    
-    
-    def _get_sink_peak_constraints(self, sink_peak_lst, converter_repair):
-        res = list()
-        for sink_peak in sink_peak_lst:
-            res.append((sink_peak.inputs_pair[0], converter_repair.outputs_pair[0]))
-        return res
-    
-
-    def _get_repair_block_options(self, repair_options, repair_name):
-        converter_power = repair_options[repair_name]["risk_reducing"] / (repair_options[repair_name]["duration"] * 24)
-        converter_startup_cost = repair_options[repair_name]["cost"]
-        converter_minuptime = repair_options[repair_name]["duration"] * 24
-        storage_capacity = converter_power * converter_minuptime
-        return converter_power,converter_startup_cost,converter_minuptime,storage_capacity
-    
-    
-    
-    
-    def _get_sink_for_risk_peak(self, npp_block, repair_name, main_risk_nodes):
-        
-        sink_peak_lst = []
-        label = npp_block.label
-        filtered_main_risk_nodes = {k:v for k,v in main_risk_nodes.items() if repair_name in k}
-
-        for repair_types_tuple, data in filtered_main_risk_nodes.items():
-            source_main_risk = data["source"]
-            profile = data["profile"]
-            main_risk_out_bus = source_main_risk.outputs_pair[0][1]
-            sink_peak = solph.components.Sink(
-                label=set_label(label, "sink_peak", *repair_types_tuple),
-                inputs={
-                    main_risk_out_bus: solph.Flow(
-                        nominal_value=1,
-                        max=profile,
-                        min=1,
-                        nonconvex=solph.NonConvex(),
-                    )
-                },
-            )
-            sink_peak.inputs_pair = [(main_risk_out_bus, sink_peak)]
-            sink_peak_lst.append(sink_peak)
-            self.es.add(sink_peak)
-        
-        return sink_peak_lst
-    
-    
-    def _get_source_profile(self, s, e, repair_options):
-        start_day = repair_options["start_day"]
-        source_profile_status = start_day["status"]
-        if source_profile_status:
-            source_profile = get_profile_by_period_for_charger(s, e, start_day["days"])
-        else:
-            source_profile = np.full(hours_between_years(s, e), 1)
-        return source_profile
-
 
     
 class Generic_storage:
@@ -713,128 +420,3 @@ class Generic_storage:
 
         self.es.add(storage)
         return storage
-    
-    
-    
-class Generic_converter:
-
-    def __init__(self, oemof_es):
-        self.oemof_es = oemof_es
-    
-    def create_converter(self, label, input_bus, output_bus):
-        pass
-
-    def create_converter_multi_input(
-        self,
-        npp_block,
-        repair_name,
-        power,
-        storage_repair_control_bus,
-        storage_period_control_bus,
-        general_converters_bus,
-        repair_avail_profile,
-        minimum_uptime,
-        startup_costs,
-    ):
-        
-        converter_label = set_label(npp_block.label, repair_name, "converter_repair")
-
-        # bad
-        npp_stop_keyword, no_parralel_keyword = self._get_npp_converter_keywords(repair_name, npp_block.npp_keyword_dict)
-        custom_attributes = self._get_custom_attributes(npp_stop_keyword, no_parralel_keyword)
-        
-        
-        bus_factory = Generic_bus(self.oemof_es)
-        main_risk_reducing_input_bus = bus_factory.create_bus(set_label(converter_label, "main_input_bus"))
-        inner_converters = self._add_converter_different_output_bus(
-            converter_label,
-            main_risk_reducing_input_bus,
-            repair_name,
-            npp_block.main_risk_nodes)
-        
-        inputs = {}
-        inputs[main_risk_reducing_input_bus] = solph.Flow()
-        inputs[storage_repair_control_bus] = solph.Flow()
-        if storage_period_control_bus is not None:
-            inputs[storage_period_control_bus] = solph.Flow()
-        
-        converter = solph.components.Converter(
-            label=converter_label,
-            inputs=inputs,
-            outputs={
-                general_converters_bus: solph.Flow(
-                    nominal_value=power,
-                    max=repair_avail_profile,
-                    min=repair_avail_profile,
-                    nonconvex=solph.NonConvex(
-                        minimum_uptime=minimum_uptime,
-                        startup_costs=startup_costs,
-                    ),
-                    custom_attributes=custom_attributes,
-                )
-            },
-        )
-        
-        converter.inputs_pair = [(input_bus, converter) for input_bus,_ in converter.inputs.items()]
-        converter.outputs_pair = [(converter, general_converters_bus)]
-        converter.startup_costs = startup_costs
-        converter.inner_converters = inner_converters
-        converter.keywords = {"npp_stop": npp_stop_keyword, "no_parralel": no_parralel_keyword}
-
-        self.oemof_es.add(converter)
-        return converter
-    
-    
-    def _add_converter_different_output_bus(self, converter_label, main_input_bus, repair_name, main_risk_nodes):
-        converters = []
-                
-        filtered_main_risk_nodes = {k:v for k,v in main_risk_nodes.items() if repair_name in k}
-
-        all_comb_filtered_main_risk_nodes = get_combinations(list(filtered_main_risk_nodes.keys()))
-
-        for input_comnbinaions in all_comb_filtered_main_risk_nodes:
-            inputs = {}
-            for input_combination in input_comnbinaions:
-                data = filtered_main_risk_nodes[input_combination]
-                storage_output_bus = data["storage"].outputs_pair[0][1]
-                inputs[storage_output_bus] = solph.Flow()
-
-            converter = solph.components.Converter(
-                label=set_label(converter_label, *input_combination),
-                inputs=inputs,
-                outputs={main_input_bus: solph.Flow()},
-            )
-            converter.inputs_pair = [(input_bus, converter) for input_bus,_ in converter.inputs.items()]
-            converter.outputs_pair = [(converter, main_input_bus)]
-            converters.append(converter)
-            self.oemof_es.add(converter)
-           
-        return converters
-    
-    
-    def _get_npp_converter_keywords(self, repair_name, npp_keyword_dict):
-
-        if repair_name in npp_keyword_dict:
-            npp_keyword = npp_keyword_dict[repair_name]
-            converter_keyword = {set_label(repair_name,"converter_keyword"): True}
-        else:
-            npp_keyword = converter_keyword = None
-
-        return npp_keyword, converter_keyword
-    
-    
-    def _get_custom_attributes(self, keyword_npp_stop, keyword_converter):
-        # если приводит к отлючению аэс то есть keyword_npp поэтому нельзя одновременно проводить данные типы ремонтов и поэтому есть keyword_converter
-        if keyword_npp_stop:
-            res = {keyword_npp_stop: True, keyword_converter: True}
-        else:
-            res = None
-        return res
-
-
-    def _get_converter_inputs(self, input_bus_1, input_bus_2, input_bus_3):
-        inputs = {input_bus_1: solph.Flow(), input_bus_2: solph.Flow()}
-        if input_bus_3:
-            inputs[input_bus_3] = solph.Flow()
-        return inputs
-            

@@ -31,25 +31,21 @@ energysystem.add(source_1)
 source_2_flow = solph.Flow(
         nominal_value = 300,
         variable_costs=999,
-        custom_attributes={"source_1": True}
+        # custom_attributes={"source_1": True}
 )
 
-source_2_flow.custom_attributes["source_2"] = True
+# working
+
 
 source_2 = solph.components.Source(
     label="source_2",
     outputs={
         
-        control_bus: solph.Flow(
-        nominal_value = 300,
-        variable_costs=999,
-        # custom_attributes={"source_1": True}
-
-
-        )},
+        control_bus: source_2_flow },
     # outputs={el_bus: flow},
 )
 
+source_2_flow.source_2 = True
 # source_2.outputs[control_bus].custom["source_2"] = True
 
 energysystem.add(source_2)
