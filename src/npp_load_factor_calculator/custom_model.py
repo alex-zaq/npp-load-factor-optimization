@@ -1,11 +1,10 @@
 
 
+from src.npp_load_factor_calculator.generic_models.generic_bus import Generic_bus
+from src.npp_load_factor_calculator.generic_models.generic_sink import Generic_sink
+from src.npp_load_factor_calculator.npp_builder import NPP_builder
 from src.npp_load_factor_calculator.block_db import Block_db
-from src.npp_load_factor_calculator.generic_models import (
-    Generic_bus,
-    Generic_sink,
-    Generic_source,
-)
+
 from src.npp_load_factor_calculator.utilites import (
     get_main_risk_by_inner_types,
     get_repair_mode_for_block,
@@ -24,8 +23,7 @@ class Custom_model:
         self.oemof_es = oemof_es
         self.bus_factory = Generic_bus(oemof_es)
         self.sink_factory = Generic_sink(oemof_es)
-        self.source_factory = Generic_source(oemof_es)
-        self.source_factory.set_years(scenario["years"])
+        self.npp_builder = NPP_builder(oemof_es)
         self.block_db = Block_db()
         
 
@@ -37,7 +35,6 @@ class Custom_model:
         
     def add_bel_npp(self):
                                
-        # start_year, end_year = self.scenario["years"][0], self.scenario["years"][-1]
 
         status_1 = self.scenario["bel_npp_block_1"]["status"]
         status_2 = self.scenario["bel_npp_block_2"]["status"]
@@ -58,7 +55,7 @@ class Custom_model:
            
            
         if status_1:
-            bel_npp_block_1 = self.source_factory.create_npp_block(
+            bel_npp_block_1 = self.npp_builder.create(
                 label="БелАЭС (блок 1)",
                 nominal_power=power_1,
                 output_bus=self.el_bus,
@@ -70,7 +67,7 @@ class Custom_model:
             self.block_db.add_block("аэс", bel_npp_block_1)
         
         if status_2:
-            bel_npp_block_2 = self.source_factory.create_npp_block(
+            bel_npp_block_2 = self.npp_builder.create(
                 label = "БелАЭС (блок 2)",
                 nominal_power = power_2,
                 output_bus = self.el_bus,
@@ -96,7 +93,7 @@ class Custom_model:
   
                 
         if status_1:
-            new_npp_block_1 = self.source_factory.create_npp_block(
+            new_npp_block_1 = self.npp_builder.create(
                 label="Новая АЭС (блок 1)",
                 nominal_power=power_1,
                 output_bus=self.el_bus,
@@ -109,6 +106,6 @@ class Custom_model:
         
 
     def get_constraints(self):
-        npp_constraints = self.source_factory.get_constraints()
+        npp_constraints = self.npp_builder.get_constraints()
         return npp_constraints
         

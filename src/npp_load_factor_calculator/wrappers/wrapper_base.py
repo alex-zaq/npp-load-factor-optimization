@@ -4,8 +4,6 @@ import numpy as np
 from oemof import solph
 
 from src.npp_load_factor_calculator.generic_models import Generic_bus
-from src.npp_load_factor_calculator.wrappers.wrapper_converter import Wrapper_converter
-from src.npp_load_factor_calculator.wrappers.wrapper_source import Wrapper_source
 
 
 class Wrapper_base:
@@ -31,6 +29,12 @@ class Wrapper_base:
     
     def build(self):
         pass
+    
+    def create_wrapper_source_builder(self, es, label):
+        pass
+    
+    def create_wrapper_converter_builder(self, es, label):
+        pass
                    
     def update_options(self, options):
         if self.block or self.get_main_flow():
@@ -45,7 +49,7 @@ class Wrapper_base:
     def add_keyword_no_equal_status(self, keyword):
         self.constraints["no_equal_status"].append(keyword)
 
-    def create_pair_keywords_no_equal_status(self, wrapper_block):
+    def create_pair_no_equal_status(self, wrapper_block):
         keyword = f"{self.label}_{wrapper_block.label}_no_equal_status"
         self.add_keyword_to_flow(keyword)
         wrapper_block.add_keyword_to_flow(keyword)
@@ -54,7 +58,10 @@ class Wrapper_base:
     def create_pair_equal_status(self, wrapper_block):
         self.constraints["equal_status"].append(wrapper_block)
               
-    def add_min_inactive_time_in_period(self, duration, max_profile_mask):
+    def add_specific_status_duration_in_period(self, duration, max_profile_mask, mode, max_profile = None, startup_cost_mask = 0):
+
+        if mode not in ("active", "non_active"):
+            raise ValueError("mode must be active or non_active")
 
         charger_power = 1
         storage_capacity = charger_power * duration
@@ -64,18 +71,25 @@ class Wrapper_base:
         bus_factory = Generic_bus(self.es)
         sink_bus = bus_factory.create_bus(f"{self.label}_sink_bus")
     
-        sink = solph.components.sink(
-            name=f"{self.label}_min_inactive_sink",
+        sink = solph.components.Sink(
+            label=f"{self.label}_min_inactive_sink",
             inputs={sink_bus: solph.Flow(nominal_value=1, fix = fix_profile)},
         )
         sink.inputs_pair = [(sink_bus, sink)]
         self.es.add(sink)
         
+        max_profile = max_profile if max_profile is not None else 1
         storage_in_bus = bus_factory.create_bus(f"{self.label}_storage_in_bus")
         storage = solph.components.GenericStorage(
             label=f"{self.label}_min_inactive_storage",
+            initial_storage_level=0,
             nominal_storage_capacity=storage_capacity,
-            inputs={storage_in_bus: solph.Flow()},
+            inputs={storage_in_bus: solph.Flow(
+                nominal_value=1e10,
+                max=max_profile,
+                min=0,
+                nonconvex=solph.NonConvex(),
+                )},
             outputs={sink_bus: solph.Flow()},
             balanced=False
         )
@@ -84,14 +98,23 @@ class Wrapper_base:
         self.es.add(storage)
         
         
-        wrapper_charger_builder = Wrapper_source(self.es, f"{self.label}_min_inactive_control_source")
+        
+        wrapper_charger_builder = self.create_wrapper_source_builder(self.es, f"{self.label}_min_inactive_control_source")
         wrapper_charger_builder.update_options({
             "nominal_power": charger_power,
             "output_bus": storage_in_bus,
             "min_uptime": duration,
             "min": 1,
             })
-        wrapper_charger_builder.create_pair_keywords_no_equal_status(self)
+        
+        if startup_cost_mask is not None:
+            wrapper_charger_builder.add_startup_cost_by_mask(startup_cost_mask)
+        
+        if mode == "active":
+            wrapper_charger_builder.create_pair_equal_status(self)
+        elif mode == "non_active":
+            wrapper_charger_builder.create_pair_no_equal_status(self)
+
         wrapper_charger_builder.build()
 
     def add_max_up_time(self, max_uptime):
@@ -116,7 +139,7 @@ class Wrapper_base:
         storage_control.outputs_pair = [(storage_control, storage_out_bus)]
         self.es.add(storage_control)
         
-        charger_builder = Wrapper_source(self.es, f"{self.label}_max_up_time_control_source")
+        charger_builder = self.create_wrapper_source_builder(self.es, f"{self.label}_max_up_time_control_source")
         charger_builder.update_options({
             "nominal_power": 1e8,
             "output_bus": storage_in_bus,
@@ -124,7 +147,7 @@ class Wrapper_base:
             })
         charger_builder.build()
         
-        max_uptime_block_builder = Wrapper_converter(self.es, f"{self.label}_max_up_time_control_converter")
+        max_uptime_block_builder = self.create_wrapper_converter_builder(self.es, f"{self.label}_max_up_time_control_converter")
         max_uptime_block_builder.update_options({
             "nominal_power": block_power,
             "output_bus": bufer_bus,
@@ -133,28 +156,23 @@ class Wrapper_base:
             })
         
         max_uptime_block_builder.create_pair_equal_status(self)
-        max_uptime_block_builder.create_pair_keywords_no_equal_status(charger_builder)
+        max_uptime_block_builder.create_pair_no_equal_status(charger_builder)
         max_uptime_block_builder.build()
 
-
             
-            
-            
-    def add_status_on_intervals(self, mask_profile):
-        mask_profile = np.array(mask_profile)
+    def add_startup_cost_by_mask(self, mask):
+        mask = np.array(mask)
         startup_cost = self.options.get("startup_cost", 0)
-        shutdown_cost = self.options.get("shutdown_cost", 0)
-        self.options["startup_cost_profile"] = np.where(mask_profile == 1, startup_cost, 1e8)
-        self.options["shutdown_cost_profile"] = np.where(mask_profile == 1, shutdown_cost, 1e8)
+        # shutdown_cost = self.options.get("shutdown_cost", 0)
+        self.options["startup_cost"] = np.where(mask == 1, startup_cost, 1e10)
+        # self.options["shutdown_cost"] = np.where(mask_profile == 1, shutdown_cost, 1e10)
 
 
     def _apply_constraints(self):
         constraint_groups_names = list(self.constraints.keys())
         if not constraint_groups_names:
             return
-        a = "no_equal_status" in constraint_groups_names
-        b = "equal_status" in constraint_groups_names
-        assert not a and b
+
         
         for constraint_group_name in constraint_groups_names:
             match constraint_group_name:
@@ -162,10 +180,30 @@ class Wrapper_base:
                     # возможные повторы
                     self.es.constraints["no_equal_status"].extend(self.constraints[constraint_group_name])
                 case "equal_status":
-                    another_wrapper_block = self.constraints[constraint_group_name]
+                    another_wrapper_block = self.constraints[constraint_group_name][0]
                     pair_1 = self.get_pair_after_building()
                     pair_2 = another_wrapper_block.get_pair_after_building()
                     self.es.constraints["equal_status"].append((pair_1, pair_2))
+
+
+    def get_nonconvex_flow(self):
+        if "fix" in self.options:
+            self.options["min"] = None
+            self.options["max"] = None
+        flow = solph.Flow(
+                nominal_value=self.options["nominal_power"],
+                min = self.options.get("min"),
+                max = self.options.get("max"),
+                fix = self.options.get("fix"),
+                variable_costs=self.options.get("var_cost", 0),
+                nonconvex=solph.NonConvex(
+                    minimum_uptime=self.options.get("min_uptime", 0),
+                    startup_costs=self.options.get("startup_cost", 0),
+                    shutdown_costs=self.options.get("shutdown_cost", 0),
+                    ),
+                custom_attributes=self.keywords
+                )
+        return flow
 
 
     def set_info(self, name, value):

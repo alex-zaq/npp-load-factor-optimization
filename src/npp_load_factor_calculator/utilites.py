@@ -174,16 +174,45 @@ def check_unig_seq(seq):
     return len(dates) == len(set(dates))
 
 
-def get_valid_profile_by_months(start_year, end_year, months):
+def get_selected_month_profile(start_year, end_year, selected_months):
     t_delta = pd.to_datetime(f"{end_year}-01-01") - pd.to_datetime(f"{start_year}-01-01")
     num_hours = t_delta.days * 24
     profile = np.zeros(num_hours)
     date_range = pd.date_range(start=f"{start_year}-01-01", end=f"{end_year}-01-01", freq="H", inclusive="left"
     )
-    for month in months:
+    for month in selected_months:
         profile[date_range.month == pd.to_datetime(month, format='%b').month] = 1
     return profile
 
+
+
+def get_fix_months_profile(date_range, selected_months):
+    res = np.ones(len(date_range))
+    for month in selected_months:
+        res[date_range.month == pd.to_datetime(month, format='%b').month] = 0
+    return res
+
+def get_avail_months_profile(date_range, selected_months):
+    res = np.zeros(len(date_range))
+    for month in selected_months:
+        res[date_range.month == pd.to_datetime(month, format='%b').month] = 1
+    return res
+
+def get_months_start_points(date_range):
+    res = np.zeros(len(date_range))
+    res[(date_range.day == 1) & (date_range.hour == 0)] = 1
+    return res
+
+def get_every_year_first_step_mask(date_range):
+    res = np.zeros(len(date_range))
+    res[(date_range.hour == 0) & (date_range.day == 1) & (date_range.month == 1)] = 1
+    res[0] = 0
+    return res
+
+def get_last_step_mask(date_range):
+    res = np.zeros(len(date_range))
+    res[-1] = 1
+    return res
 
 
 
@@ -321,9 +350,9 @@ def get_r(val):
     return val/30/24
     
 def days_to_hours(val):
-    return val * 24 * 60
+    return val * 24
 
     
 def months_to_hours(val):
-    return val * 24 * 60
+    return val * 24
 

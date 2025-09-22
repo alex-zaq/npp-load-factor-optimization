@@ -29,22 +29,17 @@ class Wrapper_sink(Wrapper_base):
         else:
             return None
         
-    def _get_input_flow(self):
-        nominal_power = self.options["nominal_power"]   
-        custom_attributes = self.keywords["input"] if self.keywords["input"] else None 
-        input_flow =  solph.Flow(nominal_power, custom_attributes=custom_attributes)
-        return input_flow
                
     def build(self):
         if self.block:
             return self.block
         
-        self._input_flow = self._get_input_flow()
+        self._input_flow = self.get_nonconvex_flow()
 
         input_bus = self.options["input_bus"]
         
         self.block = solph.components.Sink(
-            name=self.label,
+            label=self.label,
             inputs={input_bus: self._input_flow},
        ) 
         

@@ -8,8 +8,8 @@ from src.npp_load_factor_calculator.utilites import all_months, days_to_hours, g
 repair_options = {
     "maintence-1": {
         "id": 0,
-        "status": True,
-        "cost": 1e6,
+        "status": False,
+        "startup_cost": 1e3,
         "duration": days_to_hours(1),
         "min_downtime": days_to_hours(30),
         "risk_reset": set(),
@@ -19,7 +19,7 @@ repair_options = {
     "maintence-2": {
         "id": 1,
         "status": True,
-        "cost": 1e6,
+        "startup_cost": 1e3,
         "duration": days_to_hours(1),
         "min_downtime": days_to_hours(30),
         "risk_reset": set(),
@@ -29,8 +29,8 @@ repair_options = {
     
     "light": {
         "id": 2,
-        "status": True,
-        "cost": 5e6,
+        "status": False,
+        "startup_cost": 5e6,
         "duration": days_to_hours(5),
         "min_downtime": days_to_hours(30),
         "risk_reset": {"r1"},
@@ -40,7 +40,7 @@ repair_options = {
     "medium-1": {
         "id": 3,
         "status": False,
-        "cost": 15e6,
+        "startup_cost": 15e6,
         "duration": days_to_hours(15),
         "min_downtime": days_to_hours(30),
         "risk_reset": {"r1","r2"},
@@ -50,7 +50,7 @@ repair_options = {
     "medium-2": {
         "id": 4,
         "status": False,
-        "cost": 15e6,
+        "startup_cost": 15e6,
         "duration": days_to_hours(15),
         "min_downtime": days_to_hours(30),
         "risk_reset": {"r1", "r2", "r3"},
@@ -60,13 +60,13 @@ repair_options = {
     "capital": {
         "id": 5,
         "status": False,
-        "cost": 50e6,
+        "startup_cost": 50e6,
         "duration": days_to_hours(25),
         "min_downtime": days_to_hours(30),
         "risk_reset": {"r1", "r2", "r3"},
         "risk_reducing": {},
         "npp_stop": True,
-        "forced_freq_year": 1,
+        "forced_in_period": True,
     },
 }
 
@@ -80,18 +80,19 @@ scen = {
             "nominal_power": 1170,
             "var_cost": -56.5,
             "outage_options": {
-                "status": True,
+                "status": False,
                 "start_of_month": False,
-                "allow_months": all_months - {"jan"},
+                "allow_months": all_months - {"Jan"},
                 "planning_outage_duration": days_to_hours(30),
-                "fixed_outage_months":  {"june"},
+                "fixed_outage_month":  set(),
             },
             "risk_options": {
                 "status": True,
-                "r1": {"value": get_r(0.1), "max": 1},
-                "r2": {"value": get_r(0.1), "max": 1},
-                "r3": {"value": get_r(0.1), "max": 1},
-                },
+                "risks": {
+                    "r1": {"value": get_r(0.2), "max": 1, "start_risk": 0},
+                    # "r2": {"value": get_r(0.1), "max": 1, "start_risk": 0},
+                    # "r3": {"value": get_r(0.1), "max": 1, "start_risk": 0},
+                }},
             "repair_options": {
                 "status": True,
                 "options": repair_options
@@ -104,10 +105,6 @@ scen = {
             "status": False,
         },
 }
-
-
-
-
 
 
 
@@ -151,68 +148,55 @@ new_npp_block_1 = custom_es.block_db.get_new_npp_block_1()
 block_grouper = Block_grouper(results, custom_es)
 
 
-block_grouper.set_block_groups(
-    electricity_gen={
-        "БелАЭС (блок 1)": {"order": [bel_npp_block_1], "color": "#2ca02c"},
-        "БелАЭС (блок 2)": {"order": [bel_npp_block_2], "color": "#ff7f0e"},
-        "Новая АЭС (блок 1)": {"order": [new_npp_block_1], "color": "#1f77b4"},
+block_grouper.set_options(
+    electricity_options={
+        "БелАЭС (блок 1)": {"block": bel_npp_block_1, "color": "#2ca02c"},
+        "БелАЭС (блок 2)": {"block": bel_npp_block_2, "color": "#ff7f0e"},
+        "Новая АЭС (блок 1)": {"block": new_npp_block_1, "color": "#1f77b4"},
     },
-    main_risk_gen={
-        "БелАЭС (блок 1) - риск": {"order": [bel_npp_block_1], "color": "#1ae0ff"},
-        "БелАЭС (блок 2) - риск": {"order": [bel_npp_block_2], "color": "#e8ff1a"},
-        "Новая АЭС (блок 1) - риск": {"order": [new_npp_block_1], "color": "#3d26a3"},
+    risks_options={
+        "r1-риск": {"risk_name": "r1", "style":"-", "color": "#181008"},
+        "r2-риск": {"risk_name": "r2", "style":"-", "color": "#1417d1"},
+        "r3-риск": {"risk_name": "r3", "style":"-", "color": "#10c42e"},
     },
-    risk_events={
-        "БелАЭС (блок 1) - аварии": {"order": [bel_npp_block_1], "color": "#7b235a"},
-        "БелАЭС (блок 2) - аварии": {"order": [bel_npp_block_2], "color": "#968091"},
-        "Новая АЭС (блок 1) - аварии": {"order": [new_npp_block_1], "color": "#412d9b"},
+    repair_options={
+        "НО-1": {"id": 0, "color": "#009900"},
+        "НО-2": {"id": 1, "color": "#00b300"},
+        "ТР-1": {"id": 2, "color": "#0400ff"},
+        "ТР-2": {"id": 3, "color": "#0080ff"},
+        "КР-1": {"id": 4, "color": "#ff4000"},
     },
-    repair_cost={
-        "БелАЭС (блок 1) - затраты": {"order": [bel_npp_block_1], "color": "#18be2f"},
-        "БелАЭС (блок 2) - затраты": {"order": [bel_npp_block_2], "color": "#F07706"},
-        "Новая АЭС (блок 1) - затраты": {"order": [new_npp_block_1],"color": "#4a3550"},
-    }
-)
-
-block_grouper.set_repair_plot_options(
-    repair_events={
-        "БелАЭС (блок 1) - ремонт": {
-            "order": [bel_npp_block_1],
-            "options": {"легкий": (0, "#14e729"), "средний": (1, "#f9f10b"), "тяжелый": (2, "#f11111")},
-        },
-        "БелАЭС (блок 2) - ремонт": {
-            "order": [bel_npp_block_2],
-            "options": {"легкий": (0, "#14e729"), "средний": (1, "#f9f10b"), "тяжелый": (2, "#f11111")},
-        },
-        "Новая АЭС (блок 1) - ремонт": {
-            "order": [new_npp_block_1],
-            "options": {"легкий": (0, "#14e729"), "средний": (1, "#f9f10b"), "тяжелый": (2, "#f11111")},
-        },
-    }
+    repair_cost_options={
+        "БелАЭС (блок 1)-затраты": {"block": [bel_npp_block_1], "style":"-", "color": "#18be2f"},
+        "БелАЭС (блок 2)-затраты": {"block": [bel_npp_block_2], "style":"-", "color": "#ff7f0e"},
+        "Новая АЭС (блок 1)-затраты": {"block": [new_npp_block_1], "style":"-", "color": "#1f77b4"},
+    }  
 )
 
 
 solution_processor.set_block_grouper(block_grouper)
 result_viewer = Result_viewer(block_grouper)
 control_block_viewer = Control_block_viewer(block_grouper)
-control_block_viewer.select_block(bel_npp_block_1)
+# control_block_viewer.select_block(bel_npp_block_1)
 
 result_viewer.set_image_flag(False)
 # result_viewer.set_image_flag(True)
 result_viewer.set_image_options(folder="./images", image_format="jpg", dpi=600)
 
-result_viewer.plot_electricity_generation_profile()
+result_viewer.plot_general_graph()
+
+# result_viewer.plot_electricity_generation_profile()
 # result_viewer.plot_main_risk_events_profile()
 # result_viewer.plot_cost_profile()
 # result_viewer.plot_repair_profile()
 # result_viewer.plot_general_graph()
 
 
-control_block_viewer.plot_default_risk_profile()
+# control_block_viewer.plot_default_risk_profile()
 
-control_block_viewer.plot_storage_profiles(mode = "storage_main_risk", flow_mode = "content")
-control_block_viewer.plot_storage_profiles(mode = "storage_main_risk", flow_mode = "input")
-control_block_viewer.plot_storage_profiles(mode = "storage_main_risk", flow_mode = "output")
+# control_block_viewer.plot_storage_profiles(mode = "storage_main_risk", flow_mode = "content")
+# control_block_viewer.plot_storage_profiles(mode = "storage_main_risk", flow_mode = "input")
+# control_block_viewer.plot_storage_profiles(mode = "storage_main_risk", flow_mode = "output")
 
 print("done")
 

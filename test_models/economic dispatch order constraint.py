@@ -13,7 +13,7 @@ date_time_index = pd.date_range(dt.datetime(2021, 1, 1), periods=24, freq="H")
 
 es = solph.EnergySystem(timeindex=date_time_index, infer_last_interval=True)
 
-
+print(dir(es))
 
 el_bus = solph.Bus(label="electricity (energysystem level)")
 es.add(el_bus)

@@ -38,6 +38,53 @@ class Result_viewer:
         self.image_format = image_format
         self.image_dpi = dpi
         
+    def plot_general_graph(self):
+        
+        # для одного блока
+        
+        el_gen_df = self.block_grouper.get_electricity_profile()
+        all_repairs_profile = self.block_grouper.get_repairs_profile()
+        all_risks_profile = self.block_grouper.get_risks_profile()
+
+
+        font_size = 8
+        max_y = 5000
+
+        # левая ось - затраты, правая - условный риск
+        # наложить на электроэнергии ремонты на 20 % меньше вел.
+        ax_el_gen_df = el_gen_df.plot(
+            kind="area",
+            ylim=(0, max_y),
+            legend="reverse",
+            color=el_gen_df.colors,
+            linewidth=0.01,
+            figsize= (7, 5),
+            fontsize=font_size,
+        )
+
+
+        # электроэнергия
+        # накопительный риск
+        # ремонты всех видов
+        # затраты ремонтов
+        # накопительная стоимость ремонтов
+        # fig = plt.gcf()
+        
+        # if self.save_image_flag:
+        #     self._save_image(fig) 
+
+
+    # def _save_image(self, fig):
+    #         fname = (
+    #             get_file_name_with_auto_number(self.image_folder, self.scenario, "png"),
+    #         )
+    #         fig.savefig(
+    #             fname=fname,
+    #             bbox_inches="tight",
+    #             dpi=600,
+    #             transparent=True,
+    #         )
+        
         
     def plot_electricity_generation_profile(self):
         
@@ -306,30 +353,7 @@ class Result_viewer:
             self._save_image(fig) 
 
         
-    def plot_general_graph(self):
-        pass
-        # электроэнергия
-        # события рисков
-        # накопительный риск
-        # ремонты всех видов
-        # стоимость ремонтов
-        # накопительная стоимость ремонтов
-        # fig = plt.gcf()
-        
-        # if self.save_image_flag:
-        #     self._save_image(fig) 
 
-
-    # def _save_image(self, fig):
-    #         fname = (
-    #             get_file_name_with_auto_number(self.image_folder, self.scenario, "png"),
-    #         )
-    #         fig.savefig(
-    #             fname=fname,
-    #             bbox_inches="tight",
-    #             dpi=600,
-    #             transparent=True,
-    #         )
             
             
             

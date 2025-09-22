@@ -5,6 +5,7 @@ import pandas as pd
 
 from src.npp_load_factor_calculator.constraint_processor import Constraint_processor
 from src.npp_load_factor_calculator.custom_model import Custom_model
+from src.npp_load_factor_calculator.utilites import check_sequential_years
 
 
 class Oemof_model:
@@ -21,9 +22,12 @@ class Oemof_model:
         t_delta = datetime(end_year + 1, 1, 1, 0, 0, 0) - datetime(start_year, 1, 1, 0, 0, 0)
         first_time_step = datetime(start_year, 1, 1, 0, 0, 0)
         periods_count = t_delta.days * 24
+        periods_count += 1
         date_time_index = pd.date_range(first_time_step, periods=periods_count, freq="h")
         self.oemof_es = solph.EnergySystem(timeindex=date_time_index, infer_last_interval=True)
+        self.oemof_es.custom_time_index = date_time_index
        
+
     
     def init_custom_model(self, custom_scenario=None, custom_oemof_es = None):
         self.scenario = custom_scenario or self.scenario
@@ -35,17 +39,13 @@ class Oemof_model:
     
     
     def add_constraints(self, constraints_processor):
-        constraints_processor.apply_default_risk_constr()
-        # constraints_processor.apply_storage_charge_discharge_constr()
-        # constraints_processor.apply_source_converter_n_n_plus_1_constr()
-        # constraints_processor.apply_repairing_in_single_npp()
-        # constraints_processor.apply_repairing_type_for_different_npp()
-
+        constraints_processor.apply_equal_status()
+        constraints_processor.apply_no_equal_status()
 
 
     def launch_solver(self):
         model = solph.Model(self.oemof_es)
-        constraints = self.custom_es.get_constraints()
+        constraints = self.oemof_es.constraints
         self.add_constraints(Constraint_processor(model, constraints))
         print("модель сформирована")
         self.solver = self.solver_settings["solver"]
