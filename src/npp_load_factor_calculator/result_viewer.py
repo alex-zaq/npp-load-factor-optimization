@@ -38,13 +38,13 @@ class Result_viewer:
         self.image_format = image_format
         self.image_dpi = dpi
         
-    def plot_general_graph(self):
+    def plot_general_graph(self, block):
         
-        # для одного блока
         
-        el_gen_df = self.block_grouper.get_electricity_profile()
-        all_repairs_profile = self.block_grouper.get_repairs_profile()
-        all_risks_profile = self.block_grouper.get_risks_profile()
+        el_gen_df = self.block_grouper.get_electricity_profile(block)
+        risks_df = self.block_grouper.get_risks_profile(block)
+        repairs_df = self.block_grouper.get_repairs_profile(block, part=1)
+        cost_df = self.block_grouper.get_cost_profile(block, cumulative=False)
 
 
         font_size = 8

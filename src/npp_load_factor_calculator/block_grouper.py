@@ -29,49 +29,45 @@ class Custom_block:
 
 
     def get_risks_profile(self):
-        main_risk_label = self.main_risk_plot["label"]        
-        main_risk_storage = self.npp_block.main_risk_storage
-        results = solph.views.node(self.results, main_risk_storage.label)["sequences"].dropna()
         res_df = pd.DataFrame()
-        res_df[main_risk_label] = results[(main_risk_storage.label, "None"), "storage_content"]
-        res_df = res_df.clip(lower=0)
+        colors = []
+        for risk_label, risk_plot_data in self.risks_plot_dict.items():
+            colors.append(risk_plot_data["color"])
+            storage = risk_plot_data["storage"]
+            results = solph.views.node(self.results, storage.label)["sequences"].dropna()
+            res_df[risk_label] = results[(storage.label, "None"), "storage_content"]
+            res_df = res_df.clip(lower=0)
+        res_df.colors = colors
         return res_df
         
 
     def get_repair_status_profile_dict(self):
-        res_dict = {}
-        repair_nodes = self.npp_block.repair_nodes
-        for repair_name in repair_nodes:
-            label = f"{repair_name.label}"
-            repair_block = repair_nodes[repair_name]["converter_npp"]
-            output_bus = repair_block.output_pair[0][1]
+        res_df = pd.DataFrame()
+        colors = []
+        for repair_label, repair_plot_data in self.repair_plot_dict.items():
+            colors.append(repair_plot_data["color"])
+            block = repair_plot_data["block"]
+            output_bus = block.outputs_pair[0][1]
             results = solph.views.node(self.results, output_bus.label)["sequences"].dropna()
-            res_dict[label] = results[((repair_block.label, output_bus.label), "status")]
-        return res_dict
-    
-    
+            res_df[repair_label] = results[((repair_plot_data.label, output_bus.label), "status")]
+        res_df.colors = colors
+        return res_df
+        
     def get_cost_profile_for_repairs_dict(self):
-        repair_active_profile_dict = self.get_repair_status_profile_dict(mode="status")
-        res_dict = {}
-        for repair_name in repair_active_profile_dict:
-            startup_cost = self.npp_block.repair_nodes[repair_name]["converter_npp"]["startup_cost"]
-            repair_active_profile_dict[repair_name].to_numpy()
-            res_dict[repair_name] = np.where(repair_active_profile_dict[repair_name] == 1, startup_cost, 0)
-        return res_dict
-    
-    
-    def get_cost_abs_value_for_repairs_dict(self):
-        res = self.get_cost_profile_for_repairs_dict()
-        res = {repair_name: repair_array.sum() for repair_name, repair_array in res.items()}
-        return res
-    
-    
-    def get_total_cost_profile(self):
-        cost_profile_dict = self.get_cost_profile_for_repairs_dict()
-        res = pd.DataFrame({k:v for k,v in cost_profile_dict.items()})
-        res = res.sum(axis=1)
-        res.name = "cost"
-        return res
+        res_df = pd.DataFrame()
+        colors = []
+        for repair_label, repair_plot_data in self.repair_plot_dict.items():
+            colors.append(repair_plot_data["color"])
+            block = repair_plot_data["block"]
+            output_bus = block.outputs_pair[0][1]
+            startup_cost = block.startup_cost
+            results = solph.views.node(self.results, output_bus.label)["sequences"].dropna()
+            res_df[repair_label] = results[((repair_plot_data.label, output_bus.label), "status")]
+            res_df[repair_label]  = res_df[repair_label] * startup_cost
+        res_df = res_df.sum(axis=1)
+        res_df.colors = colors
+        return res_df
+###############################################################################################################    
     
     
     def get_all_helper_profiles_dict(self):
@@ -399,26 +395,46 @@ class Block_grouper:
                 self.electr_groups.append(Custom_block(custom_block["block"][0]))
                 self.electr_plot = {"label": label, "color": custom_block["color"]}
         
-            for custom_block in self.electr_groups:
-                risk_plot_dict = {}
-                for label, risk_data in risk_options.items():
-                    risk_plot_dict[label] = {"risk_name": risk_data["risk"], "label": label, "color": custom_block["color"]}
-                custom_block.risks_plot_dict = risk_plot_dict
-                        
-            for custom_block in self.electr_groups:
-                repair_plot_dict = {}
-                for label, repair_data in repair_cost_options.items():
-                    repair_plot_dict[label] = {"repair_id": repair_data["id "], "label": label, "color": repair_data["color"]}
-                custom_block.repair_plot_dict = repair_plot_dict 
         
             for custom_block in self.electr_groups:
+                for label, risk_data in risk_options.items():
+                    if risk_data["risk"]  in  custom_block.block.risks_storages:
+                        if not hasattr(custom_block, "risks_plot_dict"):
+                            custom_block.risks_plot_dict = {
+                                "label": label,
+                                "color": risk_data["color"],
+                                "storage": custom_block.block.risks_storages[risk_data["risk"]]}
+                        else:
+                            custom_block.risks_plot_dict.update(
+                                {"label": label,
+                                "color": risk_data["color"],
+                                "storage": custom_block.block.risks_storages[risk_data["risk"]]})
+                            
+                                                
+            for custom_block in self.electr_groups.values():
+                for label, repair_data in repair_cost_options.items():
+                    if repair_data["id "] in custom_block.block.repair_blocks:
+                        if not hasattr(custom_block, "repair_plot_dict"):
+                            custom_block.repair_plot_dict = {
+                                "label": label,
+                                "color": repair_data["color"],
+                                "repair_block": custom_block.block.repair_blocks[repair_data["id"]]
+                                }
+                        else:
+                            custom_block.repair_plot_dict.update(
+                                {"label": label,
+                                "color": repair_data["color"],
+                                "repair_block": custom_block.block.repair_blocks[repair_data["id"]]}
+                            )
+        
+            for custom_block in self.electr_groups.values():
                 for label, repair_cost_data in repair_cost_options.items():
                     if custom_block.block is repair_cost_data["block"][0]:
                         custom_block.repair_cost_plot = {"label": label, "color": repair_cost_data["color"]}
 
     
     def get_electricity_profile(self, block):
-        custom_block = [custom_block for custom_block in self.electr_groups if custom_block.block is block[0]][0]
+        custom_block = [custom_block for custom_block in self.electr_groups if custom_block.block is block][0]
         res = pd.DataFrame()
         colors = []
         res[custom_block.electr_plot["label"]] = custom_block.get_electricity_profile()
@@ -428,32 +444,21 @@ class Block_grouper:
    
     
     def get_risks_profile(self, block):
-        custom_block = [custom_block for custom_block in self.electr_groups if custom_block.block is block[0]][0]
-        res = pd.DataFrame()
-        colors = []       
-        res[custom_block.risks_plot["label"]] = custom_block.get_risks_profile()
-        colors.append(custom_block.main_risk_plot["color"])
-        res.colors = colors
+        custom_block = [custom_block for custom_block in self.electr_groups if custom_block.block is block][0]
+        res = custom_block.get_risks_profile()
         return res
     
     
-    def get_repair_profile(self, block):
-        custom_block = [custom_block for custom_block in self.electr_groups if custom_block.block is block[0]][0]
-        res = pd.DataFrame()
-        colors = []
-        res[custom_block.repair_cost_plot["label"]] = custom_block.get_repair_profile()
-        colors.append(custom_block.repair_cost_plot["color"])
-        res.colors = colors
+    def get_repairs_profile(self, block, part=1):
+        custom_block = [custom_block for custom_block in self.electr_groups if custom_block.block is block][0]
+        res = custom_block.get_repairs_profile()
+        res *= custom_block.block.nominal_power * part
         return res
     
     
     def get_cost_profile(self, block, cumulative=False):
         custom_block = [custom_block for custom_block in self.electr_groups if custom_block.block is block[0]][0]
-        res = pd.DataFrame()
-        colors = []
-        res[custom_block.repair_cost_plot["label"]] = custom_block.get_cost_profile()
-        colors.append(custom_block.repair_cost_plot["color"])
-        res.colors = colors
+        res = custom_block.get_cost_profile()
         if cumulative:
             res = res.cumsum()
         return res
