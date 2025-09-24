@@ -41,7 +41,7 @@ class Wrapper_source(Wrapper_base):
         if self.block:
             return self.block
         
-        self._output_flow = self.get_nonconvex_flow()
+        self._output_flow = self._get_nonconvex_flow()
         
         self.block = solph.components.Source(
             label=self.label,

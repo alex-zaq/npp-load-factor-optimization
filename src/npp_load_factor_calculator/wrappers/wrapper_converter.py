@@ -43,16 +43,31 @@ class Wrapper_converter(Wrapper_base):
             return self.block
         
         self._input_flow = solph.Flow()
-        self._output_flow = self.get_nonconvex_flow()
+        self._output_flow = self._get_nonconvex_flow()
 
+
+        inputs = {}
         
-        input_bus = self.options["input_bus"]
-        output_bus = self.options["output_bus"]
+        input_bus = self.options.get("input_bus")
+        output_bus = self.options.get("output_bus")
+
+        if input_bus:
+            inputs = {input_bus: self._input_flow}
+            
+        if output_bus:
+            outputs = {output_bus: self._output_flow}
+        
+        if second_input_bus := self.options.get("second_input_bus"):
+            inputs[second_input_bus] = solph.Flow()
+            
+        if second_output_bus := self.options.get("second_output_bus"):
+            outputs[second_output_bus] = solph.Flow()
+        
 
         self.block = solph.components.Converter(
             label=self.label,
-            inputs={input_bus: self._input_flow},
-            outputs={output_bus: self._output_flow},
+            inputs=inputs,
+            outputs=outputs,
         )
         
         self.block.inputs_pair = [(input_bus, self.block)]

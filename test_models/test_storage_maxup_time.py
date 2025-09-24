@@ -84,11 +84,7 @@ solph.constraints.limit_active_flow_count_by_keyword(
     model, "keyword", lower_limit=0, upper_limit=1
 )
 
-# solph.constraints.equate_variables(
-#     model,
-#     model.NonConvexFlowBlock.status[charger_for_storage, storage_in_bus, 4],
-#     model.NonConvexFlowBlock.status[cheap_converter, el_bus, 5],
-# )
+
 
 
 

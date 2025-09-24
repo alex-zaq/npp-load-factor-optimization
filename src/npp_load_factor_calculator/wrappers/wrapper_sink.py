@@ -34,7 +34,7 @@ class Wrapper_sink(Wrapper_base):
         if self.block:
             return self.block
         
-        self._input_flow = self.get_nonconvex_flow()
+        self._input_flow = self._get_nonconvex_flow()
 
         input_bus = self.options["input_bus"]
         

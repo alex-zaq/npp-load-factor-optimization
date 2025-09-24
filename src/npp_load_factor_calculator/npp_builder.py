@@ -11,6 +11,7 @@ from src.npp_load_factor_calculator.utilites import (
     get_months_start_points,
     plot_array,
 )
+from src.npp_load_factor_calculator.wrappers.wrapper_converter import Wrapper_converter
 from src.npp_load_factor_calculator.wrappers.wrapper_sink import Wrapper_sink
 from src.npp_load_factor_calculator.wrappers.wrapper_source import Wrapper_source
 
@@ -194,10 +195,11 @@ class NPP_builder:
                         "nominal_power": 1,
                         "min": 0,
                         "minup_time": options["duration"],
-                        "startup_cost": options["startup_cost"]
+                        "startup_cost": options["startup_cost"],
+                        "min_downtime": options["min_downtime"]
                     })
                     repair_source_builder.add_max_up_time(options["duration"])
-                    repair_source_builder.create_pair_equal_status(npp_block_builder)
+                    # repair_source_builder.create_pair_equal_status(npp_block_builder)
                     repair_source_builder.set_info("forced_in_period", options.get("forced_in_period"))
                     self._add_forced_active_if_required(repair_source_builder, options.get("forced_in_period"))
                     repair_source_builder.set_info("startup_cost", options["startup_cost"])
@@ -216,16 +218,18 @@ class NPP_builder:
             if repairs_npp_no_stop_reducing:
                 for name, options in repairs_npp_no_stop_reducing.items():
                     selected_risk_bus_set = all_risk_set & options["risk_reducing"].keys()
-                    repair_source_builder = Wrapper_source(self.es, f"{npp_block_builder.label}_{name}_repair_source" )
+                    repair_source_builder = Wrapper_converter(self.es, f"{npp_block_builder.label}_{name}_repair_source" )
                     repair_source_builder.update_options({
                         "output_bus": bufer_bus,
                         "nominal_power": 1,
                         "min": 0,
                         "minup_time": options["duration"],
-                        "startup_cost": options["startup_cost"]
+                        "startup_cost": options["startup_cost"],
+                        "min_downtime": options["min_downtime"],
+                        "max_startup": options["max_startup"]
                     })
                     repair_source_builder.add_max_up_time(options["duration"])
-                    repair_source_builder.create_pair_equal_status(npp_block_builder)
+                    # repair_source_builder.create_pair_equal_status(npp_block_builder)
                     repair_source_builder.set_info("forced_in_period", options.get("forced_in_period"))
                     repair_source_builder.set_info("startup_cost", options["startup_cost"])
                     repair_source_builder.set_info("npp_stop_required", False)

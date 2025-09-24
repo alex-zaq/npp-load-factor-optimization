@@ -13,6 +13,7 @@ class Wrapper_base:
         self.init_constraints_for_es()
         self.label = label
         self.options = {}   
+        self.alt_options = {}
         self.info = {}
         self.keywords = {}
         self.constraints = defaultdict(list)
@@ -123,13 +124,14 @@ class Wrapper_base:
     
         storage_in_bus = bus_factory.create_bus(f"{self.label}_max_up_time_storage_in_bus")
         storage_out_bus = bus_factory.create_bus(f"{self.label}_max_up_time_storage_out_bus")
-        bufer_bus = bus_factory.create_bus(f"{self.label}_max_up_time_buffer_bus", balanced=False)
+        # bufer_bus = bus_factory.create_bus(f"{self.label}_max_up_time_buffer_bus", balanced=False)
 
         block_power = self.options["nominal_power"]
 
         
         storage_control = solph.components.GenericStorage(
             label=f"{self.label}_max_up_time_storage",
+            initial_storage_level=0,
             nominal_storage_capacity=max_uptime * block_power ,
             inputs={storage_in_bus: solph.Flow()},
             outputs={storage_out_bus: solph.Flow()},
@@ -145,19 +147,24 @@ class Wrapper_base:
             "output_bus": storage_in_bus,
             "min": 0,
             })
+        
+        self.update_options({"second_input_bus": storage_out_bus})
+        charger_builder.create_pair_no_equal_status(self)
         charger_builder.build()
         
-        max_uptime_block_builder = self.create_wrapper_converter_builder(self.es, f"{self.label}_max_up_time_control_converter")
-        max_uptime_block_builder.update_options({
-            "nominal_power": block_power,
-            "output_bus": bufer_bus,
-            "input_bus": storage_out_bus,
-            "min": 1,
-            })
         
-        max_uptime_block_builder.create_pair_equal_status(self)
-        max_uptime_block_builder.create_pair_no_equal_status(charger_builder)
-        max_uptime_block_builder.build()
+        
+        # max_uptime_block_builder = self.create_wrapper_converter_builder(self.es, f"{self.label}_max_up_time_control_converter")
+        # max_uptime_block_builder.update_options({
+        #     "nominal_power": block_power,
+        #     "output_bus": bufer_bus,
+        #     "input_bus": storage_out_bus,
+        #     "min": 1,
+        #     })
+        
+        # max_uptime_block_builder.create_pair_equal_status(self)
+        # max_uptime_block_builder.create_pair_no_equal_status(charger_builder)
+        # max_uptime_block_builder.build()
 
             
     def add_startup_cost_by_mask(self, mask):
@@ -186,7 +193,7 @@ class Wrapper_base:
                     self.es.constraints["equal_status"].append((pair_1, pair_2))
 
 
-    def get_nonconvex_flow(self):
+    def _get_nonconvex_flow(self):
         if "fix" in self.options:
             self.options["min"] = None
             self.options["max"] = None
@@ -197,7 +204,9 @@ class Wrapper_base:
                 fix = self.options.get("fix"),
                 variable_costs=self.options.get("var_cost", 0),
                 nonconvex=solph.NonConvex(
+                    maximum_startups=self.options.get("max_startup", None),
                     minimum_uptime=self.options.get("min_uptime", 0),
+                    minimum_downtime=self.options.get("min_downtime", 0),
                     startup_costs=self.options.get("startup_cost", 0),
                     shutdown_costs=self.options.get("shutdown_cost", 0),
                     ),
