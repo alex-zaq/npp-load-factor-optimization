@@ -42,9 +42,9 @@ class Result_viewer:
         
         
         el_gen_df = self.block_grouper.get_electricity_profile(block)
-        risks_df = self.block_grouper.get_risks_profile(block)
-        repairs_df = self.block_grouper.get_repairs_profile(block, part=1)
-        cost_df = self.block_grouper.get_cost_profile(block, cumulative=False)
+        # risks_df = self.block_grouper.get_risks_profile(block)
+        # repairs_df = self.block_grouper.get_repairs_profile(block, part=1)
+        # cost_df = self.block_grouper.get_cost_profile(block, cumulative=False)
 
 
         font_size = 8
@@ -84,6 +84,36 @@ class Result_viewer:
     #             dpi=600,
     #             transparent=True,
     #         )
+    
+        fig = plt.gcf()
+        ax_el_gen_df.tick_params(axis="both", which="major", labelsize=font_size - 2)
+        ax_el_gen_df.tick_params(axis="both", which="minor", labelsize=font_size - 2)
+        plt.xlabel("Время, часы", labelpad=0, fontsize=font_size - 2)
+        plt.ylabel("Производство электроэнергии, МВт$\cdot$ч", labelpad=5, fontsize=font_size - 2)
+        fig.canvas.manager.set_window_title("Почасовая генерация электроэнергии")
+        fig.set_dpi(150)
+        
+        center_matplotlib_figure(fig, extra_y=-60, extra_x=40)
+        
+        plt.legend(
+            loc="upper center",
+            # bbox_to_anchor=(0.5, 1),
+            fontsize=font_size - 2,
+            # ncols=4,
+            # ncol=2,
+            reverse=True,
+            labelspacing=2,
+            edgecolor="None",
+            facecolor="none",
+        )
+    
+        plt.show(block=True)
+        
+        
+        if self.save_image_flag:
+            self._save_image(fig, self.image_dpi) 
+        
+        
         
         
     def plot_electricity_generation_profile(self):

@@ -54,6 +54,8 @@ class NPP_builder:
     def add_risk_options(self, npp_block_builder, risk_options):
         
         if not risk_options["status"]:
+            npp_block_builder.set_info("risk_out_bus_dict", {})
+            npp_block_builder.set_info("risks_storages", {})
             return
         
         
@@ -92,6 +94,7 @@ class NPP_builder:
     def add_repair_options(self, npp_block_builder, repair_options):
     
         if not repair_options["status"]:
+            npp_block_builder.set_info("repairs_blocks", {})
             return
         
         options = repair_options["options"]
@@ -238,7 +241,7 @@ class NPP_builder:
                         sink_builder.create_pair_equal_status(repair_source_builder)
                         sink_builder.build()
                         
-        npp_block_builder.set_info("repair_types_dict", repair_blocks)
+        npp_block_builder.set_info("repairs_blocks", repair_blocks)
         
     def _add_forced_active_if_required(self, repair_source_builder, forced_in_period):
         if forced_in_period:

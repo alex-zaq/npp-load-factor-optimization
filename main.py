@@ -89,7 +89,7 @@ scen = {
             "risk_options": {
                 "status": True,
                 "risks": {
-                    "r1": {"value": get_r(0.2), "max": 1, "start_risk": 0},
+                    "r1": {"value": get_r(0.12), "max": 1, "start_risk": 0},
                     # "r2": {"value": get_r(0.1), "max": 1, "start_risk": 0},
                     # "r3": {"value": get_r(0.1), "max": 1, "start_risk": 0},
                 }},
@@ -159,17 +159,17 @@ block_grouper.set_options(
         "r2-риск": {"risk_name": "r2", "style":"-", "color": "#1417d1"},
         "r3-риск": {"risk_name": "r3", "style":"-", "color": "#10c42e"},
     },
-    repair_options={
+    repairs_options={
         "НО-1": {"id": 0, "color": "#009900"},
         "НО-2": {"id": 1, "color": "#00b300"},
         "ТР-1": {"id": 2, "color": "#0400ff"},
         "ТР-2": {"id": 3, "color": "#0080ff"},
         "КР-1": {"id": 4, "color": "#ff4000"},
     },
-    repair_cost_options={
-        "БелАЭС (блок 1)-затраты": {"block": [bel_npp_block_1], "style":"-", "color": "#18be2f"},
-        "БелАЭС (блок 2)-затраты": {"block": [bel_npp_block_2], "style":"-", "color": "#ff7f0e"},
-        "Новая АЭС (блок 1)-затраты": {"block": [new_npp_block_1], "style":"-", "color": "#1f77b4"},
+    repairs_cost_options={
+        "БелАЭС (блок 1)-затраты": {"block": bel_npp_block_1, "style":"-", "color": "#18be2f"},
+        "БелАЭС (блок 2)-затраты": {"block": bel_npp_block_2, "style":"-", "color": "#ff7f0e"},
+        "Новая АЭС (блок 1)-затраты": {"block": new_npp_block_1, "style":"-", "color": "#1f77b4"},
     }  
 )
 
@@ -183,7 +183,7 @@ result_viewer.set_image_flag(False)
 # result_viewer.set_image_flag(True)
 result_viewer.set_image_options(folder="./images", image_format="jpg", dpi=600)
 
-result_viewer.plot_general_graph()
+result_viewer.plot_general_graph(bel_npp_block_1)
 
 # result_viewer.plot_electricity_generation_profile()
 # result_viewer.plot_main_risk_events_profile()
@@ -199,6 +199,51 @@ result_viewer.plot_general_graph()
 # control_block_viewer.plot_storage_profiles(mode = "storage_main_risk", flow_mode = "output")
 
 print("done")
+
+
+# добавить стартовый риск
+# почасовой вклад в риск (сразу все риски)
+# возможность изменение кпд переключателей топлива для учета разного вклада в понижение рисков
+# для ремонтов требущих отключение блока добавить промежуточный блок со связья блоком (upper 1)
+# запрет на одновременность работы промежуточных блоков
+# для учета требования 30 дневной остановки добавить storage c mindowntime и фикс. source
+# учесть паузу между ремонтами (расширить период и занулить доступности)
+# фиксировать ремонты для показа большей целевой функции
+# зеркальные non-convex source для нейтр. событий на которые попали ремонты от 1 до 3 на каждый вид ремонта в каждом блоке аэс
+# отмечать какие ремонты могут нейтр. аварий событие 
+# переделать расчет фикс ав. событий
+# переключатель нейтролизуемого риска (от 1 до 3) в качестве input через сonverter_repair
+# динам изменением maxY
+# objective value extract
+# solution_processor.write_excel_file("test.xlsx")
+# result_plotter.plot_electricity_generation_profile()
+# result_plotter.plot_risk_events_profile()
+# result_plotter.plot_cumulative_risk_profile()
+# result_plotter.plot_repair_cost_profile()
+# параметры для записи и чтения у компонентов
+# +-сделать block_grouper
+# +-сделать result_viewer
+# мин. фукц. класса oemof_model
+# реализация фиксированного времени работы на ном. мощности
+# большой интервал времени 5 лет
+# увеличение рисков по определенным во времени событием и штатной работы аэс
+# добавить 3-4 сценария
+# блок-схема
+# 4 года, много событий, кокурирующие ремонты, 1 блок, 2 блока, 3 блока
+# взять реальные значения из двух источников
+# вывод в эксель
+# запись в эксель - числа - графика- сценарий - настройки решателя
+
+
+
+
+
+
+
+
+
+
+
 
 
 # Применение методов линейно-целочисленного программирования - 40 стр
@@ -227,40 +272,10 @@ print("done")
 
 
 
-# почасовой вклад в риск (сразу все риски)
-# возможность изменение кпд переключателей топлива для учета разного вклада в понижение рисков
-# для ремонтов требущих отключение блока добавить промежуточный блок со связья блоком (upper 1)
-# запрет на одновременность работы промежуточных блоков
-# для учета требования 30 дневной остановки добавить storage c mindowntime и фикс. source
-# учесть паузу между ремонтами (расширить период и занулить доступности)
 
 
 
 
 
 
-# фиксировать ремонты для показа большей целевой функции
-# зеркальные non-convex source для нейтр. событий на которые попали ремонты от 1 до 3 на каждый вид ремонта в каждом блоке аэс
-# отмечать какие ремонты могут нейтр. аварий событие 
-# переделать расчет фикс ав. событий
-# переключатель нейтролизуемого риска (от 1 до 3) в качестве input через сonverter_repair
-# динам изменением maxY
-# objective value extract
-# solution_processor.write_excel_file("test.xlsx")
-# result_plotter.plot_electricity_generation_profile()
-# result_plotter.plot_risk_events_profile()
-# result_plotter.plot_cumulative_risk_profile()
-# result_plotter.plot_repair_cost_profile()
-# параметры для записи и чтения у компонентов
-# +-сделать block_grouper
-# +-сделать result_viewer
-# мин. фукц. класса oemof_model
-# реализация фиксированного времени работы на ном. мощности
-# большой интервал времени 5 лет
-# увеличение рисков по определенным во времени событием и штатной работы аэс
-# добавить 3-4 сценария
-# блок-схема
-# 4 года, много событий, кокурирующие ремонты, 1 блок, 2 блока, 3 блока
-# взять реальные значения из двух источников
-# вывод в эксель
-# запись в эксель - числа - графика- сценарий - настройки решателя
+

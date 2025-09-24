@@ -8,8 +8,8 @@ from oemof import solph
 
 class Custom_block:
 
-    def __init__(self, npp_block):
-        self.npp_block = npp_block
+    def __init__(self, block):
+        self.block = block
         self.results = self.__class__.results
         self.main_risk_plot = None
         self.risk_events_plot = None
@@ -20,7 +20,7 @@ class Custom_block:
     
     
     def get_electricity_profile(self):
-        block,output_bus = self.npp_block.outputs_pair[0]     
+        block,output_bus = self.block.outputs_pair[0]     
         block_results = solph.views.node(self.results, output_bus.label)["sequences"].dropna()
         res_df = pd.DataFrame()
         res_df[block.label] = block_results[((block.label, output_bus.label), "flow")]
@@ -72,14 +72,14 @@ class Custom_block:
     
     def get_all_helper_profiles_dict(self):
         res = {}
-        if self.npp_block.risk_mode:
+        if self.block.risk_mode:
             res.update(self.get_helper_risks_profiles_dict())
 
-            if self.npp_block.default_risk_mode:
+            if self.block.default_risk_mode:
                 res.update(self.get_helper_default_profiles_dict())
 
-            if self.npp_block.repair_mode:
-                for repair_part_name in self.npp_block.repair_nodes:
+            if self.block.repair_mode:
+                for repair_part_name in self.block.repair_nodes:
                     res.update(self.get_helper_repair_profiles_dict(repair_part_name))
         return res
     
@@ -104,7 +104,7 @@ class Custom_block:
 
     def get_helper_repair_profiles_dict(self, repair_part_name):
         
-        repair_nodes_dict = self.npp_block.repair_nodes
+        repair_nodes_dict = self.block.repair_nodes
         selected_repair_node = next(k for k in repair_nodes_dict if repair_part_name in k)
         if not selected_repair_node:
             raise ValueError(f"Repair part {repair_part_name} not found")
@@ -387,18 +387,19 @@ class Block_grouper:
         Custom_block.results = self.results
     
     
-    def set_options(self, electricity_options, risk_options, repair_options, repair_cost_options):
+    def set_options(self, electricity_options, risks_options, repairs_options, repairs_cost_options):
         
         self.electr_groups = []
-        for label, custom_block in electricity_options.items():
-            if custom_block["block"][0]:
-                self.electr_groups.append(Custom_block(custom_block["block"][0]))
-                self.electr_plot = {"label": label, "color": custom_block["color"]}
+        for label, block_data in electricity_options.items():
+            if block_data["block"]:
+                custom_block = Custom_block(block_data["block"])
+                custom_block.electr_plot = {"label": label, "color": block_data["color"]}
+                self.electr_groups.append(custom_block)
         
         
             for custom_block in self.electr_groups:
-                for label, risk_data in risk_options.items():
-                    if risk_data["risk"]  in  custom_block.block.risks_storages:
+                for label, risk_data in risks_options.items():
+                    if risk_data["risk_name"]  in  custom_block.block.risks_storages:
                         if not hasattr(custom_block, "risks_plot_dict"):
                             custom_block.risks_plot_dict = {
                                 "label": label,
@@ -411,25 +412,25 @@ class Block_grouper:
                                 "storage": custom_block.block.risks_storages[risk_data["risk"]]})
                             
                                                 
-            for custom_block in self.electr_groups.values():
-                for label, repair_data in repair_cost_options.items():
-                    if repair_data["id "] in custom_block.block.repair_blocks:
+            for custom_block in self.electr_groups:
+                for label, repair_data in repairs_options.items():
+                    if repair_data["id"] in custom_block.block.repairs_blocks:
                         if not hasattr(custom_block, "repair_plot_dict"):
                             custom_block.repair_plot_dict = {
                                 "label": label,
                                 "color": repair_data["color"],
-                                "repair_block": custom_block.block.repair_blocks[repair_data["id"]]
+                                "repair_block": custom_block.block.repairs_blocks[repair_data["id"]]
                                 }
                         else:
                             custom_block.repair_plot_dict.update(
                                 {"label": label,
                                 "color": repair_data["color"],
-                                "repair_block": custom_block.block.repair_blocks[repair_data["id"]]}
+                                "repair_block": custom_block.block.repairs_blocks[repair_data["id"]]}
                             )
         
-            for custom_block in self.electr_groups.values():
-                for label, repair_cost_data in repair_cost_options.items():
-                    if custom_block.block is repair_cost_data["block"][0]:
+            for custom_block in self.electr_groups:
+                for label, repair_cost_data in repairs_cost_options.items():
+                    if custom_block.block is repair_cost_data["block"]:
                         custom_block.repair_cost_plot = {"label": label, "color": repair_cost_data["color"]}
 
     
