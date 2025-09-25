@@ -69,9 +69,9 @@ def get_dumps_file_name(scenario):
     start_year, end_year = scenario["years"][0], scenario["years"][-1]
     years = str(start_year) if start_year == end_year else f"{start_year}-{end_year}"
     active_npp_count = f"npp_count_{str(get_npp_block_active_count_by_scen(scenario))}"
-    default_str = get_default_str(scenario)
-    repair_conf_str = get_repair_conf_str(scenario)
-    res = [scen_number, scen_name, years, active_npp_count, default_str, repair_conf_str]
+    # default_str = get_default_str(scenario)
+    # repair_conf_str = get_repair_conf_str(scenario)
+    res = [scen_number, scen_name, years, active_npp_count]
     res = [item for item in res if item]
     file_name = "_".join(res)
     return file_name

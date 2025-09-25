@@ -43,7 +43,7 @@ class Result_viewer:
         
         el_gen_df = self.block_grouper.get_electricity_profile(block)
         # risks_df = self.block_grouper.get_risks_profile(block)
-        # repairs_df = self.block_grouper.get_repairs_profile(block, part=1)
+        repairs_df = self.block_grouper.get_repairs_profile(block, part=1)
         # cost_df = self.block_grouper.get_cost_profile(block, cumulative=False)
 
 

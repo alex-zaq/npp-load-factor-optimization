@@ -259,6 +259,7 @@ class NPP_builder:
         nominal_power,
         output_bus,
         var_cost,
+        min_uptime,
         risk_options,
         repair_options,
         outage_options,
@@ -268,7 +269,8 @@ class NPP_builder:
         npp_block_builder.update_options({
             "nominal_power": nominal_power,
             "output_bus": output_bus,
-            "var_cost": var_cost
+            "var_cost": var_cost,
+            "min_uptime": min_uptime
         })
         
         self.add_outage_options(npp_block_builder, outage_options)

@@ -27,7 +27,7 @@ repair_options = {
         "min_downtime": 0,
         "max_startup": 5,
         "risk_reset": set(),
-        "risk_reducing": {"r1": get_r(0.9)},
+        "risk_reducing": {"r1": get_r(0.3)},
         "npp_stop": False,
     },
     
@@ -83,6 +83,8 @@ scen = {
             "status": True,
             "nominal_power": 1170,
             "var_cost": -56.5,
+            # "min_uptime": days_to_hours(30),
+            "min_uptime": 0,
             "outage_options": {
                 "status": False,
                 "start_of_month": False,
@@ -93,7 +95,7 @@ scen = {
             "risk_options": {
                 "status": True,
                 "risks": {
-                    "r1": {"value": get_r(0.1), "max": 12*0.1, "start_risk": 0},
+                    "r1": {"value": get_r(0.1), "max": 11*0.1, "start_risk": 0},
                     # "r2": {"value": get_r(0.1), "max": 1, "start_risk": 0},
                     # "r3": {"value": get_r(0.1), "max": 1, "start_risk": 0},
                 }},
@@ -123,8 +125,8 @@ oemof_model = Oemof_model(
 
 
 solution_processor = Solution_processor(oemof_model)
-solution_processor.set_calc_mode(save_results=False)
-# solution_processor.set_calc_mode(save_results=True)
+# solution_processor.set_calc_mode(save_results=False)
+solution_processor.set_calc_mode(save_results=True)
 solution_processor.set_dumps_folder("./dumps")
 solution_processor.set_excel_folder("./excel_results")
 
@@ -133,6 +135,7 @@ solution_processor.set_excel_folder("./excel_results")
 # solution_processor.set_restore_mode(file_number="02") 
 # solution_processor.set_restore_mode(file_number="03") 
 # solution_processor.set_restore_mode(file_number="06") 
+solution_processor.set_restore_mode(file_number="11") 
 
 solution_processor.apply()
 

@@ -42,6 +42,7 @@ class Custom_model:
         if status_1:
             power_1 = self.scenario["bel_npp_block_1"]["nominal_power"]
             var_cost_1 = self.scenario["bel_npp_block_1"]["var_cost"]
+            min_uptime_1 = self.scenario["bel_npp_block_1"]["min_uptime"]
             risk_options_1 = self.scenario["bel_npp_block_1"]["risk_options"]
             repair_options_1 = self.scenario["bel_npp_block_1"]["repair_options"]
             outage_options_1 = self.scenario["bel_npp_block_1"]["outage_options"]
@@ -49,6 +50,7 @@ class Custom_model:
         if status_2:
             power_2 = self.scenario["bel_npp_block_2"]["nominal_power"]
             var_cost_2 = self.scenario["bel_npp_block_2"]["var_cost"]
+            min_uptime_2 = self.scenario["bel_npp_block_2"]["min_uptime"]
             risk_options_2 = self.scenario["bel_npp_block_2"]["risk_options"]
             repair_options_2 = self.scenario["bel_npp_block_2"]["repair_options"]
             outage_options_2 = self.scenario["bel_npp_block_2"]["outage_options"]
@@ -60,6 +62,7 @@ class Custom_model:
                 nominal_power=power_1,
                 output_bus=self.el_bus,
                 var_cost=var_cost_1,
+                min_uptime=min_uptime_1,
                 risk_options=risk_options_1,
                 repair_options=repair_options_1,
                 outage_options=outage_options_1
@@ -72,6 +75,7 @@ class Custom_model:
                 nominal_power = power_2,
                 output_bus = self.el_bus,
                 var_cost = var_cost_2,
+                min_uptime = min_uptime_2,
                 risk_options = risk_options_2,
                 repair_options = repair_options_2,
                 outage_options = outage_options_2
@@ -87,6 +91,7 @@ class Custom_model:
         if status_1:
             power_1 = self.scenario["bel_npp_block_1"]["nominal_power"]
             var_cost_1 = self.scenario["bel_npp_block_1"]["var_cost"]
+            min_uptime_1 = self.scenario["bel_npp_block_1"]["min_uptime"]
             risk_options_1 = self.scenario["bel_npp_block_1"]["risk_options"]
             repair_options_1 = self.scenario["bel_npp_block_1"]["repair_options"]
             outage_options_1 = self.scenario["bel_npp_block_1"]["outage_options"]
@@ -98,6 +103,7 @@ class Custom_model:
                 nominal_power=power_1,
                 output_bus=self.el_bus,
                 var_cost=var_cost_1,
+                min_uptime=min_uptime_1,
                 risk_options=risk_options_1,
                 repair_options=repair_options_1,
                 outage_options=outage_options_1
