@@ -47,11 +47,12 @@ energysystem.add(cheap_converter)
 control_storage = solph.components.GenericStorage(
     initial_storage_level=0,
     label="charger",
-    nominal_storage_capacity=capacity_val,
+    nominal_capacity=capacity_val,
     inputs={alt_control_bus: solph.Flow()},
     outputs={control_bus: solph.Flow()},
     balanced=False,
 )
+# print(control_storage.nominal_storage_capacity)
 energysystem.add(control_storage)
 
 

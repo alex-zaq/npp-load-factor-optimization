@@ -28,11 +28,14 @@ expense_source = solph.components.Source(
 energysystem.add(expense_source)
 
 
+
+
+
 cheap_converter = solph.components.Converter(
     label="cheap_converter",
     inputs={storage_out_bus: solph.Flow()},
     outputs={el_bus: solph.Flow(
-        nominal_value = 1500,
+        nominal_value = power_val,
         variable_costs=1,
         min = 1,
         nonconvex=solph.NonConvex(minimum_uptime=cheap_min_uptime), 

@@ -171,7 +171,7 @@ class Wrapper_base:
         mask = np.array(mask)
         startup_cost = self.options.get("startup_cost", 0)
         # shutdown_cost = self.options.get("shutdown_cost", 0)
-        self.options["startup_cost"] = np.where(mask == 1, startup_cost, 1e10)
+        self.options["startup_cost"] = np.where(mask == 1, startup_cost, 1e15)
         # self.options["shutdown_cost"] = np.where(mask_profile == 1, shutdown_cost, 1e10)
 
 
@@ -204,11 +204,12 @@ class Wrapper_base:
                 fix = self.options.get("fix"),
                 variable_costs=self.options.get("var_cost", 0),
                 nonconvex=solph.NonConvex(
+                    initial_status=self.options.get("initial_status", 0),
                     maximum_startups=self.options.get("max_startup", None),
                     minimum_uptime=self.options.get("min_uptime", 0),
                     minimum_downtime=self.options.get("min_downtime", 0),
-                    startup_costs=self.options.get("startup_cost", 0),
-                    shutdown_costs=self.options.get("shutdown_cost", 0),
+                    startup_costs=self.options.get("startup_cost", None),
+                    shutdown_costs=self.options.get("shutdown_cost", None),
                     ),
                 custom_attributes=self.keywords
                 )

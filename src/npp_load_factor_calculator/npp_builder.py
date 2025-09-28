@@ -9,6 +9,7 @@ from src.npp_load_factor_calculator.utilites import (
     get_fix_months_profile,
     get_last_step_mask,
     get_months_start_points,
+    get_start_points,
     plot_array,
 )
 from src.npp_load_factor_calculator.wrappers.wrapper_converter import Wrapper_converter
@@ -29,9 +30,10 @@ class NPP_builder:
         
         timeindex = self.es.custom_time_index
 
-        if outage_options["fixed_outage_month"]:
+        if outage_options["fixed_mode"]:
             fix_profile = get_fix_months_profile(timeindex, outage_options["fixed_outage_month"])
-            npp_block_builder.update_options({"fix": fix_profile })
+            # plot_array(fix_profile)
+            npp_block_builder.update_options({"max": fix_profile, "min": fix_profile})
             return
         
         startup_cost_mask = None
@@ -64,7 +66,7 @@ class NPP_builder:
         storage_factory = Generic_storage(self.es)
         
         risk_lst = risk_options["risks"]
-        risks_storages = {}
+        risks = {}
         
         risk_out_bus_dict = {}
         for risk_name, risk_data in risk_lst.items():
@@ -85,11 +87,12 @@ class NPP_builder:
                 input_bus = risk_bus,
                 output_bus = risk_out_bus,
                 capacity = risk_data["max"],
+                initial_storage_level=risk_data["start_risk_rel"],
             )
-            risk_data[risk_name] = storage
+            risks[risk_name] = storage
             
         npp_block_builder.set_info("risk_out_bus_dict", risk_out_bus_dict)
-        npp_block_builder.set_info("risks_storages", risks_storages)
+        npp_block_builder.set_info("risks", risks)
 
     
     def add_repair_options(self, npp_block_builder, repair_options):
@@ -112,6 +115,7 @@ class NPP_builder:
     
     
         risk_out_bus_dict = npp_block_builder.get_info("risk_out_bus_dict")
+        risks = npp_block_builder.get_info("risks")
             
         all_risk_set = set(risk_out_bus_dict.keys())
         bus_factory = Generic_bus(self.es)
@@ -122,130 +126,168 @@ class NPP_builder:
         if repairs_npp_stop:
 
             control_npp_stop_source = Wrapper_source(self.es, f"{npp_block_builder.label}_control_npp_stop_converter" )
-            control_npp_stop_source.update_options({"output_bus": bufer_bus, "nominal_power": 1, "min": 0})
+            control_npp_stop_source.update_options({"output_bus": bufer_bus, "nominal_power": 1, "min": 1})
             control_npp_stop_source.create_pair_no_equal_status(npp_block_builder)
             control_npp_stop_source.add_keyword_no_equal_status("single_npp_stop_model")
             control_npp_stop_source.build()
                         
             if repairs_npp_stop_reset:
                 for name, options in repairs_npp_stop_reset.items():
-                    selected_risk_bus_set = all_risk_set & options["risk_reset"].keys()
-                    repair_source_builder = Wrapper_source(self.es, f"{npp_block_builder.label}_{name}_repair_source" )
-                    repair_source_builder.update_options({
+                    repair_risks_dict = dict.fromkeys(options["risk_reset"])
+                    selected_risk_bus_set = all_risk_set & repair_risks_dict.keys()
+                    repair_converter_builder = Wrapper_converter(self.es, f"{npp_block_builder.label}_{name}_repair_converter" )
+                    repair_converter_builder.update_options({
                         "output_bus": bufer_bus,
                         "nominal_power": 1,
-                        "min": 0,
-                        "minup_time": options["duration"],
-                        "startup_cost": options["startup_cost"]
+                        "min": 1,
+                        "min_uptime": options["duration"],
+                        "startup_cost": options["startup_cost"],
+                        "min_downtime": options["min_downtime"],
+                        "max_startup": options["max_startup"],
+                        "initial_status": 0,
                     })
-                    repair_source_builder.add_max_up_time(options["duration"])
-                    repair_source_builder.create_pair_equal_status(control_npp_stop_source)
-                    repair_source_builder.set_info("forced_in_period", options.get("forced_in_period"))
-                    repair_source_builder.set_info("startup_cost", options["startup_cost"])
-                    repair_source_builder.set_info("npp_stop_required", True)
-                    self._add_forced_active_if_required(repair_source_builder, options.get("forced_in_period"))
-                    block = repair_source_builder.build()
+                    repair_converter_builder.add_max_up_time(options["duration"])
+                    repair_converter_builder.create_pair_equal_status(control_npp_stop_source)
+                    repair_converter_builder.set_info("forced_in_period", options.get("forced_in_period"))
+                    repair_converter_builder.set_info("startup_cost", options["startup_cost"])
+                    repair_converter_builder.set_info("npp_stop_required", True)
+                    self._add_avail_days_if_required(repair_converter_builder, options.get("start_day"))
+                    self._add_forced_active_if_required(repair_converter_builder, options.get("forced_in_period"))
+                    block = repair_converter_builder.build()
+                    block.repair_id = options["id"]
                     repair_blocks[options["id"]] = block
 
+                    sinks = {}
                     for selected_risk_bus in selected_risk_bus_set:
                         sink_builder = Wrapper_sink(self.es, f"{npp_block_builder.label}_{name}_{selected_risk_bus}_sink")
+                        sink_power = risks[selected_risk_bus].nominal_storage_capacity
                         sink_builder.update_options({
-                            "input_bus": risk_out_bus_dict[selected_risk_bus], "nominal_power": 1e10, "min": 0})
-                        sink_builder.create_pair_equal_status(repair_source_builder)
-                        sink_builder.build()
+                            "input_bus": risk_out_bus_dict[selected_risk_bus], "nominal_power": sink_power, "min": 0})
+                        sink_builder.create_pair_equal_status(repair_converter_builder)
+                        sinks[selected_risk_bus] = sink_builder.build()
+                    block.sinks = sinks
             
     
             if repairs_npp_stop_reducing:
                 for name, options in repairs_npp_stop_reducing.items():
                     selected_risk_bus_set = all_risk_set & options["risk_reducing"].keys()
-                    repair_source_builder = Wrapper_source(self.es, f"{npp_block_builder.label}_{name}_repair_source")
-                    repair_source_builder.update_options({
+                    repair_converter_builder = Wrapper_converter(self.es, f"{npp_block_builder.label}_{name}_repair_converter" )
+                    repair_converter_builder.update_options({
                         "output_bus": bufer_bus,
                         "nominal_power": 1,
-                        "min": 0,
-                        "minup_time": options["duration"],
-                        "startup_cost": options["startup_cost"]
+                        "min": 1,
+                        "min_uptime": options["duration"],
+                        "startup_cost": options["startup_cost"],
+                        "min_downtime": options["min_downtime"],
+                        "max_startup": options["max_startup"],
+                        "initial_status": 0,
                     })
-                    repair_source_builder.add_max_up_time(options["duration"])
-                    repair_source_builder.create_pair_equal_status(control_npp_stop_source)
-                    repair_source_builder.set_info("forced_in_period", options.get("forced_in_period"))
-                    repair_source_builder.set_info("startup_cost", options["startup_cost"])
-                    repair_source_builder.set_info("npp_stop_required", True)
-                    self._add_forced_active_if_required(repair_source_builder, options.get("forced_in_period"))
-                    block = repair_source_builder.build()
+                    repair_converter_builder.add_max_up_time(options["duration"])
+                    repair_converter_builder.create_pair_equal_status(control_npp_stop_source)
+                    repair_converter_builder.set_info("forced_in_period", options.get("forced_in_period"))
+                    repair_converter_builder.set_info("startup_cost", options["startup_cost"])
+                    repair_converter_builder.set_info("npp_stop_required", True)
+                    self._add_avail_days_if_required(repair_converter_builder, options.get("start_day"))
+                    self._add_forced_active_if_required(repair_converter_builder, options.get("forced_in_period"))
+                    block = repair_converter_builder.build()
                     repair_blocks[options["id"]] = block
 
+                    sinks = {}
                     for selected_risk_bus in selected_risk_bus_set:
                         sink_builder = Wrapper_sink(self.es, f"{npp_block_builder.label}_{name}_{selected_risk_bus}_sink")
                         power =  options["risk_reducing"][selected_risk_bus] / options["duration"]
                         sink_builder.update_options({
                             "input_bus": risk_out_bus_dict[selected_risk_bus], "nominal_power": power, "min": 1})
-                        sink_builder.create_pair_equal_status(repair_source_builder)
-                        sink_builder.build()
+                        sink_builder.create_pair_equal_status(repair_converter_builder)
+                        sinks[selected_risk_bus] = sink_builder.build()
+                    block.sinks = sinks
     
     
         if repairs_npp_no_stop:
             
             if repairs_npp_no_stop_reset:
                 for name, options in repairs_npp_no_stop_reset.items():
-                    selected_risk_bus_set = all_risk_set & options["risk_reset"].keys()
-                    repair_source_builder = Wrapper_source(self.es, f"{npp_block_builder.label}_{name}_repair_source" )
-                    repair_source_builder.update_options({
+                    repair_risks_dict = dict.fromkeys(options["risk_reset"])
+                    selected_risk_bus_set = all_risk_set & repair_risks_dict.keys()
+                    repair_converter_builder = Wrapper_converter(self.es, f"{npp_block_builder.label}_{name}_repair_converter" )
+                    repair_converter_builder.update_options({
                         "output_bus": bufer_bus,
                         "nominal_power": 1,
-                        "min": 0,
-                        "minup_time": options["duration"],
+                        "min": 1,
+                        "min_uptime": options["duration"],
                         "startup_cost": options["startup_cost"],
-                        "min_downtime": options["min_downtime"]
+                        "min_downtime": options["min_downtime"],
+                        "max_startup": options["max_startup"],
+                        "initial_status": 0,
                     })
-                    repair_source_builder.add_max_up_time(options["duration"])
-                    # repair_source_builder.create_pair_equal_status(npp_block_builder)
-                    repair_source_builder.set_info("forced_in_period", options.get("forced_in_period"))
-                    self._add_forced_active_if_required(repair_source_builder, options.get("forced_in_period"))
-                    repair_source_builder.set_info("startup_cost", options["startup_cost"])
-                    repair_source_builder.set_info("npp_stop_required", False)
-                    block = repair_source_builder.build()
+                    repair_converter_builder.add_max_up_time(options["duration"])
+                    repair_converter_builder.set_info("forced_in_period", options.get("forced_in_period"))
+                    self._add_avail_days_if_required(repair_converter_builder, options.get("start_day"))
+                    self._add_forced_active_if_required(repair_converter_builder, options.get("forced_in_period"))
+                    repair_converter_builder.set_info("startup_cost", options["startup_cost"])
+                    repair_converter_builder.set_info("npp_stop_required", False)
+                    block = repair_converter_builder.build()
                     repair_blocks[options["id"]] = block
 
+                    sinks = {}
                     for selected_risk_bus in selected_risk_bus_set:
                         sink_builder = Wrapper_sink(self.es, f"{npp_block_builder.label}_{name}_{selected_risk_bus}_sink")
                         sink_builder.update_options({
                             "input_bus": risk_out_bus_dict[selected_risk_bus], "nominal_power": 1e10, "min": 0})
-                        sink_builder.create_pair_equal_status(repair_source_builder)
-                        sink_builder.build()
+                        sink_builder.create_pair_equal_status(repair_converter_builder)
+                        sink = sink_builder.build()
+                        sinks[selected_risk_bus] = sink_builder.build()
+                    block.sinks = sinks
                     
     
             if repairs_npp_no_stop_reducing:
                 for name, options in repairs_npp_no_stop_reducing.items():
                     selected_risk_bus_set = all_risk_set & options["risk_reducing"].keys()
-                    repair_source_builder = Wrapper_converter(self.es, f"{npp_block_builder.label}_{name}_repair_source" )
-                    repair_source_builder.update_options({
+                    repair_converter_builder = Wrapper_converter(self.es, f"{npp_block_builder.label}_{name}_repair_converter" )
+                    repair_converter_builder.update_options({
                         "output_bus": bufer_bus,
                         "nominal_power": 1,
-                        "min": 0,
-                        "minup_time": options["duration"],
+                        "min": 1,
+                        "min_uptime": options["duration"],
                         "startup_cost": options["startup_cost"],
                         "min_downtime": options["min_downtime"],
-                        "max_startup": options["max_startup"]
+                        "max_startup": options["max_startup"],
+                        "initial_status": 0,
                     })
-                    repair_source_builder.add_max_up_time(options["duration"])
-                    # repair_source_builder.create_pair_equal_status(npp_block_builder)
-                    repair_source_builder.set_info("forced_in_period", options.get("forced_in_period"))
-                    repair_source_builder.set_info("startup_cost", options["startup_cost"])
-                    repair_source_builder.set_info("npp_stop_required", False)
-                    self._add_forced_active_if_required(repair_source_builder, options.get("forced_in_period"))
-                    block = repair_source_builder.build()
+                    repair_converter_builder.add_max_up_time(options["duration"])
+                    repair_converter_builder.set_info("forced_in_period", options.get("forced_in_period"))
+                    repair_converter_builder.set_info("startup_cost", options["startup_cost"])
+                    repair_converter_builder.set_info("npp_stop_required", False)
+                    self._add_avail_days_if_required(repair_converter_builder, options.get("start_day"))
+                    self._add_forced_active_if_required(repair_converter_builder, options.get("forced_in_period"))
+                    block = repair_converter_builder.build()
                     repair_blocks[options["id"]] = block
 
+                    sinks = {}
                     for selected_risk_bus in selected_risk_bus_set:
                         sink_builder = Wrapper_sink(self.es, f"{npp_block_builder.label}_{name}_{selected_risk_bus}_sink")
                         power =  options["risk_reducing"][selected_risk_bus] / options["duration"]
                         sink_builder.update_options({
                             "input_bus": risk_out_bus_dict[selected_risk_bus], "nominal_power": power, "min": 1})
-                        sink_builder.create_pair_equal_status(repair_source_builder)
-                        sink_builder.build()
+                        sink_builder.create_pair_equal_status(repair_converter_builder)
+                        sinks[selected_risk_bus] = sink_builder.build()
+                    block.sinks = sinks
                         
         npp_block_builder.set_info("repairs_blocks", repair_blocks)
+        
+    def _add_avail_days_if_required(self, repair_source_builder, start_day):
+        if not start_day:
+            return
+        if not start_day["status"]:
+            return
+        timeindex = repair_source_builder.es.custom_time_index
+        startup_mask = get_start_points(timeindex, start_day["days"])
+        # plot_array(startup_mask)
+        repair_source_builder.add_startup_cost_by_mask(startup_mask)
+
+
+            
+        
         
     def _add_forced_active_if_required(self, repair_source_builder, forced_in_period):
         if forced_in_period:

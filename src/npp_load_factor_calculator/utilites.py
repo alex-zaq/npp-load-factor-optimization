@@ -203,6 +203,12 @@ def get_months_start_points(date_range):
     res[(date_range.day == 1) & (date_range.hour == 0)] = 1
     return res
 
+def get_start_points(date_range, start_days_of_month_lst):
+    res = np.zeros(len(date_range))
+    for day in start_days_of_month_lst:
+        res[(date_range.day == day) & (date_range.hour == 0)] = 1
+    return res
+
 def get_every_year_first_step_mask(date_range):
     res = np.zeros(len(date_range))
     res[(date_range.hour == 0) & (date_range.day == 1) & (date_range.month == 1)] = 1

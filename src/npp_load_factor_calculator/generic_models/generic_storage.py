@@ -12,14 +12,16 @@ class Generic_storage:
         input_bus,
         output_bus,
         capacity,
-        # initial_storage_level,
+        initial_storage_level,
     ):
               
+        # initial_storage_level = initial_storage_level if initial_storage_level else None
+        
            
         storage = solph.components.GenericStorage(
             label=label,
             nominal_storage_capacity=capacity,
-            # initial_storage_level=initial_storage_level,
+            initial_storage_level=initial_storage_level,
             inputs={input_bus: solph.Flow()},
             outputs={output_bus: solph.Flow()},
             balanced=False

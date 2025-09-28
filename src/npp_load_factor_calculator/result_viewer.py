@@ -42,7 +42,7 @@ class Result_viewer:
         
         
         el_gen_df = self.block_grouper.get_electricity_profile(block)
-        # risks_df = self.block_grouper.get_risks_profile(block)
+        risks_df = self.block_grouper.get_risks_profile(block)
         repairs_df = self.block_grouper.get_repairs_profile(block, part=1)
         # cost_df = self.block_grouper.get_cost_profile(block, cumulative=False)
 
@@ -52,17 +52,65 @@ class Result_viewer:
 
         # левая ось - затраты, правая - условный риск
         # наложить на электроэнергии ремонты на 20 % меньше вел.
+        
+
+        fig, ax1 = plt.subplots()
+        
+        
         ax_el_gen_df = el_gen_df.plot(
             kind="area",
             ylim=(0, max_y),
             legend="reverse",
             color=el_gen_df.colors,
             linewidth=0.01,
-            figsize= (7, 5),
             fontsize=font_size,
+            ax= ax1
         )
+        ax_el_gen_df.set_ylabel('Производство электроэнергии, МВт$\cdot$ч', fontsize=font_size - 2)
+        ax_el_gen_df.tick_params(axis="both", which="major", labelsize=font_size - 2)
+        ax_el_gen_df.tick_params(axis="both", which="minor", labelsize=font_size - 2)
+        ax_el_gen_df.legend_.remove()
 
+        ax_repair_df = None
+        if not repairs_df.empty:
+            ax_repair_df = repairs_df.plot(
+                kind="area",
+                ylim=(0, max_y),
+                legend="reverse",
+                color=repairs_df.colors,
+                linewidth=0.01,
+                fontsize=font_size,
+                alpha=0.5,
+                ax=ax1
+            )
+            ax_el_gen_df.legend_.remove()
+        
+        
+        max_risk_val = risks_df.max().max()
+        
+        max_risk_val = 1 if max_risk_val < 1 else max_risk_val
 
+        ax_risks_df = risks_df.plot(
+            kind="line",
+            ylim=(0, max_risk_val * 1.2),
+            legend="reverse",
+            color=risks_df.colors,
+            linewidth=0.5,
+            fontsize=font_size,
+            ax=ax_repair_df.twinx() if ax_repair_df is not None else ax1.twinx()
+        )
+        ax_risks_df.set_ylabel('Условная величина риска', fontsize=font_size - 2)
+        ax_risks_df.tick_params(axis="both", which="major", labelsize=font_size - 2)
+        ax_risks_df.tick_params(axis="both", which="minor", labelsize=font_size - 2)
+        ax_risks_df.legend_.remove()
+        
+        lines, labels = ax_el_gen_df.get_legend_handles_labels()
+        # lines2, labels2 = ax_repair_df.get_legend_handles_labels()
+        lines3, labels3 = ax_risks_df.get_legend_handles_labels()
+        ax1.legend(lines  + lines3, labels + labels3, loc='upper center', fontsize=font_size - 2, ncol=3)
+                
+        
+        
         # электроэнергия
         # накопительный риск
         # ремонты всех видов
@@ -88,24 +136,24 @@ class Result_viewer:
         fig = plt.gcf()
         ax_el_gen_df.tick_params(axis="both", which="major", labelsize=font_size - 2)
         ax_el_gen_df.tick_params(axis="both", which="minor", labelsize=font_size - 2)
-        plt.xlabel("Время, часы", labelpad=0, fontsize=font_size - 2)
-        plt.ylabel("Производство электроэнергии, МВт$\cdot$ч", labelpad=5, fontsize=font_size - 2)
+        # plt.xlabel("Время, часы", labelpad=0, fontsize=font_size)
+        # plt.ylabel("Производство электроэнергии, МВт$\cdot$ч", labelpad=5, fontsize=font_size)
         fig.canvas.manager.set_window_title("Почасовая генерация электроэнергии")
         fig.set_dpi(150)
         
         center_matplotlib_figure(fig, extra_y=-60, extra_x=40)
         
-        plt.legend(
-            loc="upper center",
-            # bbox_to_anchor=(0.5, 1),
-            fontsize=font_size - 2,
-            # ncols=4,
-            # ncol=2,
-            reverse=True,
-            labelspacing=2,
-            edgecolor="None",
-            facecolor="none",
-        )
+        # plt.legend(
+        #     loc="upper center",
+        #     # bbox_to_anchor=(0.5, 1),
+        #     fontsize=font_size - 2,
+        #     # ncols=4,
+        #     # ncol=2,
+        #     reverse=True,
+        #     labelspacing=2,
+        #     edgecolor="None",
+        #     facecolor="none",
+        # )
     
         plt.show(block=True)
         
@@ -203,96 +251,6 @@ class Result_viewer:
 
         if self.save_image_flag:
             self._save_image(fig) 
-
-    
-    def plot_risk_events_profile(self):
-    
-        risk_events_df = self.block_grouper.get_risk_events_profile()
-
-        colors = risk_events_df.colors
-
-        font_size = 8
-        max_y = 5000
-            
-        ax_main_risk_df = risk_events_df.plot(
-            kind="area",
-            ylim=(0, max_y),
-            legend="reverse",
-            color=colors,
-            linewidth=0.01,
-            figsize=(7, 5),
-            fontsize=font_size,
-        )
-        
-        fig = plt.gcf()
-        ax_main_risk_df.tick_params(axis="both", which="major", labelsize=font_size - 2)
-        ax_main_risk_df.tick_params(axis="both", which="minor", labelsize=font_size - 2)
-        plt.xlabel("Время, часы", labelpad=0, fontsize=font_size - 2)
-        plt.ylabel("События риска, %", labelpad=5, fontsize=font_size - 2)
-        fig.canvas.manager.set_window_title("Обзор событий риска")
-        fig.set_dpi(150)
-        center_matplotlib_figure(fig, extra_y=-60, extra_x=40)
-        plt.legend(
-            loc="upper center",
-            # bbox_to_anchor=(0.5, 1),
-            fontsize=font_size - 2,
-            # ncols=4,
-            # ncol=2,
-            reverse=True,
-            labelspacing=2,
-            edgecolor="None",
-            facecolor="none",
-        )
-            
-        if self.save_image_flag:
-            self._save_image(fig) 
-
-
-    def plot_repair_profile(self, *, mode):
-        if mode not in ["status", "flow"]:
-            raise ValueError("Mode must be 'status' or 'flow'")
-
-        repair_df = self.block_grouper.get_repair_profile(mode=mode)
-        
-        colors = repair_df.colors
-
-        font_size = 8
-        max_y = 5000
-
-        ax_main_risk_df = repair_df.plot(
-            kind="area",
-            ylim=(0, max_y),
-            legend="reverse",
-            color=colors,
-            linewidth=0.01,
-            figsize=(7, 5),
-            fontsize=font_size,
-        )
-        
-        fig = plt.gcf()
-        ax_main_risk_df.tick_params(axis="both", which="major", labelsize=font_size - 2)
-        ax_main_risk_df.tick_params(axis="both", which="minor", labelsize=font_size - 2)
-        plt.xlabel("Время, часы", labelpad=0, fontsize=font_size - 2)
-        plt.ylabel("Статусы ремонтов" if mode == "status" else "Снижение риска от ремонтов", labelpad=5, fontsize=font_size - 2)
-        title = "Обзор ремонтов (по статусу)" if mode == "status" else "Обзор ремонтов (по потоку)"
-        fig.canvas.manager.set_window_title(title)
-        fig.set_dpi(150)
-        center_matplotlib_figure(fig, extra_y=-60, extra_x=40)
-        plt.legend(
-            loc="upper center",
-            # bbox_to_anchor=(0.5, 1),
-            fontsize=font_size - 2,
-            # ncols=4,
-            # ncol=2,
-            reverse=True,
-            labelspacing=2,
-            edgecolor="None",
-            facecolor="none",
-        )
-            
-        if self.save_image_flag:
-            self._save_image(fig) 
-
 
 
 
@@ -393,73 +351,34 @@ class Control_block_viewer:
     def __init__(self, block_grouper):
         self.block_grouper = block_grouper
         
-    def select_block(self, block):
-        if block is None:
-            raise ValueError("Block is None")
-        # try:
-        self.block_db = self.block_grouper.get_helper_block_profiles(block)
-        self.status = True
-        # except Exception as e:
-        #     self.status = False
-        #     print(e)
+
+    def plot_sinks_profile(self, block, repair_id, risk_name):
         
-        
-            
-    def plot_default_risk_profile(self):
-        
-        if not self.status:
-            return
-        
-        if not self.block_db:
-            return
-        
-        
-        default_risk_df = self.block_db["source_default_risk"]["output"]
-        
-        if default_risk_df.empty:
-            return
-        
-        
-        color = "red"
-        
-        font_size = 8
-        max_y = default_risk_df.max().max()  
-        
-        ax_default_risk_df = default_risk_df.plot(
+        sink_profile_df = self.block_grouper.get_sinks_profile(block, repair_id, risk_name)
+
+        font_size = 6
+        max_y = 1.2 * sink_profile_df.max().max()
+
+        ax_sink_profile_df = sink_profile_df.plot(
             kind="area",
-            ylim=(0, max_y * 10),
+            ylim=(0, max_y),
             legend="reverse",
-            color="#d2f319",
+            # color=color,
             linewidth=0.01,
             figsize=(7, 5),
             fontsize=font_size,
         )
         
+        ax_sink_profile_df.legend(loc="upper center", fontsize=font_size)
         fig = plt.gcf()
-        ax_default_risk_df.tick_params(axis="both", which="major", labelsize=font_size - 2)
-        ax_default_risk_df.tick_params(axis="both", which="minor", labelsize=font_size - 2)
-        plt.xlabel("Время, часы", labelpad=0, fontsize=font_size - 2)
-        plt.ylabel("default risk profile - output", labelpad=5, fontsize=font_size - 2)
         fig.set_dpi(150)
-        fig.canvas.manager.set_window_title("default risk profile - output")
-        center_matplotlib_figure(fig, extra_y=-60, extra_x=40)
-        plt.legend(
-            loc="upper center",
-            # bbox_to_anchor=(0.5, 1),
-            fontsize=font_size - 2,
-            # ncols=4,
-            # ncol=2,
-            reverse=True,
-            labelspacing=2,
-            edgecolor="None",
-            facecolor="none",
-        )
+        
         
         center_matplotlib_figure(fig, extra_y=-60, extra_x=40)
-
-
+        
         plt.show(block=True)
-        
+
+    
         
         
     def plot_source_output_profile(self, *, mode):

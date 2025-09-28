@@ -20,34 +20,38 @@ repair_options = {
     },
     "maintence-2": {
         "id": 1,
-        "status": True,
-        "startup_cost": 1e3,
-        "duration": days_to_hours(2),
+        "status": False,
+        "startup_cost": 1e5,
+        "duration": days_to_hours(5),
         # "min_downtime": days_to_hours(30),
         "min_downtime": 0,
-        "max_startup": 5,
+        "max_startup": 12,
         "risk_reset": set(),
-        "risk_reducing": {"r1": get_r(0.3)},
+        "risk_reducing": {"r1": 0.15},
+        "start_day": {"status": True, "days": [1,]},
         "npp_stop": False,
     },
     
     "light": {
         "id": 2,
-        "status": False,
-        "startup_cost": 5e6,
-        "duration": days_to_hours(5),
-        "min_downtime": days_to_hours(30),
+        "status": True,
+        "startup_cost": 15e6,
+        "duration": days_to_hours(15),
+        "min_downtime": 0,
+        "max_startup": 1,
         "risk_reset": {"r1"},
-        "risk_reducing": {"r2": 0.3},
+        "risk_reducing": {},
+        "start_day": {"status": True, "days": [1,]},
         "npp_stop": True,
     },
     "medium-1": {
         "id": 3,
         "status": False,
-        "startup_cost": 15e6,
+        "startup_cost": 5e6,
         "duration": days_to_hours(15),
-        "min_downtime": days_to_hours(30),
+        "min_downtime": 0,
         "risk_reset": {"r1","r2"},
+        "max_startup": 1,
         "risk_reducing": {},
         "npp_stop": True,
     },
@@ -86,18 +90,19 @@ scen = {
             # "min_uptime": days_to_hours(30),
             "min_uptime": 0,
             "outage_options": {
-                "status": False,
-                "start_of_month": False,
+                "status": True,
+                "start_of_month": True,
                 "allow_months": all_months - {"Jan"},
                 "planning_outage_duration": days_to_hours(30),
-                "fixed_outage_month":  set(),
+                "fixed_mode": True,
+                "fixed_outage_month":  set(["Jul"]),
             },
             "risk_options": {
                 "status": True,
                 "risks": {
-                    "r1": {"value": get_r(0.1), "max": 11*0.1, "start_risk": 0},
-                    # "r2": {"value": get_r(0.1), "max": 1, "start_risk": 0},
-                    # "r3": {"value": get_r(0.1), "max": 1, "start_risk": 0},
+                    "r1": {"id": 0, "value": get_r(0.1), "max": 7*0.1, "start_risk_rel": 0},
+                    # "r2": {"id": 1," "value": get_r(0.1), "max": 1, "start_risk": 0},
+                    # "r3": {"id": 2," "value": get_r(0.1), "max": 1, "start_risk": 0},
                 }},
             "repair_options": {
                 "status": True,
@@ -119,7 +124,7 @@ oemof_model = Oemof_model(
     solver_settings = {
         "solver": "cplex",
         "solver_verbose": True,
-        "mip_gap": 0.01
+        "mip_gap": 0.05
     } 
 )
 
@@ -135,7 +140,8 @@ solution_processor.set_excel_folder("./excel_results")
 # solution_processor.set_restore_mode(file_number="02") 
 # solution_processor.set_restore_mode(file_number="03") 
 # solution_processor.set_restore_mode(file_number="06") 
-solution_processor.set_restore_mode(file_number="11") 
+# solution_processor.set_restore_mode(file_number="09") 
+# solution_processor.set_restore_mode(file_number="15") 
 
 solution_processor.apply()
 
@@ -162,14 +168,14 @@ block_grouper.set_options(
         "Новая АЭС (блок 1)": {"block": new_npp_block_1, "color": "#1f77b4"},
     },
     risks_options={
-        "r1-риск": {"risk_name": "r1", "style":"-", "color": "#181008"},
-        "r2-риск": {"risk_name": "r2", "style":"-", "color": "#1417d1"},
-        "r3-риск": {"risk_name": "r3", "style":"-", "color": "#10c42e"},
+        "R1": {"risk_name": "r1", "style":"-", "color": "#181008"},
+        "R2": {"risk_name": "r2", "style":"-", "color": "#1417d1"},
+        "R3": {"risk_name": "r3", "style":"-", "color": "#10c42e"},
     },
     repairs_options={
-        "НО-1": {"id": 0, "color": "#009900"},
-        "НО-2": {"id": 1, "color": "#00b300"},
-        "ТР-1": {"id": 2, "color": "#0400ff"},
+        "НО-1": {"id": 0, "color": "#00FFAA"},
+        "НО-2": {"id": 1, "color": "#fdec02"},
+        "ТР-1": {"id": 2, "color": "#0b07fc"},
         "ТР-2": {"id": 3, "color": "#0080ff"},
         "КР-1": {"id": 4, "color": "#ff4000"},
     },
@@ -184,13 +190,23 @@ block_grouper.set_options(
 solution_processor.set_block_grouper(block_grouper)
 result_viewer = Result_viewer(block_grouper)
 control_block_viewer = Control_block_viewer(block_grouper)
-# control_block_viewer.select_block(bel_npp_block_1)
 
 result_viewer.set_image_flag(False)
 # result_viewer.set_image_flag(True)
 result_viewer.set_image_options(folder="./images", image_format="jpg", dpi=600)
 
 result_viewer.plot_general_graph(bel_npp_block_1)
+
+# control_block_viewer.plot_sinks_profile(bel_npp_block_1, repair_id=1, risk_name="r1")
+control_block_viewer.plot_sinks_profile(bel_npp_block_1, repair_id=2, risk_name="r1")
+
+
+
+
+
+
+
+
 
 # result_viewer.plot_electricity_generation_profile()
 # result_viewer.plot_main_risk_events_profile()
@@ -208,15 +224,13 @@ result_viewer.plot_general_graph(bel_npp_block_1)
 print("done")
 
 
-# добавить стартовый риск
+# учет штрафов за остановку
 # почасовой вклад в риск (сразу все риски)
-# возможность изменение кпд переключателей топлива для учета разного вклада в понижение рисков
 # для ремонтов требущих отключение блока добавить промежуточный блок со связья блоком (upper 1)
 # запрет на одновременность работы промежуточных блоков
 # для учета требования 30 дневной остановки добавить storage c mindowntime и фикс. source
 # учесть паузу между ремонтами (расширить период и занулить доступности)
 # фиксировать ремонты для показа большей целевой функции
-# зеркальные non-convex source для нейтр. событий на которые попали ремонты от 1 до 3 на каждый вид ремонта в каждом блоке аэс
 # отмечать какие ремонты могут нейтр. аварий событие 
 # переделать расчет фикс ав. событий
 # переключатель нейтролизуемого риска (от 1 до 3) в качестве input через сonverter_repair
