@@ -20,8 +20,11 @@ class Oemof_model:
         start_year = self.scenario["years"][0]
         end_year = self.scenario["years"][-1]
 
-        first_time_step = datetime(start_year, 1, 1, 0, 0, 0)
-        t_delta = datetime(end_year + 1, 1, 1, 0, 0, 0) - first_time_step
+        # first_time_step = datetime(start_year, 1, 1, 0, 0, 0)
+        # t_delta = datetime(end_year + 1, 1, 1, 0, 0, 0) - first_time_step
+
+        first_time_step = datetime(start_year, 1, 1)
+        t_delta = datetime(end_year + 1, 1, 1) - first_time_step
 
         periods_count = self._get_periods_count(t_delta, self.scenario["freq"])
         periods_count += 1
@@ -32,9 +35,9 @@ class Oemof_model:
 
        
     def _get_periods_count(self, t_delta, freq):
-        if freq == "d":
+        if freq == "D":
             return t_delta.days
-        elif freq == "h":
+        elif freq == "H":
             return t_delta.days * 24
 
     

@@ -118,7 +118,7 @@ class Wrapper_base:
 
         wrapper_charger_builder.build()
 
-    def add_max_up_time(self, max_uptime):
+    def add_max_uptime(self, max_uptime, coeff=1):
         
         bus_factory = Generic_bus(self.es)
     
@@ -131,7 +131,7 @@ class Wrapper_base:
         storage_control = solph.components.GenericStorage(
             label=f"{self.label}_max_up_time_storage",
             initial_storage_level=0,
-            nominal_storage_capacity=max_uptime * block_power,
+            nominal_storage_capacity=max_uptime * block_power * coeff,
             inputs={storage_in_bus: solph.Flow()},
             outputs={storage_out_bus: solph.Flow()},
             balanced=False
@@ -168,7 +168,6 @@ class Wrapper_base:
         for constraint_group_name in constraint_groups_names:
             match constraint_group_name:
                 case "no_equal_status":
-                    # возможные повторы
                     self.es.constraints["no_equal_status"].extend(self.constraints[constraint_group_name])
                 case "equal_status":
                     another_wrapper_block = self.constraints[constraint_group_name][0]

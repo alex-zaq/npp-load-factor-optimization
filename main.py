@@ -19,7 +19,7 @@ repair_options = {
     "maintence-2": {
         "id": 1,
         "status": True,
-        "startup_cost": 0,
+        "startup_cost": 1e5,
         "duration": 10,
         # "min_downtime": 30,
         "min_downtime": 0,
@@ -33,8 +33,8 @@ repair_options = {
     "light": {
         "id": 2,
         "status": True,
-        "startup_cost": 15e6,
-        "duration": 15,
+        "startup_cost": 15e3,
+        "duration": 20,
         "min_downtime": 0,
         "max_startup": 1,
         "risk_reset": {"r1"},
@@ -81,7 +81,7 @@ scen = {
         "№": 1,
         "name": "test",
         "years": [2025],
-        "freq": "h",
+        "freq": "D",
         "bel_npp_block_1": {
             "status": True,
             "nominal_power": 1170,
@@ -93,7 +93,7 @@ scen = {
                 "start_of_month": True,
                 "allow_months": all_months - {"Jan"},
                 "planning_outage_duration": 30,
-                "fixed_mode": True,
+                "fixed_mode": False,
                 "fixed_outage_month":  set(["Jul"]),
             },
             "risk_options": {
@@ -123,14 +123,14 @@ oemof_model = Oemof_model(
     solver_settings = {
         "solver": "cplex",
         "solver_verbose": True,
-        "mip_gap": 0.05
+        "mip_gap": 0.01
     } 
 )
 
 
 solution_processor = Solution_processor(oemof_model)
-# solution_processor.set_calc_mode(save_results=False)
-solution_processor.set_calc_mode(save_results=True)
+solution_processor.set_calc_mode(save_results=False)
+# solution_processor.set_calc_mode(save_results=True)
 solution_processor.set_dumps_folder("./dumps")
 solution_processor.set_excel_folder("./excel_results")
 
@@ -196,8 +196,8 @@ result_viewer.set_image_options(folder="./images", image_format="jpg", dpi=600)
 
 result_viewer.plot_general_graph(bel_npp_block_1)
 
-# control_block_viewer.plot_sinks_profile(bel_npp_block_1, repair_id=1, risk_name="r1")
-control_block_viewer.plot_sinks_profile(bel_npp_block_1, repair_id=2, risk_name="r1")
+control_block_viewer.plot_sinks_profile(bel_npp_block_1, repair_id=1, risk_name="r1")
+# control_block_viewer.plot_sinks_profile(bel_npp_block_1, repair_id=2, risk_name="r1")
 
 
 

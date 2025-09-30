@@ -12,9 +12,9 @@ class Resolution_strategy:
     @classmethod
     def create_strategy(cls, strategy_name, timeindex):
         match strategy_name:
-            case "h":
+            case "H":
                 return Hourly_resolution_strategy(timeindex)
-            case "d":
+            case "D":
                 return Daily_resolution_strategy(timeindex)
             case _:
                 raise NotImplementedError
@@ -23,6 +23,12 @@ class Resolution_strategy:
         raise NotImplementedError
 
     def convert_risk(self, risk_month_val):
+        raise NotImplementedError
+    
+    def convert_power(self, power):
+        raise NotImplementedError
+    
+    def convert_var_cost(self, var_cost):
         raise NotImplementedError
         
     def get_fix_months_profile(self, selected_months):
@@ -56,12 +62,19 @@ class Hourly_resolution_strategy(Resolution_strategy):
     
     def __init__(self, timeindex):
         super().__init__(timeindex)
+        self.coeff = 1
         
     def convert_time(self, timeintervals):
         return timeintervals * 24
 
     def convert_risk(self, risk_month_val):
         return risk_month_val/30/24
+    
+    def convert_power(self, power):
+        raise power
+    
+    def convert_var_cost(self, var_cost):
+        return var_cost
 
     def get_every_year_first_step_mask(self):
         res = np.zeros(len(self.timeindex))
@@ -85,12 +98,19 @@ class Daily_resolution_strategy(Resolution_strategy):
     
     def __init__(self, timeindex):
         super().__init__(timeindex)
+        self.coeff = 24
         
     def convert_time(self, timeintervals):
         return timeintervals
     
     def convert_risk(self, risk_month_val):
-        return risk_month_val/30
+        return risk_month_val/30/24
+    
+    def convert_power(self, power):
+        return power * 24
+    
+    def convert_var_cost(self, var_cost):
+        return var_cost * 24
     
     def get_every_year_first_step_mask(self):
         res = np.zeros(len(self.timeindex))

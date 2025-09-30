@@ -4,7 +4,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from oemof import solph
 
-date_time_index = pd.date_range(dt.datetime(2021, 1, 1), periods=20, freq="H")
+date_time_index = pd.date_range(dt.datetime(2021, 1, 1), periods=20, freq="D")
 energysystem = solph.EnergySystem(timeindex=date_time_index, infer_last_interval=True)
 
 
@@ -51,7 +51,7 @@ energysystem.add(cheap_converter)
 control_storage = solph.components.GenericStorage(
     initial_storage_level=0,
     label="control_storage",
-    nominal_storage_capacity=cheap_min_uptime * power_val,
+    nominal_storage_capacity=cheap_min_uptime * power_val * 24 ,
     inputs={storage_in_bus: solph.Flow()},
     outputs={storage_out_bus: solph.Flow()},
     balanced=False,
@@ -116,10 +116,17 @@ storage_content_df["заряд"] = storage_results[(control_storage.label, "None
 charger_df = pd.DataFrame()
 charger_df["charger"] = alt_control_bus_results[((charger_for_storage.label, storage_in_bus.label), "flow")]
 
-ax_charger = charger_df.plot(kind="line", ylim=(0, 5000))
+ax_charger = charger_df.plot(kind="line", 
+                            #  ylim=(0, 5000)
+                             )
 
-ax_storage_content = storage_content_df.plot(kind="line", ylim=(0, 5000), ax=ax_charger)
+ax_storage_content = storage_content_df.plot(kind="line",
+                                            #  ylim=(0, 5000),
+                                             ax=ax_charger)
+el_df = el_df.clip(lower=0)
 
-ax_el = el_df.plot(kind="area", ylim=(0, 5000), ax=ax_storage_content)
+ax_el = el_df.plot(kind="area",
+                #    ylim=(0, 5000),
+                   ax=ax_storage_content)
 
 plt.show(block=True)
