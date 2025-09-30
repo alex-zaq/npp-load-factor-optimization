@@ -21,6 +21,10 @@ class NPP_builder:
 
     def __init__(self, oemof_es):
         self.es = oemof_es
+        
+        
+    def set_time_resolution_strategy(self, time_resolution_strategy):
+        self.time_resolution_strategy = time_resolution_strategy
                 
               
     def add_outage_options(self, npp_block_builder, outage_options):
@@ -43,7 +47,9 @@ class NPP_builder:
             
         duration = outage_options["planning_outage_duration"]
         max_power_profile = get_avail_months_profile(timeindex, outage_options["allow_months"])
+        # plot_array(max_power_profile)
         max_profile_mask = get_every_year_first_step_mask(timeindex)
+        # plot_array(max_profile_mask)
         npp_block_builder.add_specific_status_duration_in_period(
             duration,
             max_profile_mask,
@@ -235,7 +241,6 @@ class NPP_builder:
                         sink_builder.update_options({
                             "input_bus": risk_out_bus_dict[selected_risk_bus], "nominal_power": 1e10, "min": 0})
                         sink_builder.create_pair_equal_status(repair_converter_builder)
-                        sink = sink_builder.build()
                         sinks[selected_risk_bus] = sink_builder.build()
                     block.sinks = sinks
                     
@@ -292,6 +297,7 @@ class NPP_builder:
     def _add_forced_active_if_required(self, repair_source_builder, forced_in_period):
         if forced_in_period:
             mask = get_last_step_mask(self.es.time_index)
+            # plot_array(mask)
             repair_source_builder.add_specific_status_durarion_in_period(mask, mode = "active")
             
 
@@ -307,12 +313,16 @@ class NPP_builder:
         outage_options,
     ):
         
+        grad = get_months_start_points(self.es.custom_time_index)
+        
         npp_block_builder = Wrapper_source(self.es, label)
         npp_block_builder.update_options({
             "nominal_power": nominal_power,
             "output_bus": output_bus,
             "var_cost": var_cost,
-            "min_uptime": min_uptime
+            "min_uptime": min_uptime,
+            "positive_gradient_limit": grad,
+            "negative_gradient_limit": grad,
         })
         
         self.add_outage_options(npp_block_builder, outage_options)

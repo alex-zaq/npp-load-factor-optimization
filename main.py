@@ -20,9 +20,9 @@ repair_options = {
     },
     "maintence-2": {
         "id": 1,
-        "status": False,
+        "status": True,
         "startup_cost": 1e5,
-        "duration": days_to_hours(5),
+        "duration": days_to_hours(10),
         # "min_downtime": days_to_hours(30),
         "min_downtime": 0,
         "max_startup": 12,
@@ -83,6 +83,7 @@ scen = {
         "№": 1,
         "name": "test",
         "years": [2025],
+        "freq": "h",
         "bel_npp_block_1": {
             "status": True,
             "nominal_power": 1170,
@@ -100,7 +101,7 @@ scen = {
             "risk_options": {
                 "status": True,
                 "risks": {
-                    "r1": {"id": 0, "value": get_r(0.1), "max": 7*0.1, "start_risk_rel": 0},
+                    "r1": {"id": 0, "value": get_r(0.1), "max": 7*0.1, "start_risk_rel": 0.2},
                     # "r2": {"id": 1," "value": get_r(0.1), "max": 1, "start_risk": 0},
                     # "r3": {"id": 2," "value": get_r(0.1), "max": 1, "start_risk": 0},
                 }},
@@ -224,6 +225,7 @@ control_block_viewer.plot_sinks_profile(bel_npp_block_1, repair_id=2, risk_name=
 print("done")
 
 
+# перейти к дням или неделям
 # учет штрафов за остановку
 # почасовой вклад в риск (сразу все риски)
 # для ремонтов требущих отключение блока добавить промежуточный блок со связья блоком (upper 1)

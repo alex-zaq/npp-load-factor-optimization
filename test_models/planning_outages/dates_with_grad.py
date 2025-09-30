@@ -41,7 +41,7 @@ converter_1 = solph.components.Converter(
     inputs={control_bus: solph.Flow()},
     outputs={el_bus: solph.Flow(
         nominal_value = 100,
-        min = 0,
+        # min = 0,
         max=max_lst,
         nonconvex=solph.NonConvex(
             minimum_uptime=5,
@@ -50,10 +50,12 @@ converter_1 = solph.components.Converter(
         variable_costs=999,
         full_load_time_max=5,
         full_load_time_min=5,
-        positive_gradient_limit=[0,0,0,0,0,  0,0,1,0,1,   1,0,0,0,0,  0,0,0,0,0],
-        negative_gradient_limit=1
+
+        # positive_gradient_limi[0,1,2,3,4,  5,6,7,8,9, 10,11,12,0,0,  0,0,0,0,0],
+        positive_gradient_limit=[0,0,0,0,0,  0,0,1,0,0,   0,0,0,0,0,  0,0,0,0,0],
+        negative_gradient_limit=[0,0,0,0,0,  0,0,0,0,0,   0,0,1,0,0,  0,0,0,0,0],
+        # negative_gradient_limit=1
         # positive_gradient_limit=0,
-        # negative_gradient_limit=[0,0,0,0,1,  0,0,0,0,0,   0,0,0,0,0,  0,0,0,0,0],
         # negative_gradient_limit=[0,0,0,1,1,  1,1,1,1,1,   1,1,1,1,1,  1,1,1,1,1],
         )},
 )

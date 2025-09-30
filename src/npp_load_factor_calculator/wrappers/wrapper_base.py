@@ -203,6 +203,8 @@ class Wrapper_base:
                 max = self.options.get("max"),
                 fix = self.options.get("fix"),
                 variable_costs=self.options.get("var_cost", 0),
+                positive_gradient_limit=self.options.get("positive_gradient_limit", None),
+                negative_gradient_limit=self.options.get("negative_gradient_limit", None),
                 nonconvex=solph.NonConvex(
                     initial_status=self.options.get("initial_status", 0),
                     maximum_startups=self.options.get("max_startup", None),
