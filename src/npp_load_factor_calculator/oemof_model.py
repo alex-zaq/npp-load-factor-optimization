@@ -19,14 +19,23 @@ class Oemof_model:
         self.scenario = custom_scenario or self.scenario
         start_year = self.scenario["years"][0]
         end_year = self.scenario["years"][-1]
-        t_delta = datetime(end_year + 1, 1, 1, 0, 0, 0) - datetime(start_year, 1, 1, 0, 0, 0)
+
         first_time_step = datetime(start_year, 1, 1, 0, 0, 0)
-        periods_count = t_delta.days * 24
+        t_delta = datetime(end_year + 1, 1, 1, 0, 0, 0) - first_time_step
+
+        periods_count = self._get_periods_count(t_delta, self.scenario["freq"])
         periods_count += 1
-        date_time_index = pd.date_range(first_time_step, periods=periods_count, freq="h")
-        self.oemof_es = solph.EnergySystem(timeindex=date_time_index, infer_last_interval=True)
-        self.oemof_es.custom_time_index = date_time_index
+
+        date_timeindex = pd.date_range(first_time_step, periods=periods_count, freq=self.scenario["freq"])
+        self.oemof_es = solph.EnergySystem(timeindex=date_timeindex, infer_last_interval=True)
+        self.oemof_es.custom_timeindex = date_timeindex
+
        
+    def _get_periods_count(self, t_delta, freq):
+        if freq == "d":
+            return t_delta.days
+        elif freq == "h":
+            return t_delta.days * 24
 
     
     def init_custom_model(self, custom_scenario=None, custom_oemof_es = None):

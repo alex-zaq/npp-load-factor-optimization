@@ -1,29 +1,27 @@
-from datetime import datetime as dt
-
 from src.npp_load_factor_calculator import Block_grouper, Oemof_model, Result_viewer
 from src.npp_load_factor_calculator.result_viewer import Control_block_viewer
 from src.npp_load_factor_calculator.solution_processor import Solution_processor
-from src.npp_load_factor_calculator.utilites import all_months, days_to_hours, get_r
+from src.npp_load_factor_calculator.utilites import all_months, get_r
 
 repair_options = {
     "maintence-1": {
         "id": 0,
         "status": False,
         "startup_cost": 1e3,
-        "duration": days_to_hours(1),
-        # "min_downtime": days_to_hours(60),
+        "duration": 1,
+        # "min_downtime": 60,
         "min_downtime": 0,
         "max_startup": 5,
         "risk_reset": set(),
-        "risk_reducing": {"r2": get_r(0.3)},
+        "risk_reducing": {"r2": 0.3},
         "npp_stop": False,
     },
     "maintence-2": {
         "id": 1,
         "status": True,
-        "startup_cost": 1e5,
-        "duration": days_to_hours(10),
-        # "min_downtime": days_to_hours(30),
+        "startup_cost": 0,
+        "duration": 10,
+        # "min_downtime": 30,
         "min_downtime": 0,
         "max_startup": 12,
         "risk_reset": set(),
@@ -36,7 +34,7 @@ repair_options = {
         "id": 2,
         "status": True,
         "startup_cost": 15e6,
-        "duration": days_to_hours(15),
+        "duration": 15,
         "min_downtime": 0,
         "max_startup": 1,
         "risk_reset": {"r1"},
@@ -48,7 +46,7 @@ repair_options = {
         "id": 3,
         "status": False,
         "startup_cost": 5e6,
-        "duration": days_to_hours(15),
+        "duration": 15,
         "min_downtime": 0,
         "risk_reset": {"r1","r2"},
         "max_startup": 1,
@@ -59,8 +57,8 @@ repair_options = {
         "id": 4,
         "status": False,
         "startup_cost": 15e6,
-        "duration": days_to_hours(15),
-        "min_downtime": days_to_hours(30),
+        "duration": 15,
+        "min_downtime": 30,
         "risk_reset": {"r1", "r2", "r3"},
         "risk_reducing": {},
         "npp_stop": True,
@@ -69,8 +67,8 @@ repair_options = {
         "id": 5,
         "status": False,
         "startup_cost": 50e6,
-        "duration": days_to_hours(25),
-        "min_downtime": days_to_hours(30),
+        "duration": 25,
+        "min_downtime": 30,
         "risk_reset": {"r1", "r2", "r3"},
         "risk_reducing": {},
         "npp_stop": True,
@@ -88,22 +86,22 @@ scen = {
             "status": True,
             "nominal_power": 1170,
             "var_cost": -56.5,
-            # "min_uptime": days_to_hours(30),
-            "min_uptime": 0,
+            "min_uptime": 30,
+            # "min_uptime": 0,
             "outage_options": {
                 "status": True,
                 "start_of_month": True,
                 "allow_months": all_months - {"Jan"},
-                "planning_outage_duration": days_to_hours(30),
+                "planning_outage_duration": 30,
                 "fixed_mode": True,
                 "fixed_outage_month":  set(["Jul"]),
             },
             "risk_options": {
                 "status": True,
                 "risks": {
-                    "r1": {"id": 0, "value": get_r(0.1), "max": 7*0.1, "start_risk_rel": 0.2},
-                    # "r2": {"id": 1," "value": get_r(0.1), "max": 1, "start_risk": 0},
-                    # "r3": {"id": 2," "value": get_r(0.1), "max": 1, "start_risk": 0},
+                    "r1": {"id": 0, "value": 0.1, "max": 7*0.1, "start_risk_rel": 0.2},
+                    # "r2": {"id": 1," "value": 0.1, "max": 1, "start_risk_rel": 0},
+                    # "r3": {"id": 2," "value": 0.1, "max": 1, "start_risk_rel": 0},
                 }},
             "repair_options": {
                 "status": True,
@@ -142,7 +140,7 @@ solution_processor.set_excel_folder("./excel_results")
 # solution_processor.set_restore_mode(file_number="03") 
 # solution_processor.set_restore_mode(file_number="06") 
 # solution_processor.set_restore_mode(file_number="09") 
-# solution_processor.set_restore_mode(file_number="15") 
+# solution_processor.set_restore_mode(file_number="20") 
 
 solution_processor.apply()
 

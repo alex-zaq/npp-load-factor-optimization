@@ -59,13 +59,13 @@ class Wrapper_base:
     def create_pair_equal_status(self, wrapper_block):
         self.constraints["equal_status"].append(wrapper_block)
               
-    def add_specific_status_duration_in_period(self, duration, max_profile_mask, mode, max_profile = None, startup_cost_mask = 0):
+    def add_specific_status_duration_in_period(self, outage_duration, max_profile_mask, mode, max_profile = None, startup_cost_mask = 0):
 
         if mode not in ("active", "non_active"):
             raise ValueError("mode must be active or non_active")
 
         charger_power = 1
-        storage_capacity = charger_power * duration
+        storage_capacity = charger_power * outage_duration
         fix_profile = np.array(max_profile_mask) * storage_capacity
 
 
@@ -104,7 +104,7 @@ class Wrapper_base:
         wrapper_charger_builder.update_options({
             "nominal_power": charger_power,
             "output_bus": storage_in_bus,
-            "min_uptime": duration,
+            "min_uptime": outage_duration,
             "min": 1,
             })
         
@@ -124,7 +124,6 @@ class Wrapper_base:
     
         storage_in_bus = bus_factory.create_bus(f"{self.label}_max_up_time_storage_in_bus")
         storage_out_bus = bus_factory.create_bus(f"{self.label}_max_up_time_storage_out_bus")
-        # bufer_bus = bus_factory.create_bus(f"{self.label}_max_up_time_buffer_bus", balanced=False)
 
         block_power = self.options["nominal_power"]
 
@@ -132,7 +131,7 @@ class Wrapper_base:
         storage_control = solph.components.GenericStorage(
             label=f"{self.label}_max_up_time_storage",
             initial_storage_level=0,
-            nominal_storage_capacity=max_uptime * block_power ,
+            nominal_storage_capacity=max_uptime * block_power,
             inputs={storage_in_bus: solph.Flow()},
             outputs={storage_out_bus: solph.Flow()},
             balanced=False
@@ -151,28 +150,13 @@ class Wrapper_base:
         self.update_options({"second_input_bus": storage_out_bus})
         charger_builder.create_pair_no_equal_status(self)
         charger_builder.build()
-        
-        
-        
-        # max_uptime_block_builder = self.create_wrapper_converter_builder(self.es, f"{self.label}_max_up_time_control_converter")
-        # max_uptime_block_builder.update_options({
-        #     "nominal_power": block_power,
-        #     "output_bus": bufer_bus,
-        #     "input_bus": storage_out_bus,
-        #     "min": 1,
-        #     })
-        
-        # max_uptime_block_builder.create_pair_equal_status(self)
-        # max_uptime_block_builder.create_pair_no_equal_status(charger_builder)
-        # max_uptime_block_builder.build()
+
 
             
     def add_startup_cost_by_mask(self, mask):
         mask = np.array(mask)
         startup_cost = self.options.get("startup_cost", 0)
-        # shutdown_cost = self.options.get("shutdown_cost", 0)
         self.options["startup_cost"] = np.where(mask == 1, startup_cost, 1e15)
-        # self.options["shutdown_cost"] = np.where(mask_profile == 1, shutdown_cost, 1e10)
 
 
     def _apply_constraints(self):

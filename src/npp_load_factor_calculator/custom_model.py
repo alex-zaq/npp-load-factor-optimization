@@ -1,19 +1,20 @@
 
 
+from src.npp_load_factor_calculator.block_db import Block_db
 from src.npp_load_factor_calculator.generic_models.generic_bus import Generic_bus
 from src.npp_load_factor_calculator.generic_models.generic_sink import Generic_sink
 from src.npp_load_factor_calculator.npp_builder import NPP_builder
-from src.npp_load_factor_calculator.block_db import Block_db
+from src.npp_load_factor_calculator.resolution_strategy import Resolution_strategy
 
-from src.npp_load_factor_calculator.utilites import (
-    get_main_risk_by_inner_types,
-    get_repair_mode_for_block,
-    get_risk_events_profile,
-    get_profile_for_all_repair_types,
-    plot_array,
+# from src.npp_load_factor_calculator.utilites import (
+    # get_main_risk_by_inner_types,
+    # get_profile_for_all_repair_types,
+    # get_repair_mode_for_block,
+    # get_risk_events_profile,
+    # plot_array,
     # get_valid_profile_by_months,
     # plot_array,
-)
+# )
 
 
 class Custom_model:
@@ -23,8 +24,9 @@ class Custom_model:
         self.oemof_es = oemof_es
         self.bus_factory = Generic_bus(oemof_es)
         self.sink_factory = Generic_sink(oemof_es)
-        self.npp_builder = NPP_builder(oemof_es)
         self.block_db = Block_db()
+        resolution_strategy = Resolution_strategy.create_strategy(self.scenario["freq"], self.oemof_es.custom_timeindex)
+        self.npp_builder = NPP_builder(oemof_es, resolution_strategy)
         
 
     def add_electricity_demand(self):
