@@ -53,6 +53,8 @@ class Oemof_model:
     def add_constraints(self, constraints_processor):
         constraints_processor.apply_equal_status()
         constraints_processor.apply_no_equal_status()
+        constraints_processor.apply_no_equal_lower_1_status()
+        constraints_processor.apply_strict_order()
 
 
     def launch_solver(self):

@@ -1,3 +1,4 @@
+import pyomo.environ as po
 from oemof import solph
 
 
@@ -23,10 +24,37 @@ class Constraint_processor:
     def apply_no_equal_status(self):
         keywords = self.constraints["no_equal_status"]
         model = self.model
+        keywords = list(set(keywords))
         for keyword in keywords:
                 solph.constraints.limit_active_flow_count_by_keyword(
                 model, keyword, lower_limit=0, upper_limit=1
             )
+                
+                
+    def apply_no_equal_lower_1_status(self):
+        keywords = self.constraints["no_equal_lower_1_status"]
+        model = self.model
+        keywords = list(set(keywords))
+        for keyword in keywords:
+                solph.constraints.limit_active_flow_count_by_keyword(
+                model, keyword, lower_limit=1, upper_limit=10
+            )
+                
+                
+    def apply_strict_order(self):
+        
+        items = self.constraints["strict_order"]
+        model = self.model
+        
+        def sequential_loading_rule(m, t, item_1, item_2, item_3, item_4):
+             return m.NonConvexFlowBlock.status[item_1, item_2, t] <= m.NonConvexFlowBlock.status[item_3, item_4, t]
+
+        model.sequential_loading_constraint = po.Constraint(
+            model.TIMESTEPS,
+            [item for item in items],
+            rule=sequential_loading_rule
+        )
+                
 
    
             

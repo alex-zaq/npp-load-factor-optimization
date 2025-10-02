@@ -48,7 +48,14 @@ class Wrapper_base:
 
 
     def add_keyword_no_equal_status(self, keyword):
+        self.keywords[keyword] = True
         self.constraints["no_equal_status"].append(keyword)
+        
+    def create_pair_no_equal_lower_1_status(self, wrapper_block):
+        keyword = f"{self.label}_{wrapper_block.label}_no_equal_lower_1_status"
+        self.add_keyword_to_flow(keyword)
+        wrapper_block.add_keyword_to_flow(keyword)
+        self.constraints["no_equal_lower_1_status"].append(keyword)
 
     def create_pair_no_equal_status(self, wrapper_block):
         keyword = f"{self.label}_{wrapper_block.label}_no_equal_status"
@@ -59,14 +66,27 @@ class Wrapper_base:
     def create_pair_equal_status(self, wrapper_block):
         self.constraints["equal_status"].append(wrapper_block)
               
-    def add_specific_status_duration_in_period(self, outage_duration, max_profile_mask, mode, max_profile = None, startup_cost_mask = 0):
+              
+    def add_strict_order_after(self, wrapper_block):
+        self.constraints["strict_order"].append(wrapper_block)
+                            
+ 
+    def add_specific_status_duration_in_period(
+        self,
+        mode,
+        duration,
+        avail_months_mask,
+        start_days_mask,
+        last_step_mask,
+        coeff,
+        ):
 
         if mode not in ("active", "non_active"):
             raise ValueError("mode must be active or non_active")
 
         charger_power = 1
-        storage_capacity = charger_power * outage_duration
-        fix_profile = np.array(max_profile_mask) * storage_capacity
+        storage_capacity = charger_power * duration
+        fix_profile = np.array(last_step_mask) * storage_capacity
 
 
         bus_factory = Generic_bus(self.es)
@@ -79,16 +99,17 @@ class Wrapper_base:
         sink.inputs_pair = [(sink_bus, sink)]
         self.es.add(sink)
         
-        max_profile = max_profile if max_profile is not None else 1
+        avail_months_mask = avail_months_mask if avail_months_mask is not None else 1
         storage_in_bus = bus_factory.create_bus(f"{self.label}_storage_in_bus")
         storage = solph.components.GenericStorage(
             label=f"{self.label}_min_inactive_storage",
             initial_storage_level=0,
-            nominal_storage_capacity=storage_capacity,
+            nominal_storage_capacity=storage_capacity * coeff,
             inputs={storage_in_bus: solph.Flow(
                 nominal_value=1e10,
-                max=max_profile,
+                max=avail_months_mask,
                 min=0,
+                # bad
                 nonconvex=solph.NonConvex(),
                 )},
             outputs={sink_bus: solph.Flow()},
@@ -104,12 +125,12 @@ class Wrapper_base:
         wrapper_charger_builder.update_options({
             "nominal_power": charger_power,
             "output_bus": storage_in_bus,
-            "min_uptime": outage_duration,
+            "min_uptime": duration,
             "min": 1,
             })
         
-        if startup_cost_mask is not None:
-            wrapper_charger_builder.add_startup_cost_by_mask(startup_cost_mask)
+        if start_days_mask is not None:
+            wrapper_charger_builder.add_startup_cost_by_mask(start_days_mask)
         
         if mode == "active":
             wrapper_charger_builder.create_pair_equal_status(self)
@@ -163,7 +184,6 @@ class Wrapper_base:
         constraint_groups_names = list(self.constraints.keys())
         if not constraint_groups_names:
             return
-
         
         for constraint_group_name in constraint_groups_names:
             match constraint_group_name:
@@ -174,6 +194,14 @@ class Wrapper_base:
                     pair_1 = self.get_pair_after_building()
                     pair_2 = another_wrapper_block.get_pair_after_building()
                     self.es.constraints["equal_status"].append((pair_1, pair_2))
+                case "no_equal_lower_1_status":
+                    self.es.constraints["no_equal_lower_1_status"].extend(self.constraints[constraint_group_name])
+                case "strict_order":
+                    another_wrapper_block = self.constraints[constraint_group_name][0]
+                    pair_1 = self.get_pair_after_building()
+                    pair_2 = another_wrapper_block.get_pair_after_building()
+                    self.es.constraints["strict_order"].append((pair_1, pair_2))
+                    
 
 
     def _get_nonconvex_flow(self):

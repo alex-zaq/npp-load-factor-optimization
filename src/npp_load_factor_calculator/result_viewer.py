@@ -54,7 +54,7 @@ class Result_viewer:
         # наложить на электроэнергии ремонты на 20 % меньше вел.
         
 
-        fig, ax1 = plt.subplots()
+        fig, ax_base = plt.subplots()
         
         
         ax_el_gen_df = el_gen_df.plot(
@@ -64,12 +64,13 @@ class Result_viewer:
             color=el_gen_df.colors,
             linewidth=0.01,
             fontsize=font_size,
-            ax= ax1
+            ax= ax_base
         )
         ax_el_gen_df.set_ylabel('Производство электроэнергии, МВт$\cdot$ч', fontsize=font_size - 2)
         ax_el_gen_df.tick_params(axis="both", which="major", labelsize=font_size - 2)
         ax_el_gen_df.tick_params(axis="both", which="minor", labelsize=font_size - 2)
-        ax_el_gen_df.legend_.remove()
+        ax_el_gen_df.legend(loc="upper center", fontsize=font_size - 2)
+        # ax_el_gen_df.legend_.remove()
 
         ax_repair_df = None
         if not repairs_df.empty:
@@ -81,34 +82,38 @@ class Result_viewer:
                 linewidth=0.01,
                 fontsize=font_size,
                 alpha=0.5,
-                ax=ax1
+                ax=ax_base
             )
-            ax_el_gen_df.legend_.remove()
+            
         
         
         max_risk_val = risks_df.max().max()
         
         max_risk_val = 1 if max_risk_val < 1 else max_risk_val
 
-        ax_risks_df = risks_df.plot(
-            kind="line",
-            ylim=(0, max_risk_val * 1.2),
-            legend="reverse",
-            color=risks_df.colors,
-            linewidth=0.5,
-            fontsize=font_size,
-            ax=ax_repair_df.twinx() if ax_repair_df is not None else ax1.twinx()
-        )
-        ax_risks_df.set_ylabel('Условная величина риска', fontsize=font_size - 2)
-        ax_risks_df.tick_params(axis="both", which="major", labelsize=font_size - 2)
-        ax_risks_df.tick_params(axis="both", which="minor", labelsize=font_size - 2)
-        ax_risks_df.legend_.remove()
-        
-        lines, labels = ax_el_gen_df.get_legend_handles_labels()
-        # lines2, labels2 = ax_repair_df.get_legend_handles_labels()
-        lines3, labels3 = ax_risks_df.get_legend_handles_labels()
-        ax1.legend(lines  + lines3, labels + labels3, loc='upper center', fontsize=font_size - 2, ncol=3)
-                
+        if not repairs_df.empty:
+            ax_risks_df = risks_df.plot(
+                kind="line",
+                style="-",
+                ylim=(0, max_risk_val * 1.2),
+                legend="reverse",
+                color=risks_df.colors,
+                linewidth=0.5,
+                fontsize=font_size,
+                ax=ax_repair_df.twinx() if ax_repair_df is not None else ax_base.twinx()
+            )
+            ax_risks_df.set_ylabel('Условная величина риска', fontsize=font_size - 2)
+            ax_risks_df.tick_params(axis="both", which="major", labelsize=font_size - 2)
+            ax_risks_df.tick_params(axis="both", which="minor", labelsize=font_size - 2)
+            ax_risks_df.legend_.remove()
+            ax_el_gen_df.legend_.remove()
+            lines, labels = ax_el_gen_df.get_legend_handles_labels()
+            # lines2, labels2 = ax_repair_df.get_legend_handles_labels()
+            lines3, labels3 = ax_risks_df.get_legend_handles_labels()
+            ax_base.legend(lines  + lines3, labels + labels3, loc='upper center', fontsize=font_size - 2, ncol=4)
+        # else:
+            # ax_el_gen_df.legend_.visible = True
+                        
         
         
         # электроэнергия

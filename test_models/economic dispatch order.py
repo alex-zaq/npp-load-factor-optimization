@@ -39,64 +39,33 @@ es.add(gas_tr)
 
 
 npp_power = 400
-cpp_power = 300
+cpp_power = 400
 npp_key_word_1 = "npp_1"
 npp_key_word_2 = "npp_2"
 
 
-min_npp = 0.5
+min_npp = 1
 
-npp = solph.components.Source(
-    label="NPP",
+npp_expense = solph.components.Source(
+    label="npp_expense",
     outputs={
         el_bus: Flow(
-            min=min_npp,
+            min=1,
             nominal_value=npp_power,
-            variable_costs=999,
+            variable_costs=99,
             nonconvex=solph.NonConvex(),
             custom_attributes={npp_key_word_1: True},
         ),
         # control_bus_npp: Flow(custom_attributes={npp_key_word_2: True}),
     },
 )
-es.add(npp)
+es.add(npp_expense)
 
 control_source_npp = solph.components.Source(
     label="control source (npp)",
     outputs={control_bus_npp: Flow(custom_attributes={npp_key_word_2: True})},
 )
 es.add(control_source_npp)
-
-
-
-cpp = solph.components.Converter(
-    label="CPP",
-    inputs={gas_bus: Flow()},
-    outputs={el_bus: Flow(
-        nominal_value=cpp_power,
-        min=0.1,
-        variable_costs=-10,
-        nonconvex=solph.NonConvex(),
-        )}, 
-)
-es.add(cpp)
-
-
-
-
-
-
-cpp_cheap = solph.components.Converter(
-    label="cpp_cheap",
-    inputs={gas_bus: Flow()},
-    outputs={el_bus: Flow(
-        nominal_value=cpp_power,
-        variable_costs=-5,
-        nonconvex=solph.NonConvex(),
-        )}, 
-)
-es.add(cpp_cheap)
-
 
 excess_sink_npp = Sink(
     label="excess sink (npp)",
@@ -116,6 +85,23 @@ control_sink_npp = Sink(
         )}
     )
 es.add(control_sink_npp)
+
+
+cpp_cheap = solph.components.Converter(
+    label="cpp_cheap",
+    inputs={gas_bus: Flow()},
+    outputs={el_bus: Flow(
+        nominal_value=cpp_power,
+        min=1,
+        variable_costs=-99,
+        nonconvex=solph.NonConvex(),
+        )}, 
+)
+es.add(cpp_cheap)
+
+
+
+
 
 
 
@@ -148,7 +134,7 @@ model = Model(energysystem=es)
 for i in range(24):
     solph.constraints.equate_variables(
         model,
-        model.NonConvexFlowBlock.status[cpp, el_bus, i],
+        model.NonConvexFlowBlock.status[cpp_cheap, el_bus, i],
         model.NonConvexFlowBlock.status[control_bus_npp, control_sink_npp, i],
     )
 
@@ -180,16 +166,24 @@ cb_results = solph.views.node(results, control_bus_npp.label)["sequences"].dropn
 
 
 # el_blocks = [el_block, el_expense_block]
-el_blocks = [npp, cpp, cpp_cheap]
+el_blocks = [npp_expense, cpp_cheap]
 # el_blocks = [expense_block]
 el_df = pd.DataFrame()
 for el_block in el_blocks:
     el_df[el_block.label] = el_results[((el_block.label, el_bus.label), "flow")]
 
+
+npp_max = el_df[npp_expense.label] = el_results[((el_block.label, el_bus.label), "flow")].max()
+cpp_max = el_df[cpp_cheap.label] = el_results[((el_block.label, el_bus.label), "flow")].max()
+
+print(npp_max, cpp_max)
+
+
 cb_blocks = [excess_sink_npp, control_sink_npp]
 cb_df = pd.DataFrame()
 for cb_block in cb_blocks:
     cb_df[cb_block.label] = cb_results[((control_bus_npp.label, cb_block.label), "flow")]
+
 
 
 # cb_expense_blocks = [npp]
@@ -205,6 +199,9 @@ el_df = el_df.drop(el_df.index[-1])
 ax_el = el_df.plot(kind="area", ylim=(0, 1000))
 
 ax_cb_df = cb_df.plot(kind="area", ylim=(0, 1000))
+
+plt.show(block=True)
+
 
 
 # ax_cb_expense_df = cb_expense_blocks_df.plot(kind="area", ylim=(0, 1000))
@@ -231,7 +228,7 @@ ax_cb_df = cb_df.plot(kind="area", ylim=(0, 1000))
 # ax_heat = heat_df.plot(kind="line", ylim=(0, 1000), color="orange", ax=ax2)
 # ax_gas = gas_df.plot(kind="line", ylim=(0, 1000), color="green", ax=ax3)
 
-plt.show(block=True)
+
 
 
 # 1-источник полезный поток (мощность-1, bus-1) контролирующий поток(мощность-2 = мощность-1, bus-2)

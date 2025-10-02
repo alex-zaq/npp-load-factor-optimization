@@ -15,43 +15,51 @@ repair_options = {
         "risk_reset": set(),
         "risk_reducing": {"r2": 0.3},
         "npp_stop": False,
+        "forced_in_period": False,
     },
     "maintence-2": {
         "id": 1,
         "status": True,
-        "startup_cost": 1e5,
+        "startup_cost": 5e3,
         "duration": 10,
-        # "min_downtime": 30,
         "min_downtime": 0,
         "max_startup": 12,
         "risk_reset": set(),
         "risk_reducing": {"r1": 0.15},
         "start_day": {"status": True, "days": [1,]},
         "npp_stop": False,
+        "forced_in_period": False,
     },
     
     "light": {
         "id": 2,
         "status": True,
-        "startup_cost": 15e3,
-        "duration": 20,
+        "startup_cost": 10e3,
+        "duration": 30,
         "min_downtime": 0,
         "max_startup": 1,
         "risk_reset": {"r1"},
+        # "risk_reset": {},
         "risk_reducing": {},
+        # "risk_reducing": {"r1": 0.9},
         "start_day": {"status": True, "days": [1,]},
         "npp_stop": True,
+        "forced_in_period": False,
     },
     "medium-1": {
         "id": 3,
-        "status": False,
-        "startup_cost": 5e6,
-        "duration": 15,
+        "status": True,
+        "startup_cost": 7e3,
+        "duration": 30,
         "min_downtime": 0,
-        "risk_reset": {"r1","r2"},
+        # "risk_reset": {"r1","r2"},
+        "risk_reset": {},
         "max_startup": 1,
-        "risk_reducing": {},
+        "risk_reducing": {"r1": 0.9},
+        # "risk_reducing": {},
+        "start_day": {"status": True, "days": [1,]},
         "npp_stop": True,
+        "forced_in_period": False,
     },
     "medium-2": {
         "id": 4,
@@ -62,6 +70,7 @@ repair_options = {
         "risk_reset": {"r1", "r2", "r3"},
         "risk_reducing": {},
         "npp_stop": True,
+        "forced_in_period": False,
     },
     "capital": {
         "id": 5,
@@ -72,48 +81,51 @@ repair_options = {
         "risk_reset": {"r1", "r2", "r3"},
         "risk_reducing": {},
         "npp_stop": True,
-        "forced_in_period": True,
+        "forced_in_period": False,
     },
 }
 
+events = {
+    "2025-02-15 00:00:00": 0.2,
+    "2025-04-15 00:00:00": 0.3,
+}
 
 scen = {
         "№": 1,
         "name": "test",
         "years": [2025],
+        # "years": [2025, 2026],
         "freq": "D",
-        "bel_npp_block_1": {
+        "bel_npp_block_1": (bel_npp_block_2 := {
             "status": True,
             "nominal_power": 1170,
             "var_cost": -56.5,
-            "min_uptime": 30,
+            "min_uptime": 10,
             # "min_uptime": 0,
             "outage_options": {
                 "status": True,
                 "start_of_month": True,
                 "allow_months": all_months - {"Jan"},
                 "planning_outage_duration": 30,
-                "fixed_mode": False,
+                "fixed_mode": True,
                 "fixed_outage_month":  set(["Jul"]),
             },
             "risk_options": {
                 "status": True,
                 "risks": {
-                    "r1": {"id": 0, "value": 0.1, "max": 7*0.1, "start_risk_rel": 0.2},
-                    # "r2": {"id": 1," "value": 0.1, "max": 1, "start_risk_rel": 0},
-                    # "r3": {"id": 2," "value": 0.1, "max": 1, "start_risk_rel": 0},
+                    "r1": {"id": 0, "value": 0.1, "max": 7*0.1, "start_risk_rel": 0.5, "events": None},
+                    # "r2": {"id": 1," "value": 0.1, "max": 1, "start_risk_rel": 0, "events": None},
+                    # "r3": {"id": 2," "value": 0.1, "max": 1, "start_risk_rel": 0, "events": None},
                 }},
             "repair_options": {
                 "status": True,
                 "options": repair_options
                 },
-        },
-        "bel_npp_block_2": {
-            "status": False,
-        },
-        "new_npp_block_1": {
-            "status": False,
-        },
+        }),
+        # "bel_npp_block_2": bel_npp_block_2,
+        "bel_npp_block_2": {"status": False},
+        "new_npp_block_1": {"status": False},
+        # "new_npp_block_1": bel_npp_block_2,
 }
 
 
@@ -123,7 +135,7 @@ oemof_model = Oemof_model(
     solver_settings = {
         "solver": "cplex",
         "solver_verbose": True,
-        "mip_gap": 0.01
+        "mip_gap": 0.001
     } 
 )
 
@@ -140,7 +152,7 @@ solution_processor.set_excel_folder("./excel_results")
 # solution_processor.set_restore_mode(file_number="03") 
 # solution_processor.set_restore_mode(file_number="06") 
 # solution_processor.set_restore_mode(file_number="09") 
-# solution_processor.set_restore_mode(file_number="20") 
+# solution_processor.set_restore_mode(file_number="18") 
 
 solution_processor.apply()
 
@@ -167,16 +179,16 @@ block_grouper.set_options(
         "Новая АЭС (блок 1)": {"block": new_npp_block_1, "color": "#1f77b4"},
     },
     risks_options={
-        "R1": {"risk_name": "r1", "style":"-", "color": "#181008"},
+        "риск (блок 1)": {"risk_name": "r1", "style":"-", "color": "#181008"},
         "R2": {"risk_name": "r2", "style":"-", "color": "#1417d1"},
         "R3": {"risk_name": "r3", "style":"-", "color": "#10c42e"},
     },
     repairs_options={
-        "НО-1": {"id": 0, "color": "#00FFAA"},
-        "НО-2": {"id": 1, "color": "#fdec02"},
-        "ТР-1": {"id": 2, "color": "#0b07fc"},
-        "ТР-2": {"id": 3, "color": "#0080ff"},
-        "КР-1": {"id": 4, "color": "#ff4000"},
+        "легкий ремонт-0": {"id": 0, "color": "#00FFAA"},
+        "легкий ремонт": {"id": 1, "color": "#fdec02"},
+        "текущий ремонт-1": {"id": 2, "color": "#0b07fc"},
+        "текущий ремонт-2": {"id": 3, "color": "#0080ff"},
+        "капитальный ремонт": {"id": 4, "color": "#ff4000"},
     },
     repairs_cost_options={
         "БелАЭС (блок 1)-затраты": {"block": bel_npp_block_1, "style":"-", "color": "#18be2f"},
@@ -195,6 +207,8 @@ result_viewer.set_image_flag(False)
 result_viewer.set_image_options(folder="./images", image_format="jpg", dpi=600)
 
 result_viewer.plot_general_graph(bel_npp_block_1)
+result_viewer.plot_general_graph(bel_npp_block_2)
+result_viewer.plot_general_graph(new_npp_block_1)
 
 control_block_viewer.plot_sinks_profile(bel_npp_block_1, repair_id=1, risk_name="r1")
 # control_block_viewer.plot_sinks_profile(bel_npp_block_1, repair_id=2, risk_name="r1")
@@ -222,8 +236,13 @@ control_block_viewer.plot_sinks_profile(bel_npp_block_1, repair_id=1, risk_name=
 
 print("done")
 
-
-# перейти к дням или неделям
+# принуд вклюячение раз в год
+# простое переключение сценариев
+# сделать раздельные легенды
+# график с тремя блоками 1 и 3 года с ремонтами и деньгами
+# три риска сразу
+# события риска опционально
+# проверка запрета на одновоеменность ремонтов
 # учет штрафов за остановку
 # почасовой вклад в риск (сразу все риски)
 # для ремонтов требущих отключение блока добавить промежуточный блок со связья блоком (upper 1)

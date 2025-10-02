@@ -25,12 +25,9 @@ class Resolution_strategy:
     def convert_risk(self, risk_month_val):
         raise NotImplementedError
     
-    def convert_power(self, power):
+    def get_profile_by_events(self):
         raise NotImplementedError
-    
-    def convert_var_cost(self, var_cost):
-        raise NotImplementedError
-        
+            
     def get_fix_months_profile(self, selected_months):
         res = np.ones(len(self.timeindex))
         for month in selected_months:
@@ -70,11 +67,16 @@ class Hourly_resolution_strategy(Resolution_strategy):
     def convert_risk(self, risk_month_val):
         return risk_month_val/30/24
     
-    def convert_power(self, power):
-        raise power
-    
-    def convert_var_cost(self, var_cost):
-        return var_cost
+    def get_profile_by_events(self, events):
+        pass
+        # t_delta = self.date_range[-1] - self.date_range[0]
+        # num_hours = t_delta.days * 24
+        # profile = np.zeros(num_hours)
+        # for event in events.values():
+        #     start_idx = int((pd.to_datetime(event["start_datetime"]) - self.date_range[0]).total_seconds() // 3600)
+        #     risk_per_hour = event["risk_increase"]
+        #     profile[start_idx] += risk_per_hour
+        # return profile
 
     def get_every_year_first_step_mask(self):
         res = np.zeros(len(self.timeindex))
@@ -106,11 +108,16 @@ class Daily_resolution_strategy(Resolution_strategy):
     def convert_risk(self, risk_month_val):
         return risk_month_val/30/24
     
-    def convert_power(self, power):
-        return power * 24
-    
-    def convert_var_cost(self, var_cost):
-        return var_cost * 24
+    def get_profile_by_events(self, events):
+        pass
+        # t_delta = self.date_range[-1] - self.date_range[0]
+        # num_hours = t_delta.days * 24
+        # profile = np.zeros(num_hours)
+        # for event in events.values():
+        #     start_idx = int((pd.to_datetime(event["start_datetime"]) - self.date_range[0]).total_seconds() // 3600)
+        #     risk_per_hour = event["risk_increase"]
+        #     profile[start_idx] += risk_per_hour
+        # return profile
     
     def get_every_year_first_step_mask(self):
         res = np.zeros(len(self.timeindex))
