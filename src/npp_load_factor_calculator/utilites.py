@@ -148,15 +148,30 @@ def plot_array_from_dict_cumsum(dct):
 
 
 
-def get_risk_events_profile(start_year, end_year, events):
-    t_delta = pd.to_datetime(f"{end_year}-01-01") - pd.to_datetime(f"{start_year}-01-01")
-    num_hours = t_delta.days * 24
+first_time_step = datetime.datetime(2025, 1, 1)
+t_delta = datetime.datetime(2025 + 1, 1, 1) - first_time_step
+date_timeindex = pd.date_range(first_time_step, periods=365, freq="D")
+
+# events = {
+#     "2025-01-01": 0.2,
+#     "2025-02-15": 0.2,
+#     "2025-04-15": 0.3,
+# }
+
+def get_risk_events_profile(date_range, events):
+    num_hours = len(date_range)
     profile = np.zeros(num_hours)
-    for event in events.values():
-        start_idx = int((pd.to_datetime(event["start_datetime"]) - pd.to_datetime(f"{start_year}-01-01")).total_seconds() // 3600)
-        risk_per_hour = event["risk_increase"] / event["duration_hours"]
-        profile[start_idx:start_idx + event["duration_hours"]] += risk_per_hour
+
+    for event in events:
+        start_idx = int((pd.to_datetime(event) - date_range[0]).total_seconds() // (3600 * 24))
+        risk_per_hour = events[event]
+        profile[start_idx] += risk_per_hour
+        
     return profile
+
+# arr = get_risk_events_profile(date_timeindex, events)
+# plot_array(arr)
+
 
 
 def get_profile_for_all_repair_types(start_year, end_year, events):

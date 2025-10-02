@@ -78,6 +78,7 @@ class Result_viewer:
                 kind="area",
                 ylim=(0, max_y),
                 legend="reverse",
+                stacked=False,
                 color=repairs_df.colors,
                 linewidth=0.01,
                 fontsize=font_size,
@@ -113,30 +114,8 @@ class Result_viewer:
             ax_base.legend(lines  + lines3, labels + labels3, loc='upper center', fontsize=font_size - 2, ncol=4)
         # else:
             # ax_el_gen_df.legend_.visible = True
-                        
-        
-        
-        # электроэнергия
-        # накопительный риск
-        # ремонты всех видов
-        # затраты ремонтов
-        # накопительная стоимость ремонтов
-        # fig = plt.gcf()
-        
-        # if self.save_image_flag:
-        #     self._save_image(fig) 
+                       
 
-
-    # def _save_image(self, fig):
-    #         fname = (
-    #             get_file_name_with_auto_number(self.image_folder, self.scenario, "png"),
-    #         )
-    #         fig.savefig(
-    #             fname=fname,
-    #             bbox_inches="tight",
-    #             dpi=600,
-    #             transparent=True,
-    #         )
     
         fig = plt.gcf()
         ax_el_gen_df.tick_params(axis="both", which="major", labelsize=font_size - 2)

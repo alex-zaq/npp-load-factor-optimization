@@ -4,6 +4,7 @@ from src.npp_load_factor_calculator.generic_models.generic_bus import Generic_bu
 from src.npp_load_factor_calculator.generic_models.generic_storage import (
     Generic_storage,
 )
+from src.npp_load_factor_calculator.utilites import plot_array
 from src.npp_load_factor_calculator.wrappers.wrapper_converter import Wrapper_converter
 from src.npp_load_factor_calculator.wrappers.wrapper_sink import Wrapper_sink
 from src.npp_load_factor_calculator.wrappers.wrapper_source import Wrapper_source
@@ -115,6 +116,7 @@ class NPP_builder:
                 events_fix_profile = self.resolution_strategy.get_profile_by_events(risk_data["events"])
                 events_source_builder = Wrapper_source(self.es, f"{npp_label}_{risk_name}_events_source")
                 events_source_builder.update_options({
+                    "nominal_power": 1,
                     "output_bus": risk_bus,
                     "fix": events_fix_profile,
                 })
@@ -323,8 +325,7 @@ class NPP_builder:
         
         startup_mask = self.resolution_strategy.get_start_points(start_day["days"])
         repair_source_builder.add_startup_cost_by_mask(startup_mask)
-
-            
+          
         
         
     def _add_forced_active_if_required(self, repair_source_builder, forced_in_period):

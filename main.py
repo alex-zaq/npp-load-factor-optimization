@@ -6,26 +6,25 @@ from src.npp_load_factor_calculator.utilites import all_months, get_r
 repair_options = {
     "maintence-1": {
         "id": 0,
-        "status": False,
+        "status": True,
         "startup_cost": 1e3,
-        "duration": 1,
-        # "min_downtime": 60,
+        "duration": 10,
         "min_downtime": 0,
-        "max_startup": 5,
+        "max_startup": 12,
         "risk_reset": set(),
-        "risk_reducing": {"r2": 0.3},
+        "risk_reducing": {"r2": 0.15},
         "npp_stop": False,
         "forced_in_period": False,
     },
     "maintence-2": {
         "id": 1,
         "status": True,
-        "startup_cost": 5e3,
+        "startup_cost": 1e3,
         "duration": 10,
         "min_downtime": 0,
         "max_startup": 12,
         "risk_reset": set(),
-        "risk_reducing": {"r1": 0.15},
+        "risk_reducing": {"r1": 0.1},
         "start_day": {"status": True, "days": [1,]},
         "npp_stop": False,
         "forced_in_period": False,
@@ -34,7 +33,7 @@ repair_options = {
     "light": {
         "id": 2,
         "status": True,
-        "startup_cost": 10e3,
+        "startup_cost": 15e3,
         "duration": 30,
         "min_downtime": 0,
         "max_startup": 1,
@@ -48,7 +47,7 @@ repair_options = {
     },
     "medium-1": {
         "id": 3,
-        "status": True,
+        "status": False,
         "startup_cost": 7e3,
         "duration": 30,
         "min_downtime": 0,
@@ -86,8 +85,9 @@ repair_options = {
 }
 
 events = {
-    "2025-02-15 00:00:00": 0.2,
-    "2025-04-15 00:00:00": 0.3,
+    "2025-02-01": 0.01,
+    "2025-04-15": 0.01,
+    "2025-09-01": 0.01,
 }
 
 scen = {
@@ -95,6 +95,7 @@ scen = {
         "name": "test",
         "years": [2025],
         # "years": [2025, 2026],
+        # "years": [2025, 2026, 2027],
         "freq": "D",
         "bel_npp_block_1": (bel_npp_block_2 := {
             "status": True,
@@ -113,9 +114,9 @@ scen = {
             "risk_options": {
                 "status": True,
                 "risks": {
-                    "r1": {"id": 0, "value": 0.1, "max": 7*0.1, "start_risk_rel": 0.5, "events": None},
-                    # "r2": {"id": 1," "value": 0.1, "max": 1, "start_risk_rel": 0, "events": None},
-                    # "r3": {"id": 2," "value": 0.1, "max": 1, "start_risk_rel": 0, "events": None},
+                    "r1": {"id": 0, "value": 0.1, "max": 0.7, "start_risk_rel": 0.3, "events": None},
+                    "r2": {"id": 1, "value": 0.1, "max": 0.7, "start_risk_rel": 0.2, "events": None},
+                    # "r3": {"id": 2, "value": 0.1, "max": 1, "start_risk_rel": 0, "events": None},
                 }},
             "repair_options": {
                 "status": True,
@@ -141,8 +142,8 @@ oemof_model = Oemof_model(
 
 
 solution_processor = Solution_processor(oemof_model)
-solution_processor.set_calc_mode(save_results=False)
-# solution_processor.set_calc_mode(save_results=True)
+# solution_processor.set_calc_mode(save_results=False)
+solution_processor.set_calc_mode(save_results=True)
 solution_processor.set_dumps_folder("./dumps")
 solution_processor.set_excel_folder("./excel_results")
 
@@ -152,7 +153,7 @@ solution_processor.set_excel_folder("./excel_results")
 # solution_processor.set_restore_mode(file_number="03") 
 # solution_processor.set_restore_mode(file_number="06") 
 # solution_processor.set_restore_mode(file_number="09") 
-# solution_processor.set_restore_mode(file_number="18") 
+solution_processor.set_restore_mode(file_number="28") 
 
 solution_processor.apply()
 
@@ -179,16 +180,16 @@ block_grouper.set_options(
         "Новая АЭС (блок 1)": {"block": new_npp_block_1, "color": "#1f77b4"},
     },
     risks_options={
-        "риск (блок 1)": {"risk_name": "r1", "style":"-", "color": "#181008"},
-        "R2": {"risk_name": "r2", "style":"-", "color": "#1417d1"},
-        "R3": {"risk_name": "r3", "style":"-", "color": "#10c42e"},
+        "риск 1": {"risk_name": "r1", "style":"-", "color": "#181008"},
+        "риск 2": {"risk_name": "r2", "style":"-", "color": "#1417d1"},
+        "риск 3": {"risk_name": "r3", "style":"-", "color": "#10c42e"},
     },
     repairs_options={
-        "легкий ремонт-0": {"id": 0, "color": "#00FFAA"},
-        "легкий ремонт": {"id": 1, "color": "#fdec02"},
+        "легкий ремонт-1": {"id": 0, "color": "#00FFAA"},
+        "легкий ремонт-2": {"id": 1, "color": "#fdec02"},
         "текущий ремонт-1": {"id": 2, "color": "#0b07fc"},
         "текущий ремонт-2": {"id": 3, "color": "#0080ff"},
-        "капитальный ремонт": {"id": 4, "color": "#ff4000"},
+        "капитальный ремонт-1": {"id": 4, "color": "#ff4000"},
     },
     repairs_cost_options={
         "БелАЭС (блок 1)-затраты": {"block": bel_npp_block_1, "style":"-", "color": "#18be2f"},
@@ -209,6 +210,8 @@ result_viewer.set_image_options(folder="./images", image_format="jpg", dpi=600)
 result_viewer.plot_general_graph(bel_npp_block_1)
 result_viewer.plot_general_graph(bel_npp_block_2)
 result_viewer.plot_general_graph(new_npp_block_1)
+
+result_viewer.plot_all_blocks_graph()
 
 control_block_viewer.plot_sinks_profile(bel_npp_block_1, repair_id=1, risk_name="r1")
 # control_block_viewer.plot_sinks_profile(bel_npp_block_1, repair_id=2, risk_name="r1")
@@ -236,22 +239,17 @@ control_block_viewer.plot_sinks_profile(bel_npp_block_1, repair_id=1, risk_name=
 
 print("done")
 
-# принуд вклюячение раз в год
 # простое переключение сценариев
+# сохранение рисунков
+# затраты
 # сделать раздельные легенды
 # график с тремя блоками 1 и 3 года с ремонтами и деньгами
-# три риска сразу
-# события риска опционально
-# проверка запрета на одновоеменность ремонтов
 # учет штрафов за остановку
-# почасовой вклад в риск (сразу все риски)
 # для ремонтов требущих отключение блока добавить промежуточный блок со связья блоком (upper 1)
-# запрет на одновременность работы промежуточных блоков
 # для учета требования 30 дневной остановки добавить storage c mindowntime и фикс. source
 # учесть паузу между ремонтами (расширить период и занулить доступности)
 # фиксировать ремонты для показа большей целевой функции
 # отмечать какие ремонты могут нейтр. аварий событие 
-# переделать расчет фикс ав. событий
 # переключатель нейтролизуемого риска (от 1 до 3) в качестве input через сonverter_repair
 # динам изменением maxY
 # objective value extract

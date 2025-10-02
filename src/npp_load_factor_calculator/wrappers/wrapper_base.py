@@ -190,20 +190,19 @@ class Wrapper_base:
                 case "no_equal_status":
                     self.es.constraints["no_equal_status"].extend(self.constraints[constraint_group_name])
                 case "equal_status":
-                    another_wrapper_block = self.constraints[constraint_group_name][0]
-                    pair_1 = self.get_pair_after_building()
-                    pair_2 = another_wrapper_block.get_pair_after_building()
-                    self.es.constraints["equal_status"].append((pair_1, pair_2))
+                    for wrapper_block in self.constraints[constraint_group_name]:
+                        pair_1 = self.get_pair_after_building()
+                        pair_2 = wrapper_block.get_pair_after_building()
+                        self.es.constraints["equal_status"].append((pair_1, pair_2))
                 case "no_equal_lower_1_status":
                     self.es.constraints["no_equal_lower_1_status"].extend(self.constraints[constraint_group_name])
                 case "strict_order":
-                    another_wrapper_block = self.constraints[constraint_group_name][0]
-                    pair_1 = self.get_pair_after_building()
-                    pair_2 = another_wrapper_block.get_pair_after_building()
-                    self.es.constraints["strict_order"].append((pair_1, pair_2))
+                    for wrapper_block in self.constraints[constraint_group_name]:
+                        pair_1 = self.get_pair_after_building()
+                        pair_2 = wrapper_block.get_pair_after_building()
+                        self.es.constraints["strict_order"].append((pair_1, pair_2))
                     
-
-
+                    
     def _get_nonconvex_flow(self):
         if "fix" in self.options:
             self.options["min"] = None
@@ -223,7 +222,7 @@ class Wrapper_base:
                     minimum_downtime=self.options.get("min_downtime", 0),
                     startup_costs=self.options.get("startup_cost", None),
                     shutdown_costs=self.options.get("shutdown_cost", None),
-                    ),
+                    ) if "fix" not in self.options else None,
                 custom_attributes=self.keywords
                 )
         return flow
