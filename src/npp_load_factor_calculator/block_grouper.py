@@ -134,6 +134,12 @@ class Block_grouper:
         res = res[:-1]
         res.colors = colors
         return res
+    
+    
+    def get_electricity_profile_by_blocks(self, blocks):
+        pass
+    
+    
    
     
     def get_risks_profile(self, block):
