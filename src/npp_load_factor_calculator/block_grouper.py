@@ -53,7 +53,7 @@ class Custom_block:
         res_df.colors = colors
         return res_df
         
-    def get_cost_profile_for_repairs_dict(self):
+    def get_cost_profile(self):
         res_df = pd.DataFrame()
         colors = []
         for repair_label, repair_plot_data in self.repair_plot_dict.items():
@@ -124,8 +124,9 @@ class Block_grouper:
                         custom_block.repair_cost_plot[label] = {"color": repair_cost_data["color"]}
 
     
-    def get_electricity_profile(self, block):
-        custom_block = [custom_block for custom_block in self.electr_groups if custom_block.block is block][0]
+    def get_electricity_profile_by_block(self, block):
+        custom_blocks = [custom_block for custom_block in self.electr_groups if custom_block.block is block]
+        custom_block = custom_blocks[0]
         res = pd.DataFrame()
         colors = []
         label = list(custom_block.electr_plot.keys())[0]
@@ -142,7 +143,7 @@ class Block_grouper:
     
    
     
-    def get_risks_profile(self, block):
+    def get_risks_profile_by_block(self, block):
         custom_block = [custom_block for custom_block in self.electr_groups if custom_block.block is block][0]
         res = custom_block.get_risks_profile()
         colors = res.colors
@@ -151,7 +152,7 @@ class Block_grouper:
         return res
     
     
-    def get_repairs_profile(self, block, part=1):
+    def get_repairs_profile_by_block(self, block, part=1):
         custom_block = [custom_block for custom_block in self.electr_groups if custom_block.block is block][0]
         res = custom_block.get_repair_status_profile()
         res *= custom_block.block.nominal_power * part
@@ -161,9 +162,21 @@ class Block_grouper:
         return res
     
     
-    def get_cost_profile(self, block, cumulative=False):
+    def get_cost_profile_block(self, block, cumulative=False):
         custom_block = [custom_block for custom_block in self.electr_groups if custom_block.block is block[0]][0]
         res = custom_block.get_cost_profile()
+        if cumulative:
+            res = res.cumsum()
+        res = res[:-1]
+        return res
+    
+    
+    def get_cost_profile_all_blocks(self, cumulative=False):
+        res = pd.DataFrame()
+        for custom_block in self.electr_groups:
+            res[custom_block.block.label] = custom_block.get_cost_profile()
+        res = res.sum(axis=1).to_frame()
+        res.columns = ["затраты"]
         if cumulative:
             res = res.cumsum()
         res = res[:-1]

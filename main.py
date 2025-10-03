@@ -115,7 +115,7 @@ scen = {
                 "status": True,
                 "risks": {
                     "r1": {"id": 0, "value": 0.1, "max": 0.7, "start_risk_rel": 0.3, "events": None},
-                    "r2": {"id": 1, "value": 0.1, "max": 0.7, "start_risk_rel": 0.2, "events": None},
+                    # "r2": {"id": 1, "value": 0.1, "max": 0.7, "start_risk_rel": 0.2, "events": None},
                     # "r3": {"id": 2, "value": 0.1, "max": 1, "start_risk_rel": 0, "events": None},
                 }},
             "repair_options": {
@@ -136,7 +136,7 @@ oemof_model = Oemof_model(
     solver_settings = {
         "solver": "cplex",
         "solver_verbose": True,
-        "mip_gap": 0.001
+        "mip_gap": 0.0001
     } 
 )
 
@@ -153,7 +153,7 @@ solution_processor.set_excel_folder("./excel_results")
 # solution_processor.set_restore_mode(file_number="03") 
 # solution_processor.set_restore_mode(file_number="06") 
 # solution_processor.set_restore_mode(file_number="09") 
-# solution_processor.set_restore_mode(file_number="28") 
+solution_processor.set_restore_mode(file_number="31") 
 
 solution_processor.apply()
 
@@ -208,8 +208,8 @@ result_viewer.set_image_flag(False)
 result_viewer.set_image_options(folder="./images", image_format="jpg", dpi=600)
 
 result_viewer.plot_general_graph(bel_npp_block_1)
-result_viewer.plot_general_graph(bel_npp_block_2)
-result_viewer.plot_general_graph(new_npp_block_1)
+# result_viewer.plot_general_graph(bel_npp_block_2)
+# result_viewer.plot_general_graph(new_npp_block_1)
 
 result_viewer.plot_all_blocks_graph()
 

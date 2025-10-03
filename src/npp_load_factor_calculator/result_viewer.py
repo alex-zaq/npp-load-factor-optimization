@@ -41,18 +41,15 @@ class Result_viewer:
     def plot_general_graph(self, block):
         
         
-        el_gen_df = self.block_grouper.get_electricity_profile(block)
-        risks_df = self.block_grouper.get_risks_profile(block)
-        repairs_df = self.block_grouper.get_repairs_profile(block, part=1)
-        # cost_df = self.block_grouper.get_cost_profile(block, cumulative=False)
+        
+        el_gen_df = self.block_grouper.get_electricity_profile_by_block(block)
+        risks_df = self.block_grouper.get_risks_profile_by_block(block)
+        repairs_df = self.block_grouper.get_repairs_profile_by_block(block, part=1)
 
 
         font_size = 8
         max_y = 3 * el_gen_df.max().max()
 
-        # левая ось - затраты, правая - условный риск
-        # наложить на электроэнергии ремонты на 20 % меньше вел.
-        
 
         fig, ax_base = plt.subplots()
         
@@ -70,7 +67,6 @@ class Result_viewer:
         ax_el_gen_df.tick_params(axis="both", which="major", labelsize=font_size - 2)
         ax_el_gen_df.tick_params(axis="both", which="minor", labelsize=font_size - 2)
         ax_el_gen_df.legend(loc="upper center", fontsize=font_size - 2)
-        # ax_el_gen_df.legend_.remove()
 
         ax_repair_df = None
         if not repairs_df.empty:
@@ -85,11 +81,8 @@ class Result_viewer:
                 alpha=0.5,
                 ax=ax_base
             )
-            
-        
         
         max_risk_val = risks_df.max().max()
-        
         max_risk_val = 1 if max_risk_val < 1 else max_risk_val
 
         if not repairs_df.empty:
@@ -112,10 +105,7 @@ class Result_viewer:
             # lines2, labels2 = ax_repair_df.get_legend_handles_labels()
             lines3, labels3 = ax_risks_df.get_legend_handles_labels()
             ax_base.legend(lines  + lines3, labels + labels3, loc='upper center', fontsize=font_size - 2, ncol=4)
-        # else:
-            # ax_el_gen_df.legend_.visible = True
                        
-
     
         fig = plt.gcf()
         ax_el_gen_df.tick_params(axis="both", which="major", labelsize=font_size - 2)
@@ -126,24 +116,53 @@ class Result_viewer:
         fig.set_dpi(150)
         
         center_matplotlib_figure(fig, extra_y=-60, extra_x=40)
-        
-        # plt.legend(
-        #     loc="upper center",
-        #     # bbox_to_anchor=(0.5, 1),
-        #     fontsize=font_size - 2,
-        #     # ncols=4,
-        #     # ncol=2,
-        #     reverse=True,
-        #     labelspacing=2,
-        #     edgecolor="None",
-        #     facecolor="none",
-        # )
-    
+  
         plt.show(block=True)
         
         
         if self.save_image_flag:
             self._save_image(fig, self.image_dpi) 
+        
+        
+        
+    def plot_all_blocks_graph(self):
+        
+        
+        cost_all_blocks_df = self.block_grouper.get_cost_profile_all_blocks(cumulative=True)
+        
+        fig, ax_base = plt.subplots()
+        
+        font_size = 8
+        max_y = cost_all_blocks_df.max().max() * 1.2
+        
+        ax_cost_all_blocks_df = cost_all_blocks_df.plot(
+            kind="line",
+            ylim=(0, max_y),
+            legend="reverse",
+            color="black",
+            linewidth=0.5,
+            fontsize=font_size-2,
+            ax=ax_base
+        )
+        ax_cost_all_blocks_df.set_ylabel('Затраты на ремонты,', fontsize=font_size - 2)
+        ax_cost_all_blocks_df.tick_params(axis="both", which="major", labelsize=font_size - 2)
+        ax_cost_all_blocks_df.tick_params(axis="both", which="minor", labelsize=font_size - 2)
+        ax_base.legend(loc='upper center', fontsize=font_size - 2, ncol=4)
+        # fig.canvas.manager.set_window_title("")
+        fig.set_dpi(150)
+        center_matplotlib_figure(fig, extra_y=-60, extra_x=40)
+        plt.show(block=True)
+        
+        if self.save_image_flag:
+            self._save_image(fig, self.image_dpi) 
+        
+        
+        
+        
+        
+        
+        
+        
         
         
         
