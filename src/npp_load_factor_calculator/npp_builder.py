@@ -192,8 +192,9 @@ class NPP_builder:
                         sink_builder = Wrapper_sink(self.es, f"{npp_block_builder.label}_{name}_{selected_risk_bus}_sink")
                         sink_power = risks[selected_risk_bus].nominal_storage_capacity
                         sink_power = self.resolution_strategy.convert_power(sink_power)
+                        min_val = options["min"]
                         sink_builder.update_options({
-                            "input_bus": risk_out_bus_dict[selected_risk_bus], "nominal_power": sink_power, "min": 0})
+                            "input_bus": risk_out_bus_dict[selected_risk_bus], "nominal_power": sink_power, "min": min_val})
                         sink_builder.create_pair_equal_status(repair_converter_builder)
                         sinks[selected_risk_bus] = sink_builder.build()
                     block.sinks = sinks
@@ -232,8 +233,9 @@ class NPP_builder:
                         duration = self.resolution_strategy.convert_time(options["duration"])
                         sink_power =  risk_reducing / duration
                         sink_power = sink_power / coeff
+                        min_val = options["min"]
                         sink_builder.update_options({
-                            "input_bus": risk_out_bus_dict[selected_risk_bus], "nominal_power": sink_power, "min": 0})
+                            "input_bus": risk_out_bus_dict[selected_risk_bus], "nominal_power": sink_power, "min": min_val})
                         sink_builder.create_pair_equal_status(repair_converter_builder)
                         sinks[selected_risk_bus] = sink_builder.build()
                     block.sinks = sinks
@@ -270,8 +272,9 @@ class NPP_builder:
                     for selected_risk_bus in selected_risk_bus_set:
                         sink_builder = Wrapper_sink(self.es, f"{npp_block_builder.label}_{name}_{selected_risk_bus}_sink")
                         sink_power = risks[selected_risk_bus].nominal_storage_capacity
+                        min_val = options["min"]
                         sink_builder.update_options({
-                            "input_bus": risk_out_bus_dict[selected_risk_bus], "nominal_power": sink_power, "min": 0})
+                            "input_bus": risk_out_bus_dict[selected_risk_bus], "nominal_power": sink_power, "min": min_val})
                         sink_builder.create_pair_equal_status(repair_converter_builder)
                         sinks[selected_risk_bus] = sink_builder.build()
                     block.sinks = sinks
@@ -309,8 +312,9 @@ class NPP_builder:
                         duration = self.resolution_strategy.convert_time(options["duration"])
                         sink_power =  risk_reducing / duration
                         sink_power = sink_power / coeff
+                        min_val = options["min"]
                         sink_builder.update_options({
-                            "input_bus": risk_out_bus_dict[selected_risk_bus], "nominal_power": sink_power, "min": 0})
+                            "input_bus": risk_out_bus_dict[selected_risk_bus], "nominal_power": sink_power, "min": min_val})
                         sink_builder.create_pair_equal_status(repair_converter_builder)
                         sinks[selected_risk_bus] = sink_builder.build()
                     block.sinks = sinks

@@ -137,6 +137,18 @@ class Block_grouper:
         return res
     
     
+    def get_electricity_profile_all_blocks(self):
+        res = pd.DataFrame()
+        colors = []
+        for custom_block in self.electr_groups:
+            label = list(custom_block.electr_plot.keys())[0]
+            res[label] = custom_block.get_electricity_profile()
+            colors.append(custom_block.electr_plot[label]["color"])
+        res = res[:-1]
+        res.colors = colors
+        return res
+    
+    
     def get_electricity_profile_by_blocks(self, blocks):
         pass
     

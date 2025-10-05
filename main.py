@@ -1,18 +1,19 @@
 from src.npp_load_factor_calculator import Block_grouper, Oemof_model, Result_viewer
 from src.npp_load_factor_calculator.result_viewer import Control_block_viewer
 from src.npp_load_factor_calculator.solution_processor import Solution_processor
-from src.npp_load_factor_calculator.utilites import all_months, get_r
+from src.npp_load_factor_calculator.utilites import all_months
 
 repair_options = {
     "maintence-1": {
         "id": 0,
-        "status": True,
+        "status": False,
         "startup_cost": 1e3,
         "duration": 10,
         "min_downtime": 0,
         "max_startup": 12,
         "risk_reset": set(),
         "risk_reducing": {"r2": 0.15},
+        "min": 0,
         "npp_stop": False,
         "forced_in_period": False,
     },
@@ -25,6 +26,7 @@ repair_options = {
         "max_startup": 12,
         "risk_reset": set(),
         "risk_reducing": {"r1": 0.1},
+        "min": 1,
         "start_day": {"status": True, "days": [1,]},
         "npp_stop": False,
         "forced_in_period": False,
@@ -41,6 +43,7 @@ repair_options = {
         # "risk_reset": {},
         "risk_reducing": {},
         # "risk_reducing": {"r1": 0.9},
+        "min": 0,
         "start_day": {"status": True, "days": [1,]},
         "npp_stop": True,
         "forced_in_period": False,
@@ -56,6 +59,7 @@ repair_options = {
         "max_startup": 1,
         "risk_reducing": {"r1": 0.9},
         # "risk_reducing": {},
+        "min": 0,
         "start_day": {"status": True, "days": [1,]},
         "npp_stop": True,
         "forced_in_period": False,
@@ -68,6 +72,7 @@ repair_options = {
         "min_downtime": 30,
         "risk_reset": {"r1", "r2", "r3"},
         "risk_reducing": {},
+        "min": 0,
         "npp_stop": True,
         "forced_in_period": False,
     },
@@ -79,6 +84,7 @@ repair_options = {
         "min_downtime": 30,
         "risk_reset": {"r1", "r2", "r3"},
         "risk_reducing": {},
+        "min": 0,
         "npp_stop": True,
         "forced_in_period": False,
     },
@@ -108,7 +114,7 @@ scen = {
                 "start_of_month": True,
                 "allow_months": all_months - {"Jan"},
                 "planning_outage_duration": 30,
-                "fixed_mode": True,
+                "fixed_mode": False,
                 "fixed_outage_month":  set(["Jul"]),
             },
             "risk_options": {
@@ -123,8 +129,8 @@ scen = {
                 "options": repair_options
                 },
         }),
-        # "bel_npp_block_2": bel_npp_block_2,
-        "bel_npp_block_2": {"status": False},
+        "bel_npp_block_2": bel_npp_block_2,
+        # "bel_npp_block_2": {"status": False},
         "new_npp_block_1": {"status": False},
         # "new_npp_block_1": bel_npp_block_2,
 }
@@ -153,7 +159,7 @@ solution_processor.set_excel_folder("./excel_results")
 # solution_processor.set_restore_mode(file_number="03") 
 # solution_processor.set_restore_mode(file_number="06") 
 # solution_processor.set_restore_mode(file_number="09") 
-solution_processor.set_restore_mode(file_number="31") 
+solution_processor.set_restore_mode(file_number="29") 
 
 solution_processor.apply()
 
@@ -207,11 +213,14 @@ result_viewer.set_image_flag(False)
 # result_viewer.set_image_flag(True)
 result_viewer.set_image_options(folder="./images", image_format="jpg", dpi=600)
 
-result_viewer.plot_general_graph(bel_npp_block_1)
+# result_viewer.plot_general_graph(bel_npp_block_1)
 # result_viewer.plot_general_graph(bel_npp_block_2)
 # result_viewer.plot_general_graph(new_npp_block_1)
 
-result_viewer.plot_all_blocks_graph()
+# result_viewer.plot_cost_all_blocks_graph()
+
+result_viewer.plot_profile_all_blocks_graph()
+
 
 control_block_viewer.plot_sinks_profile(bel_npp_block_1, repair_id=1, risk_name="r1")
 # control_block_viewer.plot_sinks_profile(bel_npp_block_1, repair_id=2, risk_name="r1")
