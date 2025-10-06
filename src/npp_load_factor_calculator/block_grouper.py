@@ -174,6 +174,18 @@ class Block_grouper:
         return res
     
     
+    def get_repairs_profile_by_all_blocks_dict(self, part=1):
+        res = {}
+        for custom_block in self.electr_groups:
+            repair_df = custom_block.get_repair_status_profile()
+            colors = repair_df.colors
+            repair_df *= custom_block.block.nominal_power * part
+            repair_df = repair_df[:-1]
+            repair_df.colors = colors
+            res[custom_block.block.label] = repair_df
+        return res
+    
+    
     def get_cost_profile_block(self, block, cumulative=False):
         custom_block = [custom_block for custom_block in self.electr_groups if custom_block.block is block[0]][0]
         res = custom_block.get_cost_profile()

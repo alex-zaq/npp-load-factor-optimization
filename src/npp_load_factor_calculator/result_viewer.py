@@ -2,7 +2,7 @@ from pathlib import Path
 
 from matplotlib import pyplot as plt
 
-from src.npp_load_factor_calculator.utilites import center_matplotlib_figure, get_file_name_with_auto_number
+from src.npp_load_factor_calculator.utilites import add_white_spaces_and_colors_el_gen, add_white_spaces_and_colors_repairs, center_matplotlib_figure, get_file_name_with_auto_number
 
 
 class Result_viewer:
@@ -161,10 +161,16 @@ class Result_viewer:
         
                         
         el_gen_df = self.block_grouper.get_electricity_profile_all_blocks()
-        # repairs_df = self.block_grouper.get_repairs_profile_by_all_blocks(part=1)
+        repairs_df = self.block_grouper.get_repairs_profile_by_all_blocks_dict()
+        
+        el_gen_df = add_white_spaces_and_colors_el_gen(el_gen_df, 1170)
+        repairs_df = add_white_spaces_and_colors_repairs(repairs_df, 1170)
+        
+        
+        
 
         font_size = 8
-        max_y = 6000
+        max_y = 5000
 
         ax_el_gen_df = el_gen_df.plot(
             kind="area",
@@ -173,12 +179,24 @@ class Result_viewer:
             color=el_gen_df.colors,
             linewidth=0.01,
             fontsize=font_size,
-            ax= ax_base
+            ax=ax_base
+        )
+        
+        ax_repairs_df = repairs_df.plot(
+            kind="area",
+            ylim=(0, max_y),
+            legend="reverse",
+            stacked=True,
+            color=repairs_df.colors,
+            linewidth=0.01,
+            alpha=0.5,
+            fontsize=font_size,
+            ax=ax_base
         )
 
 
         fig.set_dpi(150)
-        # center_matplotlib_figure(fig, extra_y=-60, extra_x=40)
+        center_matplotlib_figure(fig, extra_y=-60, extra_x=40)
         plt.show(block=True)
         
 

@@ -152,11 +152,7 @@ first_time_step = datetime.datetime(2025, 1, 1)
 t_delta = datetime.datetime(2025 + 1, 1, 1) - first_time_step
 date_timeindex = pd.date_range(first_time_step, periods=365, freq="D")
 
-# events = {
-#     "2025-01-01": 0.2,
-#     "2025-02-15": 0.2,
-#     "2025-04-15": 0.3,
-# }
+
 
 def get_risk_events_profile(date_range, events):
     num_hours = len(date_range)
@@ -169,8 +165,45 @@ def get_risk_events_profile(date_range, events):
         
     return profile
 
-# arr = get_risk_events_profile(date_timeindex, events)
-# plot_array(arr)
+
+def add_white_spaces_and_colors_el_gen(df, value):
+    
+    new_df = pd.DataFrame()
+    new_colors = []
+    colors = df.colors
+    for i,col in enumerate(df.columns):
+        new_df.insert(len(new_df.columns), f"{col}", df.iloc[:, i], True)
+        new_colors.append(colors[i])
+        if df.iloc[:, i].min() < value:
+            new_df.insert(len(new_df.columns), f"{col}_white_spaces", value - df.iloc[:, i], True)
+            new_colors.insert(len(new_colors) - 1 + 1, "white")
+    
+    new_df.colors = new_colors
+    return new_df
+
+def add_white_spaces_and_colors_repairs(dict_value, value):
+    
+    new_df = pd.DataFrame()
+    new_colors = []
+
+    for key, df_item in dict_value.items():
+
+        new_colors.extend(df_item.colors)
+        for col in df_item.columns:
+            new_df.insert(len(new_df.columns), f"{col}", df_item[col], True)
+
+        buf = df_item.sum(axis = 1).to_frame()
+        print(buf)
+
+        if buf.iloc[:, 0].min() < value:
+            df_insert = value - buf.iloc[:, 0]
+            new_df.insert(len(new_df.columns), f"{key}_white_spaces", df_insert, True)
+            new_colors.insert(len(new_colors) - 1 + 1, (1,0,0,0)) 
+    
+
+    new_df.colors = new_colors
+    return new_df
+    
 
 
 
