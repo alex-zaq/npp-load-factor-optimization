@@ -178,10 +178,12 @@ class Block_grouper:
         res = {}
         for custom_block in self.electr_groups:
             repair_df = custom_block.get_repair_status_profile()
+            block_color = custom_block.electr_plot[list(custom_block.electr_plot.keys())[0]]["color"]
             colors = repair_df.colors
             repair_df *= custom_block.block.nominal_power * part
             repair_df = repair_df[:-1]
             repair_df.colors = colors
+            repair_df.block_color = block_color
             res[custom_block.block.label] = repair_df
         return res
     
@@ -192,6 +194,7 @@ class Block_grouper:
         if cumulative:
             res = res.cumsum()
         res = res[:-1]
+        res = res / 1e6
         return res
     
     
@@ -204,6 +207,7 @@ class Block_grouper:
         if cumulative:
             res = res.cumsum()
         res = res[:-1]
+        res = res / 1e6
         return res
 
     

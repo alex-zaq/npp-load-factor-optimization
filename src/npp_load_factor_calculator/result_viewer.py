@@ -162,6 +162,8 @@ class Result_viewer:
                         
         el_gen_df = self.block_grouper.get_electricity_profile_all_blocks()
         repairs_df = self.block_grouper.get_repairs_profile_by_all_blocks_dict()
+        cost_all_blocks_df = self.block_grouper.get_cost_profile_all_blocks(cumulative=True)
+        
         
         el_gen_df = add_white_spaces_and_colors_el_gen(el_gen_df, 1170)
         repairs_df = add_white_spaces_and_colors_repairs(repairs_df, 1170)
@@ -178,6 +180,7 @@ class Result_viewer:
             legend="reverse",
             color=el_gen_df.colors,
             linewidth=0.01,
+            alpha=1,
             fontsize=font_size,
             ax=ax_base
         )
@@ -189,11 +192,47 @@ class Result_viewer:
             stacked=True,
             color=repairs_df.colors,
             linewidth=0.01,
-            alpha=0.5,
+            alpha=0.6,
             fontsize=font_size,
             ax=ax_base
         )
+        
+        max_y_cost = cost_all_blocks_df.max().max() * 1.5
+        
+        ax_cost_all_blocks_df = cost_all_blocks_df.plot(
+            kind="line",
+            ylim=(0, max_y_cost),
+            legend="reverse",
+            color="black",
+            linewidth=0.7,
+            fontsize=font_size-2,
+            ax=ax_base.twinx()
+        )
+        ax_cost_all_blocks_df.set_ylabel('Затраты, млн. долл. США', fontsize=font_size - 2)
+        ax_cost_all_blocks_df.legend_.remove()
+        
+        ax_base.set_ylabel('Мощность АЭС, МВт', fontsize=font_size - 2)
 
+        lines, labels = ax_cost_all_blocks_df.get_legend_handles_labels()
+        
+        legen_cost_dict = dict(zip(labels, lines))
+    
+    
+        lines, labels = ax_base.get_legend_handles_labels()
+        
+        
+        main_legend_dict = dict(zip(labels, lines))
+        
+        main_legend_dict.update(legen_cost_dict)
+        
+        legend_dict_updated = {k:v for k,v in main_legend_dict.items() if "white" not in k}
+        
+        updated_lines = list(legend_dict_updated.values())
+        updated_labels = list(legend_dict_updated.keys())
+        ax_base.legend(updated_lines, updated_labels, loc='upper left', fontsize=font_size - 2, ncol=2)
+        
+        ax_base.tick_params(axis="both", which="major", labelsize=font_size - 2)
+        ax_base.tick_params(axis="both", which="minor", labelsize=font_size - 2)
 
         fig.set_dpi(150)
         center_matplotlib_figure(fig, extra_y=-60, extra_x=40)

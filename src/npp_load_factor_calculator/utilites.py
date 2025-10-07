@@ -193,12 +193,13 @@ def add_white_spaces_and_colors_repairs(dict_value, value):
             new_df.insert(len(new_df.columns), f"{col}", df_item[col], True)
 
         buf = df_item.sum(axis = 1).to_frame()
-        print(buf)
+        # print(buf)
 
         if buf.iloc[:, 0].min() < value:
             df_insert = value - buf.iloc[:, 0]
             new_df.insert(len(new_df.columns), f"{key}_white_spaces", df_insert, True)
-            new_colors.insert(len(new_colors) - 1 + 1, (1,0,0,0)) 
+            # new_colors.insert(len(new_colors) - 1 + 1, (1,0,0,0)) 
+            new_colors.insert(len(new_colors) - 1 + 1, df_item.block_color) 
     
 
     new_df.colors = new_colors
