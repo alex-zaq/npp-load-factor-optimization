@@ -115,7 +115,7 @@ class Result_viewer:
         fig.canvas.manager.set_window_title("Расчет плановых остановок (один блок)")
         fig.set_dpi(150)
         
-        center_matplotlib_figure(fig, extra_y=-60, extra_x=40)
+        # center_matplotlib_figure(fig, extra_y=-60, extra_x=40)
   
         plt.show(block=True)
         

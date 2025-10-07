@@ -38,6 +38,10 @@ class Custom_block:
             res_df = res_df.clip(lower=0)
         res_df.colors = colors
         return res_df
+    
+    def get_max_risk_dict(self):
+        max_risk_dict = {k: v.nominal_storage_capacity for k,v in self.block.risks.items()}
+        return max_risk_dict
         
 
     def get_repair_status_profile(self):
@@ -158,14 +162,25 @@ class Block_grouper:
         return res
     
     def get_risks_profile_by_all_blocks_dict(self):
-        res = {}
+        res_dict = {}
+        all_colors = []
         for custom_block in self.electr_groups:
             risk_df = custom_block.get_risks_profile()
-            colors = risk_df.colors
+            all_colors.extend(risk_df.colors)
             risk_df = risk_df[:-1]
-            risk_df.colors = colors
-            res[custom_block.block.label] = risk_df
-        return res
+            max_risk_dict = custom_block.get_max_risk_dict()
+            
+            block_label = custom_block.block.label
+            risks = max_risk_dict.keys()
+
+            for risk in risks:
+                risk_label = f"{risk} ({block_label})"
+                max_risk = max_risk_dict[risk]
+                risk_line_col = risk_df[risk]
+                res_dict[risk_label] = {"max_risk": max_risk, "risk_line_col": risk_line_col}
+            
+        res_dict.colors = all_colors
+        return res_dict
     
     
     def get_repairs_profile_by_block(self, block, part=1):
