@@ -147,13 +147,7 @@ class Block_grouper:
         res = res[:-1]
         res.colors = colors
         return res
-    
-    
-    def get_electricity_profile_by_blocks(self, blocks):
-        pass
-    
-    
-   
+ 
     
     def get_risks_profile_by_block(self, block):
         custom_block = [custom_block for custom_block in self.electr_groups if custom_block.block is block][0]
@@ -161,6 +155,16 @@ class Block_grouper:
         colors = res.colors
         res = res[:-1]
         res.colors = colors
+        return res
+    
+    def get_risks_profile_by_all_blocks_dict(self):
+        res = {}
+        for custom_block in self.electr_groups:
+            risk_df = custom_block.get_risks_profile()
+            colors = risk_df.colors
+            risk_df = risk_df[:-1]
+            risk_df.colors = colors
+            res[custom_block.block.label] = risk_df
         return res
     
     
