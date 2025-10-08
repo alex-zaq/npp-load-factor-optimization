@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from matplotlib import pyplot as plt
+import pandas as pd
 
 from src.npp_load_factor_calculator.utilites import add_white_spaces_and_colors_el_gen, add_white_spaces_and_colors_repairs, center_matplotlib_figure, get_file_name_with_auto_number
 
@@ -133,17 +134,14 @@ class Result_viewer:
                        
         el_gen_df = self.block_grouper.get_electricity_profile_all_blocks()
         repairs_dict = self.block_grouper.get_repairs_profile_by_all_blocks_dict()
-        risks_dict = self.block_grouper.get_risks_profile_by_all_blocks_dict()
         cost_all_blocks_df = self.block_grouper.get_cost_profile_all_blocks(cumulative=True)
         
         
         el_gen_df = add_white_spaces_and_colors_el_gen(el_gen_df, 1170)
         repairs_df = add_white_spaces_and_colors_repairs(repairs_dict, 1170)
         
-        
-        
 
-        font_size = 8
+        font_size = 10
         max_y = 5000
 
         ax_el_gen_df = el_gen_df.plot(
@@ -176,7 +174,8 @@ class Result_viewer:
             ylim=(0, max_y_cost),
             legend="reverse",
             color="black",
-            linewidth=0.7,
+            style="-",
+            linewidth=1,
             fontsize=font_size-2,
             ax=ax_left.twinx()
         )
@@ -205,6 +204,35 @@ class Result_viewer:
         
         ax_left.tick_params(axis="both", which="major", labelsize=font_size - 2)
         ax_left.tick_params(axis="both", which="minor", labelsize=font_size - 2)
+
+
+
+
+        ax_right = ax_right
+        risks_dict = self.block_grouper.get_risks_profile_by_all_blocks_dict()
+        risk_colors = [v["color"] for v in risks_dict.values()]
+        risk_data_dict = {k: v["risk_line_col"] for k, v in risks_dict.items()}
+        risk_df = pd.DataFrame(risk_data_dict)
+        max_y_cost = risk_df.max().max() * 1.5
+
+        ax_risk_df = risk_df.plot(
+            kind="line",
+            ylim=(0, max_y_cost),
+            legend="reverse",
+            color=risk_colors,
+            linewidth=0.7,
+            fontsize=font_size-2,
+            ax=ax_right
+        )
+        ax_risk_df.set_ylabel('Условная величина риска', fontsize=font_size - 2)
+        ax_risk_df.legend(loc='upper left', fontsize=font_size - 2, ncol=1)
+        if len(max_risk_value:=set(v["max_risk"] for v in risks_dict.values())) == 1:
+            ax_risk_df.axhline(y=max_risk_value.pop(), color='r', linestyle='--', label='Верхняя граница риска')
+
+
+
+
+
 
         fig.set_dpi(100)
         center_matplotlib_figure(fig, extra_y=-60, extra_x=40)

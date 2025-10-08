@@ -160,7 +160,7 @@ solution_processor.set_excel_folder("./excel_results")
 # solution_processor.set_restore_mode(file_number="06") 
 # solution_processor.set_restore_mode(file_number="09") 
 
-# solution_processor.set_restore_mode(file_number="35") 
+solution_processor.set_restore_mode(file_number="30") 
 # solution_processor.set_restore_mode(file_number="36") 
 
 solution_processor.apply()
@@ -215,8 +215,8 @@ result_viewer.set_image_flag(False)
 # result_viewer.set_image_flag(True)
 result_viewer.set_image_options(folder="./images", image_format="jpg", dpi=600)
 
-result_viewer.plot_general_graph(bel_npp_block_1)
-result_viewer.plot_general_graph(bel_npp_block_2)
+# result_viewer.plot_general_graph(bel_npp_block_1)
+# result_viewer.plot_general_graph(bel_npp_block_2)
 # result_viewer.plot_general_graph(new_npp_block_1)
 
 # result_viewer.plot_cost_all_blocks_graph()
@@ -251,6 +251,12 @@ control_block_viewer.plot_sinks_profile(bel_npp_block_1, repair_id=1, risk_name=
 print("done")
 
 
+# раздвинуть графики
+# добавить подпись ось x
+# вынести параметр шрифта
+# добавить опциональные подписи максимумов (вынести в параметр)
+# разные верхние границы максимумов
+# доавить отображения событий повышающих риск (вертикальные черты)
 # обязательный выбор ремонтов во время остановки
 # простое переключение сценариев
 # сохранение рисунков

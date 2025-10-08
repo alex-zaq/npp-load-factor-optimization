@@ -40,7 +40,10 @@ class Custom_block:
         return res_df
     
     def get_max_risk_dict(self):
-        max_risk_dict = {k: v.nominal_storage_capacity for k,v in self.block.risks.items()}
+        max_risk_dict = {}
+        for risk_label, risk_plot_data in self.risks_plot_dict.items():
+            storage = risk_plot_data["storage"]
+            max_risk_dict[risk_label] = storage.nominal_storage_capacity
         return max_risk_dict
         
 
@@ -102,6 +105,7 @@ class Block_grouper:
                 custom_block = Custom_block(block_data["block"])
                 custom_block.electr_plot = {}
                 custom_block.electr_plot[label] = {"color": block_data["color"]}
+                custom_block.color = block_data["color"]
                 self.electr_groups.append(custom_block)
         
         
@@ -110,7 +114,10 @@ class Block_grouper:
                     if risk_data["risk_name"]  in  custom_block.block.risks:
                         custom_block.risks_plot_dict[label] ={
                                 "color": risk_data["color"],
-                                "storage": custom_block.block.risks[risk_data["risk_name"]]}
+                                "block_color": custom_block.color,
+                                "storage": custom_block.block.risks[risk_data["risk_name"]],
+                                "max_risk": custom_block.block.risks[risk_data["risk_name"]].nominal_storage_capacity
+                                }
                             
                                                 
             for custom_block in self.electr_groups:
@@ -163,23 +170,21 @@ class Block_grouper:
     
     def get_risks_profile_by_all_blocks_dict(self):
         res_dict = {}
-        all_colors = []
         for custom_block in self.electr_groups:
             risk_df = custom_block.get_risks_profile()
-            all_colors.extend(risk_df.colors)
             risk_df = risk_df[:-1]
             max_risk_dict = custom_block.get_max_risk_dict()
-            
             block_label = custom_block.block.label
             risks = max_risk_dict.keys()
-
             for risk in risks:
                 risk_label = f"{risk} ({block_label})"
                 max_risk = max_risk_dict[risk]
                 risk_line_col = risk_df[risk]
-                res_dict[risk_label] = {"max_risk": max_risk, "risk_line_col": risk_line_col}
-            
-        res_dict.colors = all_colors
+                res_dict[risk_label] = {
+                    "max_risk": max_risk,
+                    "risk_line_col": risk_line_col,
+                    # "color": custom_block.risks_plot_dict[risk]["color"]}
+                    "color": custom_block.color}
         return res_dict
     
     
@@ -222,7 +227,7 @@ class Block_grouper:
         for custom_block in self.electr_groups:
             res[custom_block.block.label] = custom_block.get_cost_profile()
         res = res.sum(axis=1).to_frame()
-        res.columns = ["затраты"]
+        res.columns = ["затраты на ремонты"]
         if cumulative:
             res = res.cumsum()
         res = res[:-1]
