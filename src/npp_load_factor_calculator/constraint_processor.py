@@ -54,9 +54,48 @@ class Constraint_processor:
             [item for item in items],
             rule=sequential_loading_rule
         )
-                
+        
+        
+    def add_group_equal_1(self):
+        
+        block_associations = self.constraints["group_equal_1"]
+        model = self.model
+        
+        def dependency_rule_generalized(model, t, cheap_block_pair, expense_group_pairs, bus):
+            sum_of_group_statuses = sum(
+                model.NonConvexFlowBlock.status[pair[0], pair[1], t]
+                for pair in expense_group_pairs
+            )
+            return model.NonConvexFlowBlock.status[cheap_block_pair[0], cheap_block_pair[1], t] <= sum_of_group_statuses
 
-   
+        def mutual_exclusion_rule_generalized(model, t, expense_group_pairs):
+            sum_of_group_statuses = sum(
+                model.NonConvexFlowBlock.status[pair[0], pair[1], t]
+                for pair in expense_group_pairs
+            )
+            return sum_of_group_statuses <= 1
+                    
+
+        for i, (cheap_block_pair, expense_group_pairs) in enumerate(block_associations):
+            setattr(
+                model,
+                f'dependency_constraint_{i}',
+                po.Constraint(
+                    model.TIMESTEPS,
+                    rule=lambda model, t, cheap_block_pair=cheap_block_pair, expense_group_pairs=expense_group_pairs:
+                        dependency_rule_generalized(model, t, cheap_block_pair, expense_group_pairs)
+                )
+            )
+
+            setattr(
+                model,
+                f'mutual_exclusion_constraint_{i}',
+                po.Constraint(
+                    model.TIMESTEPS,
+                    rule=lambda model, t, expense_group_pairs=expense_group_pairs:
+                        mutual_exclusion_rule_generalized(model, t, expense_group_pairs)
+                )
+            )
             
 
 

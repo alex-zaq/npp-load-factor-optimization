@@ -160,8 +160,8 @@ solution_processor.set_excel_folder("./excel_results")
 # solution_processor.set_restore_mode(file_number="06") 
 # solution_processor.set_restore_mode(file_number="09") 
 
-# solution_processor.set_restore_mode(file_number="30") 
-solution_processor.set_restore_mode(file_number="31") 
+solution_processor.set_restore_mode(file_number="39") 
+# solution_processor.set_restore_mode(file_number="31") 
 
 solution_processor.apply()
 
@@ -229,36 +229,18 @@ result_viewer.plot_profile_all_blocks_graph(font_size=10, risk_graph = True, dpi
 
 
 
-
-
-
-
-
-
-# result_viewer.plot_electricity_generation_profile()
-# result_viewer.plot_main_risk_events_profile()
-# result_viewer.plot_cost_profile()
-# result_viewer.plot_repair_profile()
-# result_viewer.plot_general_graph()
-
-
-# control_block_viewer.plot_default_risk_profile()
-
-# control_block_viewer.plot_storage_profiles(mode = "storage_main_risk", flow_mode = "content")
-# control_block_viewer.plot_storage_profiles(mode = "storage_main_risk", flow_mode = "input")
-# control_block_viewer.plot_storage_profiles(mode = "storage_main_risk", flow_mode = "output")
-
 print("done")
 
 
+# проверка ограничения group_equal_1 - прсотой пример
+# поменять название рисков
+# подпись макс затрат справа
 # добавить опциональные подписи максимумов (вынести в параметр)
 # разные верхние границы максимумов
 # добавить отображения событий повышающих риск (вертикальные черты)
 # обязательный выбор ремонтов во время остановки
 # простое переключение сценариев
 # сохранение рисунков
-# затраты
-# сделать раздельные легенды
 # график с тремя блоками 1 и 3 года с ремонтами и деньгами
 # учет штрафов за остановку
 # для ремонтов требущих отключение блока добавить промежуточный блок со связья блоком (upper 1)

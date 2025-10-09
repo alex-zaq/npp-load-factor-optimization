@@ -86,8 +86,10 @@ model = solph.Model(es)
 solph.constraints.limit_active_flow_count_by_keyword(model, "cheap", lower_limit=2, upper_limit=2)
 
 
-item_1 = (cheap_block_1, el_bus), (expense_block_1, el_bus)
-item_2 = (cheap_block_2, el_bus), (expense_block_2, el_bus)
+# item_1 = (cheap_block_1, el_bus), (expense_block_1, el_bus)
+# item_2 = (cheap_block_2, el_bus), (expense_block_2, el_bus)
+item_1 = (cheap_block_1, el_bus, expense_block_1, el_bus)
+item_2 = (cheap_block_2, el_bus, expense_block_2, el_bus)
 
 
 

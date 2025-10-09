@@ -144,6 +144,7 @@ class Block_grouper:
         res[label] = custom_block.get_electricity_profile()
         colors.append(custom_block.electr_plot[label]["color"])
         res = res[:-1]
+        res.clip(lower=0)
         res.colors = colors
         return res
     
@@ -156,6 +157,7 @@ class Block_grouper:
             res[label] = custom_block.get_electricity_profile()
             colors.append(custom_block.electr_plot[label]["color"])
         res = res[:-1]
+        res.clip(lower=0)
         res.colors = colors
         return res
  
@@ -165,6 +167,7 @@ class Block_grouper:
         res = custom_block.get_risks_profile()
         colors = res.colors
         res = res[:-1]
+        res.clip(lower=0)
         res.colors = colors
         return res
     

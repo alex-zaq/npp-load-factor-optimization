@@ -51,8 +51,8 @@ class Wrapper_base:
         self.keywords[keyword] = True
         self.constraints["no_equal_status"].append(keyword)
         
-    def add_group_lower_1(self, wrapper_block):
-        self.constraints["group_lower_1"].append(wrapper_block)
+    def add_group_equal_1(self, wrapper_block):
+        self.constraints["group_equal_1"].append(wrapper_block)
         
     def create_pair_no_equal_lower_1_status(self, wrapper_block):
         keyword = f"{self.label}_{wrapper_block.label}_no_equal_lower_1_status"
@@ -204,13 +204,11 @@ class Wrapper_base:
                         pair_1 = self.get_pair_after_building()
                         pair_2 = wrapper_block.get_pair_after_building()
                         self.es.constraints["strict_order"].append((pair_1, pair_2))
-                case  "group_lower_1":
-                    group_items = []
-                    main_pair = self.get_pair_after_building()
-                    for wrapper_block in self.constraints[constraint_group_name]:
-                        group_item_pair = wrapper_block.get_pair_after_building()
-                        group_items.append(group_item_pair)
-                    self.es.constraints["group_lower_1"] = {"main_pair": main_pair, "group_items": group_items}
+                case  "group_equal_1":
+                        cheap_pair = self.get_pair_after_building()
+                        expense_pairs = [wrapper_block.get_pair_after_building() for wrapper_block in self.constraints[constraint_group_name]]
+                        self.es.constraints["group_equal_1"].append((cheap_pair, expense_pairs))
+
                     
                     
     def _get_nonconvex_flow(self):
