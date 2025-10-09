@@ -125,7 +125,7 @@ class Result_viewer:
             self._save_image(fig, self.image_dpi) 
                 
    
-    def plot_profile_all_blocks_graph(self, font_size, risk_graph=False):
+    def plot_profile_all_blocks_graph(self, font_size, risk_graph=False, dpi=120):
         
         
         if risk_graph:
@@ -213,6 +213,22 @@ class Result_viewer:
 
         ax_left.set_xlabel("Время, часы", fontsize=font_size - 2)
         
+        cost_upper_bound = cost_all_blocks_df.max().max()
+        
+        ax_cost_all_blocks_df.axhline(y=cost_upper_bound, color='black', linestyle='--', label='затраты за период')
+        
+        x_max = cost_all_blocks_df.index[40]
+        y_max = cost_all_blocks_df.max().max()
+        ax_cost_all_blocks_df.text(
+            x_max,
+            y_max * 1.03,
+            f"max = {y_max:.3f}",
+            fontsize=font_size - 2,
+            horizontalalignment="center",
+            verticalalignment="bottom",
+            color="black",
+            )
+        
         if risk_graph:
 
             ax_right = ax_right
@@ -221,6 +237,12 @@ class Result_viewer:
             risk_data_dict = {k: v["risk_line_col"] for k, v in risks_dict.items()}
             risk_df = pd.DataFrame(risk_data_dict)
             max_y_cost = risk_df.max().max() * 1.5
+
+
+            if len(max_risk_value:=set(v["max_risk"] for v in risks_dict.values())) == 1:
+                max_risk_value = max_risk_value.pop()
+                max_y_cost = max_risk_value * 1.5
+
 
             ax_risk_df = risk_df.plot(
                 kind="line",
@@ -233,16 +255,32 @@ class Result_viewer:
             )
             ax_risk_df.set_ylabel('Условная величина риска', fontsize=font_size - 2)
             ax_risk_df.legend(loc='upper left', fontsize=font_size - 2, ncol=1)
-            if len(max_risk_value:=set(v["max_risk"] for v in risks_dict.values())) == 1:
-                ax_risk_df.axhline(y=max_risk_value.pop(), color='r', linestyle='--', label='верхняя граница риска')
+            if len(set(v["max_risk"] for v in risks_dict.values())) == 1:
+                ax_risk_df.axhline(y=max_risk_value, color='r', linestyle='--', label='верхняя граница риска')
                 ax_risk_df.legend(loc='upper left', fontsize=font_size - 2, ncol=1)
+
+            x_max = risk_df.index[40]
+
+            # x_max = risk_df.idxmax().max()
+            y_max = risk_df.max().max()
+            # ax1.scatter(x_el_max, y_el_max, color="red", s=5, zorder=10)
+            # font_size = 7
+            ax_risk_df.text(
+                x_max,
+                max_risk_value * 1.03,
+                f"max = {y_max:.3f}",
+                fontsize=font_size - 2,
+                horizontalalignment="center",
+                verticalalignment="bottom",
+                color="black",
+            )
 
 
             fig.subplots_adjust(wspace=0.3)
             ax_risk_df.set_xlabel("Время, часы", fontsize=font_size - 2)
 
 
-        fig.set_dpi(120)
+        fig.set_dpi(dpi)
         center_matplotlib_figure(fig, extra_y=-60, extra_x=40)
         plt.show(block=True)
         

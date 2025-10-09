@@ -161,7 +161,7 @@ solution_processor.set_excel_folder("./excel_results")
 # solution_processor.set_restore_mode(file_number="09") 
 
 # solution_processor.set_restore_mode(file_number="30") 
-solution_processor.set_restore_mode(file_number="37") 
+solution_processor.set_restore_mode(file_number="31") 
 
 solution_processor.apply()
 
@@ -221,7 +221,7 @@ result_viewer.set_image_options(folder="./images", image_format="jpg", dpi=600)
 
 # result_viewer.plot_cost_all_blocks_graph()
 
-result_viewer.plot_profile_all_blocks_graph(font_size=10, risk_graph = True)
+result_viewer.plot_profile_all_blocks_graph(font_size=10, risk_graph = True, dpi = 120)
 
 
 # control_block_viewer.plot_sinks_profile(bel_npp_block_1, repair_id=1, risk_name="r1")
