@@ -197,6 +197,7 @@ class Block_grouper:
         res *= custom_block.block.nominal_power * part
         colors = res.colors
         res = res[:-1]
+        res.clip(lower=0)
         res.colors = colors
         return res
     

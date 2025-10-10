@@ -27,13 +27,19 @@ class NPP_builder:
         bufer_bus = bus_factory.create_bus(f"{npp_block_builder.label}_bufer_bus", balanced=False)
         control_npp_stop_source = Wrapper_source(self.es, f"{npp_block_builder.label}_control_npp_stop_converter" )
         control_npp_stop_source.update_options({"output_bus": bufer_bus, "nominal_power": 1, "min": 1})
-        control_npp_stop_source.create_pair_no_equal_status(npp_block_builder)
-        control_npp_stop_source.build()
+        control_npp_stop_source.create_pair_no_equal_status_lower_0(npp_block_builder)
+
+        npp_block_builder.create_pair_no_equal_status(control_npp_stop_source)
+        
+        # control_npp_stop_source.create_pair_no_equal_status(npp_block_builder)
+        
+        
+        # control_npp_stop_source.build()
 
         control_npp_stop_source_2 = Wrapper_source(self.es, f"{npp_block_builder.label}_control_npp_stop_converter_2" )
         control_npp_stop_source_2.update_options({"output_bus": bufer_bus, "nominal_power": 1, "min": 1})
-        control_npp_stop_source_2.create_pair_no_equal_status(npp_block_builder)
-        control_npp_stop_source_2.create_pair_no_equal_lower_1_status(npp_block_builder)
+        control_npp_stop_source_2.create_pair_no_equal_status_lower_0(npp_block_builder)
+        control_npp_stop_source_2.create_pair_no_equal_status_lower_1(npp_block_builder)
         control_npp_stop_source_2.add_keyword_no_equal_status("single_npp_stop_model")
         control_npp_stop_source_2.build()
         
@@ -177,7 +183,10 @@ class NPP_builder:
                     duration = self.resolution_strategy.convert_time(options["duration"])
                     coeff = self.resolution_strategy.coeff
                     repair_converter_builder.add_max_uptime(duration, coeff)
+                    
                     repair_converter_builder.add_strict_order_after(control_npp_stop_source)
+                    control_npp_stop_source.add_group_equal_1(repair_converter_builder)
+                    
                     repair_converter_builder.set_info("forced_in_period", options.get("forced_in_period"))
                     repair_converter_builder.set_info("startup_cost", options["startup_cost"])
                     repair_converter_builder.set_info("npp_stop_required", True)
@@ -217,7 +226,12 @@ class NPP_builder:
                     duration = self.resolution_strategy.convert_time(options["duration"])
                     coeff = self.resolution_strategy.coeff
                     repair_converter_builder.add_max_uptime(duration, coeff)
+                    
+                    
                     repair_converter_builder.add_strict_order_after(control_npp_stop_source)
+                    control_npp_stop_source.add_group_equal_1(repair_converter_builder)
+
+
                     repair_converter_builder.set_info("forced_in_period", options.get("forced_in_period"))
                     repair_converter_builder.set_info("startup_cost", options["startup_cost"])
                     repair_converter_builder.set_info("npp_stop_required", True)
@@ -318,7 +332,8 @@ class NPP_builder:
                         sink_builder.create_pair_equal_status(repair_converter_builder)
                         sinks[selected_risk_bus] = sink_builder.build()
                     block.sinks = sinks
-                        
+        
+        control_npp_stop_source.build()
         npp_block_builder.set_info("repairs_blocks", repair_blocks)
         
     def _add_start_days_if_required(self, repair_source_builder, start_day):

@@ -54,17 +54,21 @@ class Wrapper_base:
     def add_group_equal_1(self, wrapper_block):
         self.constraints["group_equal_1"].append(wrapper_block)
         
-    def create_pair_no_equal_lower_1_status(self, wrapper_block):
-        keyword = f"{self.label}_{wrapper_block.label}_no_equal_lower_1_status"
+    def create_pair_no_equal_status_lower_1(self, wrapper_block):
+        keyword = f"{self.label}_{wrapper_block.label}_no_equal_status_lower_1"
         self.add_keyword_to_flow(keyword)
         wrapper_block.add_keyword_to_flow(keyword)
-        self.constraints["no_equal_lower_1_status"].append(keyword)
+        self.constraints["no_equal_status_lower_1"].append(keyword)
 
-    def create_pair_no_equal_status(self, wrapper_block):
-        keyword = f"{self.label}_{wrapper_block.label}_no_equal_status"
+    def create_pair_no_equal_status_lower_0(self, wrapper_block):
+        keyword = f"{self.label}_{wrapper_block.label}no_equal_status_lower_0"
         self.add_keyword_to_flow(keyword)
         wrapper_block.add_keyword_to_flow(keyword)
-        self.constraints["no_equal_status"].append(keyword)
+        self.constraints["no_equal_status_lower_0"].append(keyword)
+        
+    def create_pair_no_equal_status(self, wrapper_block):
+        self.constraints["no_equal_status_equal_1"].append(wrapper_block)
+        
 
     def create_pair_equal_status(self, wrapper_block):
         self.constraints["equal_status"].append(wrapper_block)
@@ -138,7 +142,7 @@ class Wrapper_base:
         if mode == "active":
             wrapper_charger_builder.create_pair_equal_status(self)
         elif mode == "non_active":
-            wrapper_charger_builder.create_pair_no_equal_status(self)
+            wrapper_charger_builder.create_pair_no_equal_status_lower_0(self)
 
         wrapper_charger_builder.build()
 
@@ -172,7 +176,7 @@ class Wrapper_base:
             })
         
         self.update_options({"second_input_bus": storage_out_bus})
-        charger_builder.create_pair_no_equal_status(self)
+        charger_builder.create_pair_no_equal_status_lower_0(self)
         charger_builder.build()
 
 
@@ -190,21 +194,26 @@ class Wrapper_base:
         
         for constraint_group_name in constraint_groups_names:
             match constraint_group_name:
-                case "no_equal_status":
-                    self.es.constraints["no_equal_status"].extend(self.constraints[constraint_group_name])
+                case "no_equal_status_lower_0":
+                    self.es.constraints["no_equal_status_lower_0"].extend(self.constraints[constraint_group_name])
+                case "no_equal_status_lower_1":
+                    self.es.constraints["no_equal_status_lower_1"].extend(self.constraints[constraint_group_name])
                 case "equal_status":
                     for wrapper_block in self.constraints[constraint_group_name]:
                         pair_1 = self.get_pair_after_building()
                         pair_2 = wrapper_block.get_pair_after_building()
                         self.es.constraints["equal_status"].append((pair_1, pair_2))
-                case "no_equal_lower_1_status":
-                    self.es.constraints["no_equal_lower_1_status"].extend(self.constraints[constraint_group_name])
+                case "no_equal_status_equal_1":
+                    first_pair = self.get_pair_after_building()
+                    remain_pairs = [wrapper_block.get_pair_after_building() for wrapper_block in self.constraints[constraint_group_name]]
+                    pairs = [first_pair] + remain_pairs
+                    self.es.constraints["no_equal_status_equal_1"].append(pairs)
                 case "strict_order":
                     for wrapper_block in self.constraints[constraint_group_name]:
                         pair_1 = self.get_pair_after_building()
                         pair_2 = wrapper_block.get_pair_after_building()
                         self.es.constraints["strict_order"].append((pair_1, pair_2))
-                case  "group_equal_1":
+                case "group_equal_1":
                         cheap_pair = self.get_pair_after_building()
                         expense_pairs = [wrapper_block.get_pair_after_building() for wrapper_block in self.constraints[constraint_group_name]]
                         self.es.constraints["group_equal_1"].append((cheap_pair, expense_pairs))

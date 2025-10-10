@@ -21,8 +21,8 @@ class Constraint_processor:
                     model.NonConvexFlowBlock.status[pair_2[0], pair_2[1], i],
                 )
                 
-    def apply_no_equal_status(self):
-        keywords = self.constraints["no_equal_status"]
+    def apply_no_equal_status_lower_0(self):
+        keywords = self.constraints["no_equal_status_lower_0"]
         model = self.model
         keywords = list(set(keywords))
         for keyword in keywords:
@@ -30,6 +30,28 @@ class Constraint_processor:
                 model, keyword, lower_limit=0, upper_limit=1
             )
                 
+    def apply_no_equal_status_equal_1(self):
+        groups = self.constraints["no_equal_status_equal_1"]
+        model = self.model
+
+        def rule(m, t, current_group):
+            sum_of_statuses = sum(
+                m.NonConvexFlowBlock.status[pair[0], pair[1], t]
+                for pair in current_group
+            )
+            return sum_of_statuses == 1
+
+        for i, group in enumerate(groups):
+             setattr(
+                    model,
+                    f'no_equal_status_equal_1_group_{i}',
+                    po.Constraint(
+                        model.TIMESTEPS,
+                        rule=lambda model, t, current_group=group:
+                            rule(model, t, current_group)
+                    )
+                )
+    
                 
     def apply_no_equal_lower_1_status(self):
         keywords = self.constraints["no_equal_lower_1_status"]
@@ -61,7 +83,7 @@ class Constraint_processor:
         block_associations = self.constraints["group_equal_1"]
         model = self.model
         
-        def dependency_rule_generalized(model, t, cheap_block_pair, expense_group_pairs, bus):
+        def dependency_rule_generalized(model, t, cheap_block_pair, expense_group_pairs):
             sum_of_group_statuses = sum(
                 model.NonConvexFlowBlock.status[pair[0], pair[1], t]
                 for pair in expense_group_pairs

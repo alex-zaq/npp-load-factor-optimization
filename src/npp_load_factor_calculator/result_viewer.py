@@ -217,7 +217,7 @@ class Result_viewer:
         
         ax_cost_all_blocks_df.axhline(y=cost_upper_bound, color='black', linestyle='--', label='затраты за период')
         
-        x_max = cost_all_blocks_df.index[40]
+        x_max = cost_all_blocks_df.index[-40]
         y_max = cost_all_blocks_df.max().max()
         ax_cost_all_blocks_df.text(
             x_max,

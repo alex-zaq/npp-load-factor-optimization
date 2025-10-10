@@ -35,7 +35,7 @@ repair_options = {
     "light": {
         "id": 2,
         "status": True,
-        "startup_cost": 15e3,
+        "startup_cost": 15e8,
         "duration": 30,
         "min_downtime": 0,
         "max_startup": 1,
@@ -120,7 +120,7 @@ scen = {
             "risk_options": {
                 "status": True,
                 "risks": {
-                    "r1": {"id": 0, "value": 0.1, "max": 0.7, "start_risk_rel": 0.3, "events": None},
+                    "r1": {"id": 0, "value": 0.1, "max": 0.3, "start_risk_rel": 0.2, "events": None},
                     # "r2": {"id": 1, "value": 0.1, "max": 0.7, "start_risk_rel": 0.2, "events": None},
                     # "r3": {"id": 2, "value": 0.1, "max": 1, "start_risk_rel": 0, "events": None},
                 }},
@@ -129,8 +129,8 @@ scen = {
                 "options": repair_options
                 },
         }),
-        "bel_npp_block_2": bel_npp_block_2,
-        # "bel_npp_block_2": {"status": False},
+        # "bel_npp_block_2": bel_npp_block_2,
+        "bel_npp_block_2": {"status": False},
         "new_npp_block_1": {"status": False},
         # "new_npp_block_1": bel_npp_block_2,
 }
@@ -142,7 +142,7 @@ oemof_model = Oemof_model(
     solver_settings = {
         "solver": "cplex",
         "solver_verbose": True,
-        "mip_gap": 0.01
+        "mip_gap": 0.001
     } 
 )
 
@@ -160,7 +160,7 @@ solution_processor.set_excel_folder("./excel_results")
 # solution_processor.set_restore_mode(file_number="06") 
 # solution_processor.set_restore_mode(file_number="09") 
 
-solution_processor.set_restore_mode(file_number="39") 
+# solution_processor.set_restore_mode(file_number="39") 
 # solution_processor.set_restore_mode(file_number="31") 
 
 solution_processor.apply()
@@ -188,7 +188,7 @@ block_grouper.set_options(
         "Новая АЭС (блок 1)": {"block": new_npp_block_1, "color": "#1f77b4"},
     },
     risks_options={
-        "риск 1": {"risk_name": "r1", "style":"-", "color": "#181008"},
+        "показатель риска": {"risk_name": "r1", "style":"-", "color": "#181008"},
         "риск 2": {"risk_name": "r2", "style":"-", "color": "#1417d1"},
         "риск 3": {"risk_name": "r3", "style":"-", "color": "#10c42e"},
     },
@@ -215,7 +215,7 @@ result_viewer.set_image_flag(False)
 # result_viewer.set_image_flag(True)
 result_viewer.set_image_options(folder="./images", image_format="jpg", dpi=600)
 
-# result_viewer.plot_general_graph(bel_npp_block_1)
+result_viewer.plot_general_graph(bel_npp_block_1)
 # result_viewer.plot_general_graph(bel_npp_block_2)
 # result_viewer.plot_general_graph(new_npp_block_1)
 
@@ -232,10 +232,7 @@ result_viewer.plot_profile_all_blocks_graph(font_size=10, risk_graph = True, dpi
 print("done")
 
 
-# проверка ограничения group_equal_1 - прсотой пример
-# поменять название рисков
-# подпись макс затрат справа
-# добавить опциональные подписи максимумов (вынести в параметр)
+# проверка ограничения group_equal_1 - простой пример
 # разные верхние границы максимумов
 # добавить отображения событий повышающих риск (вертикальные черты)
 # обязательный выбор ремонтов во время остановки
