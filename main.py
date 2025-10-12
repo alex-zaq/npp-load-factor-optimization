@@ -187,7 +187,7 @@ solution_processor.set_excel_folder("./excel_results")
 # solution_processor.set_restore_mode(file_number="09") 
 
 # solution_processor.set_restore_mode(file_number="39") 
-# solution_processor.set_restore_mode(file_number="88") 
+solution_processor.set_restore_mode(file_number="33") 
 
 solution_processor.apply()
 
@@ -238,7 +238,7 @@ result_viewer = Result_viewer(block_grouper)
 control_block_viewer = Control_block_viewer(block_grouper)
 
 
-image_simple = result_viewer.plot_general_graph(bel_npp_block_1)
+# image_simple = result_viewer.plot_general_graph(bel_npp_block_1)
 image_main = result_viewer.plot_profile_all_blocks_graph(font_size=10, risk_graph=True, dpi=120)
 
 # result_viewer.plot_general_graph(bel_npp_block_2)

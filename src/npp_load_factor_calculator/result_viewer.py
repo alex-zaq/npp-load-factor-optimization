@@ -143,7 +143,7 @@ class Result_viewer:
         el_gen_df = self.block_grouper.get_electricity_profile_all_blocks()
         repairs_dict = self.block_grouper.get_repairs_profile_by_all_blocks_dict()
         cost_all_blocks_df = self.block_grouper.get_cost_profile_all_blocks(cumulative=True)
-        events_df = self.block_grouper.get_events_profile_all_blocks()
+        events_df = self.block_grouper.get_events_profile_all_blocks_df()
         
         el_gen_df = add_white_spaces_and_colors_el_gen(el_gen_df, 1170)
         repairs_df = add_white_spaces_and_colors_repairs(repairs_dict, 1170)
@@ -260,29 +260,41 @@ class Result_viewer:
             )
             ax_risk_df.set_ylabel('Условная величина риска', fontsize=font_size - 2)
             ax_risk_df.legend(loc='upper left', fontsize=font_size - 2, ncol=1)
-            if len(set(v["max_risk"] for v in risks_dict.values())) == 1:
-                ax_risk_df.axhline(y=max_risk_value, color='r', linestyle='--', label='верхняя граница риска')
-                ax_risk_df.legend(loc='upper left', fontsize=font_size - 2, ncol=1)
+            # if len(set(v["max_risk"] for v in risks_dict.values())) == 1:
+            #     ax_risk_df.axhline(y=max_risk_value, color='r', linestyle='--', label='верхняя граница риска')
+            #     ax_risk_df.legend(loc='upper left', fontsize=font_size - 2, ncol=1)
 
-            x_max = risk_df.index[round(40*cost_all_blocks_df.shape[0]/365)]
+            # x_max = risk_df.index[round(40*cost_all_blocks_df.shape[0]/365)]
 
-            # x_max = risk_df.idxmax().max()
-            y_max = risk_df.max().max()
-            # ax1.scatter(x_el_max, y_el_max, color="red", s=5, zorder=10)
-            # font_size = 7
-            ax_risk_df.text(
-                x_max,
-                max_risk_value * 1.03,
-                f"max = {y_max:.3f}",
-                fontsize=font_size - 2,
-                horizontalalignment="center",
-                verticalalignment="bottom",
-                color="black",
-            )
+            # y_max = risk_df.max().max()
+            # ax_risk_df.text(
+            #     x_max,
+            #     max_risk_value * 1.03,
+            #     f"max = {y_max:.3f}",
+            #     fontsize=font_size - 2,
+            #     horizontalalignment="center",
+            #     verticalalignment="bottom",
+            #     color="black",
+            # )
 
 
-            fig.subplots_adjust(wspace=0.3)
-            ax_risk_df.set_xlabel("Время, часы", fontsize=font_size - 2)
+            # fig.subplots_adjust(wspace=0.3)
+            # ax_risk_df.set_xlabel("Время, часы", fontsize=font_size - 2)
+            
+            
+            if not events_df.empty:
+                print(events_df.head(10))
+                
+                ax_events_df = events_df.plot(
+                    kind="area",
+                    ylim=(0, max_y_cost),
+                    legend="reverse",
+                    color="red",
+                    linewidth=0.7,
+                    fontsize=font_size-2,
+                    ax=ax_right
+                )
+                
 
 
         fig.set_dpi(dpi)

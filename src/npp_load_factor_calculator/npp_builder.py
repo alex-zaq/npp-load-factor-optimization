@@ -373,8 +373,6 @@ class NPP_builder:
             "var_cost": var_cost,
             "min": 1,
             "min_uptime": min_uptime,
-            # "positive_gradient_limit": grad_mask,
-            # "negative_gradient_limit": 1,
         })
         
         self.add_outage_options(npp_block_builder, outage_options)

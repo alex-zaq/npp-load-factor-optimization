@@ -138,8 +138,14 @@ class Custom_block:
         return res_dict
            
                 
-    def get_events_profile(self, risk_name):
-        pass
+    def get_events_profile(self):
+        for risk_name, events_source in self.block.events_sources.items():
+            block, output = events_source.outputs_pair[0]
+            block_results = solph.views.node(self.results, output.label)["sequences"].dropna()
+            res_df = pd.DataFrame()
+            res_df[f"события риска {risk_name} {self.block.label}"] = block_results[((block.label, output.label), "flow")]
+            res_df = res_df.clip(lower=0)
+            return res_df
     
 ###############################################################################################################    
 
@@ -329,15 +335,18 @@ class Block_grouper:
         return res_dict
     
         
-    def get_events_profile_by_block(self, block, risk_name):
+    def get_events_profile_by_block(self, block):
         custom_block = [custom_block for custom_block in self.electr_groups if custom_block.block is block][0]
-        events_df = custom_block.get_events_profile(risk_name)
+        events_df = custom_block.get_events_profile()
         events_df = events_df[:-1]
         return events_df
     
         
-    def get_events_profile_by_all_blocks_df(self, risk_name):
+    def get_events_profile_all_blocks_df(self):
         res = pd.DataFrame()
+        for custom_block in self.electr_groups:
+            events_df = self.get_events_profile_by_block(custom_block.block)
+            res = pd.concat([res, events_df], axis=1)
         return res
     
     
