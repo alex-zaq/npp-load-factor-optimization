@@ -143,7 +143,7 @@ class Result_viewer:
         el_gen_df = self.block_grouper.get_electricity_profile_all_blocks()
         repairs_dict = self.block_grouper.get_repairs_profile_by_all_blocks_dict()
         cost_all_blocks_df = self.block_grouper.get_cost_profile_all_blocks(cumulative=True)
-        
+        events_df = self.block_grouper.get_events_profile_all_blocks()
         
         el_gen_df = add_white_spaces_and_colors_el_gen(el_gen_df, 1170)
         repairs_df = add_white_spaces_and_colors_repairs(repairs_dict, 1170)

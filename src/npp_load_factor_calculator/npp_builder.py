@@ -31,21 +31,7 @@ class NPP_builder:
 
         npp_block_builder.create_pair_no_equal_status_equal_1(control_npp_stop_source)
         
-        # control_npp_stop_source.create_pair_no_equal_status(npp_block_builder)
-        # control_npp_stop_source.create_pair_no_equal_status_lower_1(npp_block_builder)
-        
-        
-        # control_npp_stop_source.build()
 
-        # control_npp_stop_source_2 = Wrapper_source(self.es, f"{npp_block_builder.label}_control_npp_stop_converter_2" )
-        # control_npp_stop_source_2.update_options({"output_bus": bufer_bus, "nominal_power": 1, "min": 1})
-
-
-        # npp_block_builder.create_pair_no_equal_status_lower_0(control_npp_stop_source_2)
-        # npp_block_builder.create_pair_no_equal_status_lower_1(control_npp_stop_source_2)
-
-        # control_npp_stop_source_2.add_keyword_no_equal_status("single_npp_stop_model")
-        # control_npp_stop_source_2.build()
         
         
         npp_block_builder.set_info("bufer_bus", bufer_bus)
@@ -57,24 +43,17 @@ class NPP_builder:
         if outage_options["start_of_month"]:
             start_days_mask = self.resolution_strategy.get_months_start_points()
             
-            
         outage_duration = self.resolution_strategy.convert_time(outage_options["planning_outage_duration"])
-        avail_months_mask = self.resolution_strategy.get_avail_months_profile(outage_options["allow_months"])
-
         mask_for_storage = self.resolution_strategy.get_last_step_mask()
         coeff = self.resolution_strategy.coeff
-
-        if outage_options["fixed_mode"]:
-            month = list(outage_options["fixed_outage_month"])[0]
-            avail_months_mask = self.resolution_strategy.get_mask_from_first_day_of_month(month, outage_duration)
-
-        
-        grad_mask = self.resolution_strategy.get_grad_mask(month, outage_duration)
-        # plot_array(grad_mask, self.es.custom_timeindex)
-        # grad_mask = self.resolution_strategy.get_months_start_points()
-        # plot_array(grad_mask)
+            
+            
+        allow_months = outage_options["allow_months"]
+        avail_months_mask = self.resolution_strategy.get_mask_from_first_day_of_months(allow_months, outage_duration)
+        grad_mask = self.resolution_strategy.get_grad_mask(allow_months, outage_duration)
         npp_block_builder.update_options({"positive_gradient_limit": grad_mask})
-        # npp_block_builder.update_options({"negative_gradient_limit": 1})
+        
+        
         
         control_npp_stop_source.add_specific_status_duration_in_period(
             mode="active",
@@ -104,6 +83,7 @@ class NPP_builder:
         risks = {}
         
         risk_out_bus_dict = {}
+        events_sources = {}
         for risk_name, risk_data in risk_lst.items():
             npp_label = npp_block_builder.label
             risk_bus = bus_factory.create_bus(f"{npp_label}_{risk_name}_input_bus")           
@@ -135,11 +115,11 @@ class NPP_builder:
                     "output_bus": risk_bus,
                     "fix": events_fix_profile,
                 })
-                events_source_builder.build()
+                events_source = events_source_builder.build()
+                events_sources[risk_name] = events_source
                 
                 
-            
-            
+        npp_block_builder.set_info("events_sources", events_sources)
         npp_block_builder.set_info("risk_out_bus_dict", risk_out_bus_dict)
         npp_block_builder.set_info("risks", risks)
 

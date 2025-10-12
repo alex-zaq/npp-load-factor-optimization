@@ -136,7 +136,10 @@ class Custom_block:
         output_flow_df["output_flow"] = storage_results[(block.label, output_bus.label), "flow"]
         res_dict["output_flow"] = output_flow_df
         return res_dict
-            
+           
+                
+    def get_events_profile(self, risk_name):
+        pass
     
 ###############################################################################################################    
 
@@ -313,16 +316,29 @@ class Block_grouper:
         res = res[:-1]
         return res
     
+    
     def get_npp_storage_dict(self, block):
         custom_block = [custom_block for custom_block in self.electr_groups if custom_block.block is block][0]
         res_dict = custom_block.get_npp_storage_data_dict()
         return res_dict
+    
     
     def get_repair_storage_max_uptime_dict(self, block, repair_id):
         custom_block = [custom_block for custom_block in self.electr_groups if custom_block.block is block][0]
         res_dict = custom_block.get_repair_storage_max_uptime_dict(repair_id)
         return res_dict
     
+        
+    def get_events_profile_by_block(self, block, risk_name):
+        custom_block = [custom_block for custom_block in self.electr_groups if custom_block.block is block][0]
+        events_df = custom_block.get_events_profile(risk_name)
+        events_df = events_df[:-1]
+        return events_df
+    
+        
+    def get_events_profile_by_all_blocks_df(self, risk_name):
+        res = pd.DataFrame()
+        return res
     
     
     

@@ -3,7 +3,7 @@
 import numpy as np
 import pandas as pd
 
-from src.npp_load_factor_calculator.utilites import zero_inner_ones
+from src.npp_load_factor_calculator.utilites import plot_array, zero_inner_ones
 
 
 class Resolution_strategy:
@@ -36,7 +36,7 @@ class Resolution_strategy:
     def get_first_step_every_year_mask(self):
         raise NotImplementedError
     
-    def get_mask_from_first_day_of_month(self, month, duration):
+    def get_mask_from_first_day_of_months(self, months, duration):
         raise NotImplementedError
             
     def get_fix_months_profile(self, selected_months):
@@ -161,10 +161,10 @@ class Daily_resolution_strategy(Resolution_strategy):
         res[0] = 0
         return res
     
-    def get_mask_from_first_day_of_month(self, month, duration):
-        month_num = pd.to_datetime(month, format='%b').month
+    def get_mask_from_first_day_of_months(self, months, duration):
+        month_nums = [pd.to_datetime(month, format='%b').month for month in months]
         res = np.zeros(len(self.timeindex))
-        mask = (self.timeindex.day == 1) & (self.timeindex.month == month_num)
+        mask = np.logical_or.reduce([(self.timeindex.day == 1) & (self.timeindex.month == month_num) for month_num in month_nums])
         res[mask] = 1
         indexes = np.where(res == 1)[0]
         for index in indexes:
@@ -173,8 +173,11 @@ class Daily_resolution_strategy(Resolution_strategy):
     
         
     def get_grad_mask(self, month, duration):
-        res = self.get_mask_from_first_day_of_month(month, duration)
+        res = self.get_mask_from_first_day_of_months(month, duration)
+        # plot_array(res, self.timeindex)
         res = zero_inner_ones(res)
+        # print(np.sum(res))
+        # plot_array(res, self.timeindex)
         return res
     
     def get_start_points(self, start_days_of_month_lst):

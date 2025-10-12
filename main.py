@@ -12,7 +12,7 @@ repair_options = {
         "min_downtime": 0,
         "max_startup": 12,
         "risk_reset": set(),
-        "risk_reducing": {"r2": 0.15},
+        "risk_reducing": {"r1": 0.15},
         "min": 0,
         "npp_stop": False,
         "forced_in_period": False,
@@ -35,7 +35,7 @@ repair_options = {
     "light": {
         "id": 2,
         "status": True,
-        "startup_cost": 15e8,
+        "startup_cost": 15e3,
         "duration": 30,
         "min_downtime": 0,
         "max_startup": 3,
@@ -70,7 +70,7 @@ repair_options = {
         "startup_cost": 15e6,
         "duration": 15,
         "min_downtime": 30,
-        "risk_reset": {"r1", "r2", "r3"},
+        "risk_reset": {"r1"},
         "risk_reducing": {},
         "min": 0,
         "npp_stop": True,
@@ -82,7 +82,7 @@ repair_options = {
         "startup_cost": 50e6,
         "duration": 25,
         "min_downtime": 30,
-        "risk_reset": {"r1", "r2", "r3"},
+        "risk_reset": {"r1"},
         "risk_reducing": {},
         "min": 0,
         "npp_stop": True,
@@ -91,12 +91,12 @@ repair_options = {
 }
 
 events = {
-    "2025-02-01": 0.01,
-    "2025-04-15": 0.01,
-    "2025-09-01": 0.01,
+    "2025-02-01": 0.002,
+    "2025-04-15": 0.005,
+    "2025-09-01": 0.002,
 }
 
-scen = {
+base_scen = {
         "№": 1,
         "name": "test",
         "years": [2025],
@@ -112,17 +112,19 @@ scen = {
             "outage_options": {
                 "status": True,
                 "start_of_month": True,
-                "allow_months": all_months - {"Jan"},
+                # "allow_months": all_months - {"Jan"},
+                "allow_months": {"Jul"},
+                # "allow_months": {"Feb", "Oct"},
                 "planning_outage_duration": 30,
-                "fixed_mode": True,
+                # "fixed_mode": True,
                 # "fixed_mode": False,
                 # "fixed_outage_month":  {"Sep"},
-                "fixed_outage_month":  {"Oct"},
+                # "fixed_outage_month":  {"Oct"},
             },
             "risk_options": {
                 "status": True,
                 "risks": {
-                    "r1": {"id": 0, "value": 0.1, "max": 2, "start_risk_rel": 0.2, "events": None},
+                    "r1": {"id": 0, "value": 0.1, "max": 0.5, "start_risk_rel": 0.3, "events": events},
                     # "r2": {"id": 1, "value": 0.1, "max": 0.7, "start_risk_rel": 0.2, "events": None},
                     # "r3": {"id": 2, "value": 0.1, "max": 1, "start_risk_rel": 0, "events": None},
                 }},
@@ -137,20 +139,25 @@ scen = {
         # "new_npp_block_1": bel_npp_block_2,
 }
 
+base_scen = base_scen
+
 # scenarios
 ###############################################################################
 
+# 
+scen = base_scen | {"№": 1, "name": "one_block_one_risk_one_year", "years": [2025]}
+
+
+
+# scen = base_scen | {"№": 2, "name": "two_block_one_risk_two_years", "years": [2025, 2026]}
 
 
 
 
 
-# три блока - три года - обязательный капремонт - 2 - 4 npp-stop reduce - 25-5, два non-stop reduce
 
 
-
-
-
+# 3 блока - 3 года - 1 риск - 1 обяз.капремонт - 4 конкур. npp-stop reduce-20-10, 2 конкур. два non-stop reduce 10-15 дней, разн.ст. риски 
 
 
 ###############################################################################
@@ -232,16 +239,16 @@ control_block_viewer = Control_block_viewer(block_grouper)
 
 
 image_simple = result_viewer.plot_general_graph(bel_npp_block_1)
-# image_main = result_viewer.plot_profile_all_blocks_graph(font_size=10, risk_graph=True, dpi=120)
+image_main = result_viewer.plot_profile_all_blocks_graph(font_size=10, risk_graph=True, dpi=120)
 
 # result_viewer.plot_general_graph(bel_npp_block_2)
 # result_viewer.plot_general_graph(new_npp_block_1)
 
 control_block_viewer.plot_control_stop_block(bel_npp_block_1)
-# control_block_viewer.plot_npp_status(bel_npp_block_1)
+control_block_viewer.plot_npp_status(bel_npp_block_1)
 
 control_block_viewer.plot_npp_storage_data(bel_npp_block_1)
-# control_block_viewer.plot_repair_storage_max_uptime(bel_npp_block_1, repair_id=1)
+control_block_viewer.plot_repair_storage_max_uptime(bel_npp_block_1, repair_id=1)
 control_block_viewer.plot_repair_storage_max_uptime(bel_npp_block_1, repair_id=2)
  
 
@@ -256,36 +263,17 @@ print("done")
 
 
 
-
-
-
-# control_block_viewer.plot_sinks_profile(bel_npp_block_1, repair_id=1, risk_name="r1")
-# control_block_viewer.plot_sinks_profile(bel_npp_block_1, repair_id=2, risk_name="r1")
+# отображение доп. событий риска на графике + ось
+# подпись время, дни
+# отображение множественных рисков
+# сделать расчет с ноутбука
+# фото с ноутбука
 # разные верхние границы максимумов
 # добавить отображения событий повышающих риск (вертикальные черты)
 # простое переключение сценариев
-# график с тремя блоками 1 и 3 года с ремонтами и деньгами
-# учет штрафов за остановку
-# фиксировать ремонты для показа большей целевой функции
-# objective value extract
-# solution_processor.write_excel_file("test.xlsx")
-# result_plotter.plot_electricity_generation_profile()
-# result_plotter.plot_risk_events_profile()
-# result_plotter.plot_cumulative_risk_profile()
-# result_plotter.plot_repair_cost_profile()
 # параметры для записи и чтения у компонентов
-# +-сделать block_grouper
-# +-сделать result_viewer
-# мин. фукц. класса oemof_model
-# реализация фиксированного времени работы на ном. мощности
-# большой интервал времени 5 лет
-# увеличение рисков по определенным во времени событием и штатной работы аэс
-# добавить 3-4 сценария
 # блок-схема
-# 4 года, много событий, кокурирующие ремонты, 1 блок, 2 блока, 3 блока
 # взять реальные значения из двух источников
-# вывод в эксель
-# запись в эксель - числа - графика- сценарий - настройки решателя
 
 
 
@@ -295,31 +283,28 @@ print("done")
 
 
 
-
-
-
-
-# Применение методов линейно-целочисленного программирования - 40 стр
-
+# время расчета, точность, по в отчет
+# ключевые формулировки актульности (моника)
+# формализованная блок-схема расчет
+# дальнейшенее развитие
+# принцип реализации
+# актуальность и полезность
+# модель с тестовыми данными
+# введение в лп
+# введение в oemof
+# введение в oemof в контексте риск-мониаторинга
 # введение в oemof в контексте риск-мониаторинга, возможности и ограничения
-# используемые компоненты
+# используемые компоненты OEMOF
 # общий принцип работы и расчетная схема (акцент на условности расчета)
 # таблица настроек сценария
 # исходные данные
 # используемое ПО
 # серия примеров расчета (графики: работа АЭС, события риска, выполенные ремонты, изменения раска во времени, деньги за ремонты)
 
-# серия типовых расчетов от простого к сложному
-# 1 блок - 1 риск - 1 год - 1 ремонт - ОТЧЕТ  
-# 1 блока - 3 риска - 3 года - 3 ремонт - ОТЧЕТ
-# 2 блока - 3 риска - 3 года - 3 ремонт - ОТЧЕТ
-# 4 блока в каждом по 3 типа риска, в каждом блоке 3 типа ремонтов на 4 года - ОТЧЕТ 
 
 
-# 3 блока в каждом по 3 типа риска, в каждом блоке 3 типа ремонтов на 1 год
-# 1 блок - 1 риск - 1 год - 1 ремонт
-# 1 блок - 2 риск - 1 год - 2 ремонт
-# 1 блок - 3 риск - 1 год - 3 ремонт
+
+
 
 
 
