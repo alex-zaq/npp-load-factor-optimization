@@ -1,0 +1,71 @@
+digraph {
+	"электроэнергия (bus)" [color=lightgrey fixedsize=shape fontsize=10 height=0.3 shape=rectangle style=filled tooltip="электроэнергия (bus)" width=4.1]
+	"электроэнергия (sink)" [color="#FFD6E0" fontsize=12 shape=trapezium]
+	"БелАЭС (блок 1)_bufer_bus" [color=lightgrey fixedsize=shape fontsize=10 height=0.3 shape=rectangle style=filled tooltip="БелАЭС (блок 1)_bufer_bus" width=4.1]
+	"БелАЭС (блок 1)_control_npp_stop_convert
+er_2" [color="#A4ADFB" fontsize=12 shape=invtrapezium]
+	"БелАЭС (блок 1)_sink_bus" [color=lightgrey fixedsize=shape fontsize=10 height=0.3 shape=rectangle style=filled tooltip="БелАЭС (блок 1)_sink_bus" width=4.1]
+	"БелАЭС (блок 1)_min_inactive_sink" [color="#FFD6E0" fontsize=12 shape=trapezium]
+	"БелАЭС (блок 1)_storage_in_bus" [color=lightgrey fixedsize=shape fontsize=10 height=0.3 shape=rectangle style=filled tooltip="БелАЭС (блок 1)_storage_in_bus" width=4.1]
+	"БелАЭС (блок 1)_min_inactive_storage" [color="#90F1EF" fontsize=12 shape=rectangle style=rounded]
+	"БелАЭС (блок 1)_min_inactive_control_sou
+rce" [color="#A4ADFB" fontsize=12 shape=invtrapezium]
+	"БелАЭС (блок 1)_r1_input_bus" [color=lightgrey fixedsize=shape fontsize=10 height=0.3 shape=rectangle style=filled tooltip="БелАЭС (блок 1)_r1_input_bus" width=4.1]
+	"БелАЭС (блок 1)_r1_source" [color="#A4ADFB" fontsize=12 shape=invtrapezium]
+	"БелАЭС (блок 1)_r1_outbus" [color=lightgrey fixedsize=shape fontsize=10 height=0.3 shape=rectangle style=filled tooltip="БелАЭС (блок 1)_r1_outbus" width=4.1]
+	"БелАЭС (блок 1)_r1_storage" [color="#90F1EF" fontsize=12 shape=rectangle style=rounded]
+	"БелАЭС (блок 1)_light_repair_converter_max_up_time_storage_in_bus" [color=lightgrey fixedsize=shape fontsize=10 height=0.3 shape=rectangle style=filled tooltip="БелАЭС (блок 1)_light_repair_converter_max_up_time_storage_in_bus" width=4.1]
+	"БелАЭС (блок 1)_light_repair_converter_max_up_time_storage_out_bus" [color=lightgrey fixedsize=shape fontsize=10 height=0.3 shape=rectangle style=filled tooltip="БелАЭС (блок 1)_light_repair_converter_max_up_time_storage_out_bus" width=4.1]
+	"БелАЭС (блок 1)_light_repair_converter_m
+ax_up_time_storage" [color="#90F1EF" fontsize=12 shape=rectangle style=rounded]
+	"БелАЭС (блок 1)_light_repair_converter_m
+ax_up_time_control_source" [color="#A4ADFB" fontsize=12 shape=invtrapezium]
+	"БелАЭС (блок 1)_light_repair_converter" [color="#7BF1A8" fontsize=12 shape=rectangle]
+	"БелАЭС (блок 1)_control_npp_stop_convert
+er" [color="#A4ADFB" fontsize=12 shape=invtrapezium]
+	"БелАЭС (блок 1)_light_r1_sink" [color="#FFD6E0" fontsize=12 shape=trapezium]
+	"БелАЭС (блок 1)_maintence-2_repair_converter_max_up_time_storage_in_bus" [color=lightgrey fixedsize=shape fontsize=10 height=0.3 shape=rectangle style=filled tooltip="БелАЭС (блок 1)_maintence-2_repair_converter_max_up_time_storage_in_bus" width=4.1]
+	"БелАЭС (блок 1)_maintence-2_repair_converter_max_up_time_storage_out_bus" [color=lightgrey fixedsize=shape fontsize=10 height=0.3 shape=rectangle style=filled tooltip="БелАЭС (блок 1)_maintence-2_repair_converter_max_up_time_storage_out_bus" width=4.1]
+	"БелАЭС (блок 1)_maintence-2_repair_conve
+rter_max_up_time_storage" [color="#90F1EF" fontsize=12 shape=rectangle style=rounded]
+	"БелАЭС (блок 1)_maintence-2_repair_conve
+rter_max_up_time_control_source" [color="#A4ADFB" fontsize=12 shape=invtrapezium]
+	"БелАЭС (блок 1)_maintence-2_repair_conve
+rter" [color="#7BF1A8" fontsize=12 shape=rectangle]
+	"БелАЭС (блок 1)_maintence-2_r1_sink" [color="#FFD6E0" fontsize=12 shape=trapezium]
+	"БелАЭС (блок 1)" [color="#A4ADFB" fontsize=12 shape=invtrapezium]
+	"БелАЭС (блок 1)" -> "электроэнергия (bus)"
+	"электроэнергия (bus)" -> "электроэнергия (sink)"
+	"БелАЭС (блок 1)_maintence-2_repair_conve
+rter" -> "БелАЭС (блок 1)_bufer_bus"
+	"БелАЭС (блок 1)_control_npp_stop_convert
+er_2" -> "БелАЭС (блок 1)_bufer_bus"
+	"БелАЭС (блок 1)_light_repair_converter" -> "БелАЭС (блок 1)_bufer_bus"
+	"БелАЭС (блок 1)_control_npp_stop_convert
+er" -> "БелАЭС (блок 1)_bufer_bus"
+	"БелАЭС (блок 1)_min_inactive_storage" -> "БелАЭС (блок 1)_sink_bus"
+	"БелАЭС (блок 1)_sink_bus" -> "БелАЭС (блок 1)_min_inactive_sink"
+	"БелАЭС (блок 1)_min_inactive_control_sou
+rce" -> "БелАЭС (блок 1)_storage_in_bus"
+	"БелАЭС (блок 1)_storage_in_bus" -> "БелАЭС (блок 1)_min_inactive_storage"
+	"БелАЭС (блок 1)_r1_source" -> "БелАЭС (блок 1)_r1_input_bus"
+	"БелАЭС (блок 1)_r1_input_bus" -> "БелАЭС (блок 1)_r1_storage"
+	"БелАЭС (блок 1)_r1_storage" -> "БелАЭС (блок 1)_r1_outbus"
+	"БелАЭС (блок 1)_r1_outbus" -> "БелАЭС (блок 1)_light_r1_sink"
+	"БелАЭС (блок 1)_r1_outbus" -> "БелАЭС (блок 1)_maintence-2_r1_sink"
+	"БелАЭС (блок 1)_light_repair_converter_m
+ax_up_time_control_source" -> "БелАЭС (блок 1)_light_repair_converter_max_up_time_storage_in_bus"
+	"БелАЭС (блок 1)_light_repair_converter_max_up_time_storage_in_bus" -> "БелАЭС (блок 1)_light_repair_converter_m
+ax_up_time_storage"
+	"БелАЭС (блок 1)_light_repair_converter_m
+ax_up_time_storage" -> "БелАЭС (блок 1)_light_repair_converter_max_up_time_storage_out_bus"
+	"БелАЭС (блок 1)_light_repair_converter_max_up_time_storage_out_bus" -> "БелАЭС (блок 1)_light_repair_converter"
+	"БелАЭС (блок 1)_maintence-2_repair_conve
+rter_max_up_time_control_source" -> "БелАЭС (блок 1)_maintence-2_repair_converter_max_up_time_storage_in_bus"
+	"БелАЭС (блок 1)_maintence-2_repair_converter_max_up_time_storage_in_bus" -> "БелАЭС (блок 1)_maintence-2_repair_conve
+rter_max_up_time_storage"
+	"БелАЭС (блок 1)_maintence-2_repair_conve
+rter_max_up_time_storage" -> "БелАЭС (блок 1)_maintence-2_repair_converter_max_up_time_storage_out_bus"
+	"БелАЭС (блок 1)_maintence-2_repair_converter_max_up_time_storage_out_bus" -> "БелАЭС (блок 1)_maintence-2_repair_conve
+rter"
+}

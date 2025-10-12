@@ -3,6 +3,8 @@
 import numpy as np
 import pandas as pd
 
+from src.npp_load_factor_calculator.utilites import zero_inner_ones
+
 
 class Resolution_strategy:
     
@@ -29,6 +31,12 @@ class Resolution_strategy:
         raise NotImplementedError
     
     def get_profile_by_events(self):
+        raise NotImplementedError
+    
+    def get_first_step_every_year_mask(self):
+        raise NotImplementedError
+    
+    def get_mask_from_first_day_of_month(self, month, duration):
         raise NotImplementedError
             
     def get_fix_months_profile(self, selected_months):
@@ -73,6 +81,12 @@ class Hourly_resolution_strategy(Resolution_strategy):
     def convert_power(self, power):
         return power
     
+    def get_first_step_every_year_mask(self):
+        res = np.zeros(len(self.timeindex))
+        res[(self.timeindex.day == 1) & (self.timeindex.hour == 0)] = 1
+        res[0] = 0
+        return res
+    
     def get_profile_by_events(self, events):
         num_hours = len(self.timeindex)
         profile = np.zeros(num_hours)
@@ -87,6 +101,9 @@ class Hourly_resolution_strategy(Resolution_strategy):
         res[(self.timeindex.hour == 0) & (self.timeindex.day == 1) & (self.timeindex.month == 1)] = 1
         res[0] = 0
         return res
+    
+    def get_mask_from_first_day_of_month(self, duration):
+        raise NotImplementedError
     
     def get_start_points(self, start_days_of_month_lst):
         res = np.zeros(len(self.timeindex))
@@ -114,7 +131,21 @@ class Daily_resolution_strategy(Resolution_strategy):
     
     def convert_power(self, power):
         return power * 24
+        
     
+    def get_first_step_every_year_mask(self):
+        res = np.zeros(len(self.timeindex))
+        res[(self.timeindex.day == 1) & (self.timeindex.hour == 0) & (self.timeindex.month == 1)] = 1
+        res[0] = 0
+        return res
+        
+    def get_last_step_every_year_mask(self):
+        res = np.zeros(len(self.timeindex))
+        res[(self.timeindex.day == 31)  & (self.timeindex.month == 12)] = 1
+        res[0] = 0
+        return res
+    
+        
     def get_profile_by_events(self, events):
         num_hours = len(self.timeindex)
         profile = np.zeros(num_hours)
@@ -128,6 +159,22 @@ class Daily_resolution_strategy(Resolution_strategy):
         res = np.zeros(len(self.timeindex))
         res[(self.timeindex.day == 1) & (self.timeindex.month == 1)] = 1
         res[0] = 0
+        return res
+    
+    def get_mask_from_first_day_of_month(self, month, duration):
+        month_num = pd.to_datetime(month, format='%b').month
+        res = np.zeros(len(self.timeindex))
+        mask = (self.timeindex.day == 1) & (self.timeindex.month == month_num)
+        res[mask] = 1
+        indexes = np.where(res == 1)[0]
+        for index in indexes:
+            res[index:index + duration] = 1
+        return res
+    
+        
+    def get_grad_mask(self, month, duration):
+        res = self.get_mask_from_first_day_of_month(month, duration)
+        res = zero_inner_ones(res)
         return res
     
     def get_start_points(self, start_days_of_month_lst):

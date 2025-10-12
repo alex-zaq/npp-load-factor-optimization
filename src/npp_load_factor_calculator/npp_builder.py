@@ -29,51 +29,60 @@ class NPP_builder:
         control_npp_stop_source.update_options({"output_bus": bufer_bus, "nominal_power": 1, "min": 1})
         control_npp_stop_source.create_pair_no_equal_status_lower_0(npp_block_builder)
 
-        npp_block_builder.create_pair_no_equal_status(control_npp_stop_source)
+        npp_block_builder.create_pair_no_equal_status_equal_1(control_npp_stop_source)
         
         # control_npp_stop_source.create_pair_no_equal_status(npp_block_builder)
+        # control_npp_stop_source.create_pair_no_equal_status_lower_1(npp_block_builder)
         
         
         # control_npp_stop_source.build()
 
-        control_npp_stop_source_2 = Wrapper_source(self.es, f"{npp_block_builder.label}_control_npp_stop_converter_2" )
-        control_npp_stop_source_2.update_options({"output_bus": bufer_bus, "nominal_power": 1, "min": 1})
-        control_npp_stop_source_2.create_pair_no_equal_status_lower_0(npp_block_builder)
-        control_npp_stop_source_2.create_pair_no_equal_status_lower_1(npp_block_builder)
-        control_npp_stop_source_2.add_keyword_no_equal_status("single_npp_stop_model")
-        control_npp_stop_source_2.build()
+        # control_npp_stop_source_2 = Wrapper_source(self.es, f"{npp_block_builder.label}_control_npp_stop_converter_2" )
+        # control_npp_stop_source_2.update_options({"output_bus": bufer_bus, "nominal_power": 1, "min": 1})
+
+
+        # npp_block_builder.create_pair_no_equal_status_lower_0(control_npp_stop_source_2)
+        # npp_block_builder.create_pair_no_equal_status_lower_1(control_npp_stop_source_2)
+
+        # control_npp_stop_source_2.add_keyword_no_equal_status("single_npp_stop_model")
+        # control_npp_stop_source_2.build()
+        
         
         npp_block_builder.set_info("bufer_bus", bufer_bus)
         npp_block_builder.set_info("control_npp_stop_source", control_npp_stop_source)
         
 
-        if outage_options["fixed_mode"]:
-            fix_profile = self.resolution_strategy.get_fix_months_profile(outage_options["fixed_outage_month"])
-            
-            npp_block_builder.update_options({"max": fix_profile, "min": fix_profile})
-            return
         
         start_days_mask = None
         if outage_options["start_of_month"]:
             start_days_mask = self.resolution_strategy.get_months_start_points()
             
-            # plot_array(startup_cost_mask)
-
             
         outage_duration = self.resolution_strategy.convert_time(outage_options["planning_outage_duration"])
         avail_months_mask = self.resolution_strategy.get_avail_months_profile(outage_options["allow_months"])
 
-        last_step_mask = self.resolution_strategy.get_last_step_mask()
-        
+        mask_for_storage = self.resolution_strategy.get_last_step_mask()
         coeff = self.resolution_strategy.coeff
 
-        npp_block_builder.add_specific_status_duration_in_period(
-            mode = "non_active",
-            duration = outage_duration,
-            avail_months_mask = avail_months_mask,
-            start_days_mask = start_days_mask,
-            last_step_mask = last_step_mask,
-            coeff = coeff
+        if outage_options["fixed_mode"]:
+            month = list(outage_options["fixed_outage_month"])[0]
+            avail_months_mask = self.resolution_strategy.get_mask_from_first_day_of_month(month, outage_duration)
+
+        
+        grad_mask = self.resolution_strategy.get_grad_mask(month, outage_duration)
+        # plot_array(grad_mask, self.es.custom_timeindex)
+        # grad_mask = self.resolution_strategy.get_months_start_points()
+        # plot_array(grad_mask)
+        npp_block_builder.update_options({"positive_gradient_limit": grad_mask})
+        # npp_block_builder.update_options({"negative_gradient_limit": 1})
+        
+        control_npp_stop_source.add_specific_status_duration_in_period(
+            mode="active",
+            duration=outage_duration,
+            avail_months_mask=avail_months_mask,
+            start_days_mask=start_days_mask,
+            mask=mask_for_storage,
+            coeff=coeff
             )
         
 
@@ -184,7 +193,7 @@ class NPP_builder:
                     coeff = self.resolution_strategy.coeff
                     repair_converter_builder.add_max_uptime(duration, coeff)
                     
-                    repair_converter_builder.add_strict_order_after(control_npp_stop_source)
+                    repair_converter_builder.add_optional_active_after(control_npp_stop_source)
                     control_npp_stop_source.add_group_equal_1(repair_converter_builder)
                     
                     repair_converter_builder.set_info("forced_in_period", options.get("forced_in_period"))
@@ -228,7 +237,7 @@ class NPP_builder:
                     repair_converter_builder.add_max_uptime(duration, coeff)
                     
                     
-                    repair_converter_builder.add_strict_order_after(control_npp_stop_source)
+                    repair_converter_builder.add_optional_active_after(control_npp_stop_source)
                     control_npp_stop_source.add_group_equal_1(repair_converter_builder)
 
 
@@ -357,7 +366,7 @@ class NPP_builder:
                 duration = repair_duration,
                 avail_months_mask = 1,
                 start_days_mask = None,
-                last_step_mask = last_step_mask,
+                mask = last_step_mask,
                 coeff = coeff
                 )
             
@@ -374,10 +383,8 @@ class NPP_builder:
         outage_options,
     ):
         
-        # power = self.resolution_strategy.convert_power(nominal_power)
-        grad = self.resolution_strategy.get_months_start_points()
+
         min_uptime = self.resolution_strategy.convert_time(min_uptime)
-        # var_cost = self.resolution_strategy.convert_var_cost(var_cost)
         
         npp_block_builder = Wrapper_source(self.es, label)
         npp_block_builder.update_options({
@@ -386,8 +393,8 @@ class NPP_builder:
             "var_cost": var_cost,
             "min": 1,
             "min_uptime": min_uptime,
-            "positive_gradient_limit": grad,
-            "negative_gradient_limit": grad,
+            # "positive_gradient_limit": grad_mask,
+            # "negative_gradient_limit": 1,
         })
         
         self.add_outage_options(npp_block_builder, outage_options)

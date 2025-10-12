@@ -53,5 +53,6 @@ class Wrapper_source(Wrapper_base):
         self.es.add(self.block)
         self._set_info_to_block()
         self._apply_constraints()
+        self.built = True
 
         return self.block

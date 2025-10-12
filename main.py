@@ -23,7 +23,7 @@ repair_options = {
         "startup_cost": 1e3,
         "duration": 10,
         "min_downtime": 0,
-        "max_startup": 12,
+        "max_startup": 36,
         "risk_reset": set(),
         "risk_reducing": {"r1": 0.1},
         "min": 1,
@@ -38,7 +38,7 @@ repair_options = {
         "startup_cost": 15e8,
         "duration": 30,
         "min_downtime": 0,
-        "max_startup": 1,
+        "max_startup": 3,
         "risk_reset": {"r1"},
         # "risk_reset": {},
         "risk_reducing": {},
@@ -114,13 +114,15 @@ scen = {
                 "start_of_month": True,
                 "allow_months": all_months - {"Jan"},
                 "planning_outage_duration": 30,
-                "fixed_mode": False,
-                "fixed_outage_month":  set(["Jul"]),
+                "fixed_mode": True,
+                # "fixed_mode": False,
+                # "fixed_outage_month":  {"Sep"},
+                "fixed_outage_month":  {"Oct"},
             },
             "risk_options": {
                 "status": True,
                 "risks": {
-                    "r1": {"id": 0, "value": 0.1, "max": 0.3, "start_risk_rel": 0.2, "events": None},
+                    "r1": {"id": 0, "value": 0.1, "max": 2, "start_risk_rel": 0.2, "events": None},
                     # "r2": {"id": 1, "value": 0.1, "max": 0.7, "start_risk_rel": 0.2, "events": None},
                     # "r3": {"id": 2, "value": 0.1, "max": 1, "start_risk_rel": 0, "events": None},
                 }},
@@ -135,6 +137,23 @@ scen = {
         # "new_npp_block_1": bel_npp_block_2,
 }
 
+# scenarios
+###############################################################################
+
+
+
+
+
+
+# три блока - три года - обязательный капремонт - 2 - 4 npp-stop reduce - 25-5, два non-stop reduce
+
+
+
+
+
+
+
+###############################################################################
 
 
 oemof_model = Oemof_model(
@@ -161,7 +180,7 @@ solution_processor.set_excel_folder("./excel_results")
 # solution_processor.set_restore_mode(file_number="09") 
 
 # solution_processor.set_restore_mode(file_number="39") 
-# solution_processor.set_restore_mode(file_number="31") 
+# solution_processor.set_restore_mode(file_number="88") 
 
 solution_processor.apply()
 
@@ -211,42 +230,43 @@ solution_processor.set_block_grouper(block_grouper)
 result_viewer = Result_viewer(block_grouper)
 control_block_viewer = Control_block_viewer(block_grouper)
 
-result_viewer.set_image_flag(False)
-# result_viewer.set_image_flag(True)
-result_viewer.set_image_options(folder="./images", image_format="jpg", dpi=600)
 
-result_viewer.plot_general_graph(bel_npp_block_1)
+image_simple = result_viewer.plot_general_graph(bel_npp_block_1)
+# image_main = result_viewer.plot_profile_all_blocks_graph(font_size=10, risk_graph=True, dpi=120)
+
 # result_viewer.plot_general_graph(bel_npp_block_2)
 # result_viewer.plot_general_graph(new_npp_block_1)
 
-# result_viewer.plot_cost_all_blocks_graph()
+control_block_viewer.plot_control_stop_block(bel_npp_block_1)
+# control_block_viewer.plot_npp_status(bel_npp_block_1)
 
-result_viewer.plot_profile_all_blocks_graph(font_size=10, risk_graph = True, dpi = 120)
+control_block_viewer.plot_npp_storage_data(bel_npp_block_1)
+# control_block_viewer.plot_repair_storage_max_uptime(bel_npp_block_1, repair_id=1)
+control_block_viewer.plot_repair_storage_max_uptime(bel_npp_block_1, repair_id=2)
+ 
 
+# result_viewer.create_scheme("./schemes")
+# image_simple.save("./images","jpg", 600)
+# image_main.save("./images","jpg", 600)
 
-# control_block_viewer.plot_sinks_profile(bel_npp_block_1, repair_id=1, risk_name="r1")
-# control_block_viewer.plot_sinks_profile(bel_npp_block_1, repair_id=2, risk_name="r1")
 
 
 
 print("done")
 
 
-# проверка ограничения group_equal_1 - простой пример
+
+
+
+
+# control_block_viewer.plot_sinks_profile(bel_npp_block_1, repair_id=1, risk_name="r1")
+# control_block_viewer.plot_sinks_profile(bel_npp_block_1, repair_id=2, risk_name="r1")
 # разные верхние границы максимумов
 # добавить отображения событий повышающих риск (вертикальные черты)
-# обязательный выбор ремонтов во время остановки
 # простое переключение сценариев
-# сохранение рисунков
 # график с тремя блоками 1 и 3 года с ремонтами и деньгами
 # учет штрафов за остановку
-# для ремонтов требущих отключение блока добавить промежуточный блок со связья блоком (upper 1)
-# для учета требования 30 дневной остановки добавить storage c mindowntime и фикс. source
-# учесть паузу между ремонтами (расширить период и занулить доступности)
 # фиксировать ремонты для показа большей целевой функции
-# отмечать какие ремонты могут нейтр. аварий событие 
-# переключатель нейтролизуемого риска (от 1 до 3) в качестве input через сonverter_repair
-# динам изменением maxY
 # objective value extract
 # solution_processor.write_excel_file("test.xlsx")
 # result_plotter.plot_electricity_generation_profile()

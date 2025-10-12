@@ -18,6 +18,8 @@ class Wrapper_base:
         self.keywords = {}
         self.constraints = defaultdict(list)
         self.block = None
+        self.built = False
+        
         
     def add_keyword_to_flow(self):
         pass
@@ -66,7 +68,7 @@ class Wrapper_base:
         wrapper_block.add_keyword_to_flow(keyword)
         self.constraints["no_equal_status_lower_0"].append(keyword)
         
-    def create_pair_no_equal_status(self, wrapper_block):
+    def create_pair_no_equal_status_equal_1(self, wrapper_block):
         self.constraints["no_equal_status_equal_1"].append(wrapper_block)
         
 
@@ -74,8 +76,11 @@ class Wrapper_base:
         self.constraints["equal_status"].append(wrapper_block)
               
               
-    def add_strict_order_after(self, wrapper_block):
+    def add_optional_active_after(self, wrapper_block):
         self.constraints["strict_order"].append(wrapper_block)
+         
+         
+
                             
  
     def add_specific_status_duration_in_period(
@@ -84,7 +89,7 @@ class Wrapper_base:
         duration,
         avail_months_mask,
         start_days_mask,
-        last_step_mask,
+        mask,
         coeff,
         ):
 
@@ -93,7 +98,7 @@ class Wrapper_base:
 
         charger_power = 1
         storage_capacity = charger_power * duration
-        fix_profile = np.array(last_step_mask) * storage_capacity
+        fix_profile = np.array(mask) * storage_capacity
 
 
         bus_factory = Generic_bus(self.es)
@@ -106,6 +111,8 @@ class Wrapper_base:
         sink.inputs_pair = [(sink_bus, sink)]
         self.es.add(sink)
         
+        
+        # print(np.sum(avail_months_mask))
         avail_months_mask = avail_months_mask if avail_months_mask is not None else 1
         storage_in_bus = bus_factory.create_bus(f"{self.label}_storage_in_bus")
         storage = solph.components.GenericStorage(
@@ -114,6 +121,7 @@ class Wrapper_base:
             nominal_storage_capacity=storage_capacity * coeff,
             inputs={storage_in_bus: solph.Flow(
                 nominal_value=1e10,
+                # max=1,
                 max=avail_months_mask,
                 min=0,
                 # bad
@@ -123,7 +131,8 @@ class Wrapper_base:
             balanced=False
         )
         storage.inputs_pair = [(storage_in_bus, storage)]
-        storage.outputs_pair = [(sink_bus, storage)]
+        storage.outputs_pair = [(storage, sink_bus)]
+        self.set_info("specific_status_duration_storage", storage)
         self.es.add(storage)
         
         
@@ -140,9 +149,13 @@ class Wrapper_base:
             wrapper_charger_builder.add_startup_cost_by_mask(start_days_mask)
         
         if mode == "active":
-            wrapper_charger_builder.create_pair_equal_status(self)
+            self.create_pair_equal_status(wrapper_charger_builder)
+            # wrapper_charger_builder.create_pair_equal_status(self)
         elif mode == "non_active":
-            wrapper_charger_builder.create_pair_no_equal_status_lower_0(self)
+            self.create_pair_no_equal_status_lower_0(wrapper_charger_builder)
+            # self.create_pair_no_equal_status_equal_1(wrapper_charger_builder)
+            # wrapper_charger_builder.create_pair_no_equal_status_lower_0(self)
+            # wrapper_charger_builder.create_pair_no_equal_status_lower_1(self)
 
         wrapper_charger_builder.build()
 
@@ -167,6 +180,7 @@ class Wrapper_base:
         storage_control.inputs_pair = [(storage_in_bus, storage_control)]
         storage_control.outputs_pair = [(storage_control, storage_out_bus)]
         self.es.add(storage_control)
+        self.set_info("max_uptime_storage", storage_control)
         
         charger_builder = self.create_wrapper_source_builder(self.es, f"{self.label}_max_up_time_control_source")
         charger_builder.update_options({

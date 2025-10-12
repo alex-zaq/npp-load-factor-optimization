@@ -115,8 +115,11 @@ def set_label(*items, sep="_"):
 
     return sep.join(items)
 
-def plot_array(arr):
-    plt.plot(arr, linewidth=1)
+def plot_array(arr, date_time_index=None):
+    if date_time_index is not None:
+        plt.plot(date_time_index, arr, linewidth=1)
+    else:
+        plt.plot(arr, linewidth=1)
     plt.margins(x=0, y=0)
     plt.show(block=True)
 
@@ -201,7 +204,8 @@ def add_white_spaces_and_colors_repairs(dict_value, value):
             # new_colors.insert(len(new_colors) - 1 + 1, (1,0,0,0)) 
             new_colors.insert(len(new_colors) - 1 + 1, df_item.block_color) 
     
-
+    new_df.clip(lower=0)
+    new_df[new_df < 0] = 0
     new_df.colors = new_colors
     return new_df
     
@@ -411,3 +415,51 @@ def days_to_hours(val):
 def months_to_hours(val):
     return val * 24
 
+def zero_middle_ones(arr):
+    result = arr.copy()
+    in_segment = False
+    start = 0
+    for i in range(len(arr)):
+        if arr[i] == 1 and not in_segment:
+            in_segment = True
+            start = i
+        elif arr[i] == 0 and in_segment:
+            in_segment = False
+            if start < i-1:
+                result[start+1:i-1] = 0
+    # Если сегмент единиц длиной до конца массива
+    if in_segment and start < len(arr)-1:
+        result[start+1:] = 0
+    return result
+
+
+
+def zero_inner_ones(arr):
+
+    n = len(arr)
+    result = [0] * n  # Создаем новый массив, заполненный нулями, той же длины
+    i = 0
+    while i < n:
+        if arr[i] == 1:
+            # Найдено начало блока единиц
+            result[i] = 1  # Первая единица в блоке остается единицей
+
+            # Находим конец блока единиц
+            end_of_block_index = i
+            while end_of_block_index + 1 < n and arr[end_of_block_index + 1] == 1:
+                end_of_block_index += 1
+
+            # Если есть позиция сразу после блока единиц, ставим там единицу
+            if end_of_block_index + 1 < n:
+                result[end_of_block_index + 1] = 1
+
+            # Перемещаем указатель 'i' за текущий блок, чтобы продолжить поиск
+            i = end_of_block_index + 1
+        else:
+            # Если текущий элемент 0, он остается 0 (поскольку result уже инициализирован нулями)
+            i += 1
+    return result
+
+my_array = [0,0,1,1,1,0,0]
+transformed_array = zero_inner_ones(my_array)
+print(transformed_array) # Выведет: [0, 0, 1, 0, 0, 1, 0]

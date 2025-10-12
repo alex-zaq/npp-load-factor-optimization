@@ -5,7 +5,6 @@ import pandas as pd
 
 from src.npp_load_factor_calculator.constraint_processor import Constraint_processor
 from src.npp_load_factor_calculator.custom_model import Custom_model
-from src.npp_load_factor_calculator.utilites import check_sequential_years
 
 
 class Oemof_model:
@@ -83,6 +82,7 @@ class Oemof_model:
         self.meta_results = solph.processing.meta_results(model)
         print("результаты извлечены")
     
+
     
     def calculate(self):
         self.init_oemof_model()

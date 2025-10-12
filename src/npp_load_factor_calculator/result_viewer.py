@@ -1,9 +1,15 @@
 from pathlib import Path
 
-from matplotlib import pyplot as plt
 import pandas as pd
+from matplotlib import pyplot as plt
+from oemof.visio import ESGraphRenderer
 
-from src.npp_load_factor_calculator.utilites import add_white_spaces_and_colors_el_gen, add_white_spaces_and_colors_repairs, center_matplotlib_figure, get_file_name_with_auto_number
+from src.npp_load_factor_calculator.utilites import (
+    add_white_spaces_and_colors_el_gen,
+    add_white_spaces_and_colors_repairs,
+    center_matplotlib_figure,
+    get_file_name_with_auto_number,
+)
 
 
 class Result_viewer:
@@ -12,35 +18,28 @@ class Result_viewer:
         self.block_grouper = block_grouper
         self.scenario = block_grouper.custom_es.scenario
         self.save_image_flag = False
-        self.image_folder = None
         
+    def create_scheme(self, folder):
         
-    def _save_image(self, figure, dpi):
+        folder = Path(folder)
+        if not folder.exists():
+            folder.mkdir(parents=True)
+        name = get_file_name_with_auto_number(folder, self.scenario, "png")
+        folder = folder / name
+        oemof_es = self.block_grouper.custom_es.oemof_es
         
-        folder = Path(self.image_folder)
-        name = get_file_name_with_auto_number(folder, self.scenario, self.image_format)
-        path = folder / name
-        
-        figure.savefig(
-            path,
-            bbox_inches="tight",
-            dpi=dpi,
-            transparent=True,
+        gr = ESGraphRenderer(
+            energy_system=oemof_es,
+            filepath=folder,
+            img_format="png",
+            txt_fontsize=12,
+            txt_width=40,
+            legend=False,
         )
-        print(f"Saved to {path}")
-        
-        
-    def set_image_flag(self, flag):
-        self.save_image_flag = flag
-    
-    
-    def set_image_options(self, folder, image_format, dpi):
-        self.image_folder = folder
-        self.image_format = image_format
-        self.image_dpi = dpi
-        
+        gr.view()
+
+
     def plot_general_graph(self, block):
-        
                 
         el_gen_df = self.block_grouper.get_electricity_profile_by_block(block)
         risks_df = self.block_grouper.get_risks_profile_by_block(block)
@@ -70,6 +69,10 @@ class Result_viewer:
 
         ax_repair_df = None
         if not repairs_df.empty:
+            
+            count_nonzero = repairs_df.astype(bool).sum().sum()
+            print("repair_duration",count_nonzero)
+            
             ax_repair_df = repairs_df.plot(
                 kind="area",
                 ylim=(0, max_y),
@@ -116,13 +119,15 @@ class Result_viewer:
         fig.canvas.manager.set_window_title("Расчет плановых остановок (один блок)")
         fig.set_dpi(150)
         
-        # center_matplotlib_figure(fig, extra_y=-60, extra_x=40)
+        center_matplotlib_figure(fig, extra_y=-60, extra_x=40)
   
         plt.show(block=True)
         
         
-        if self.save_image_flag:
-            self._save_image(fig, self.image_dpi) 
+        image_builder = Image_builder(fig, self.scenario)
+        
+        return image_builder
+        
                 
    
     def plot_profile_all_blocks_graph(self, font_size, risk_graph=False, dpi=120):
@@ -217,7 +222,7 @@ class Result_viewer:
         
         ax_cost_all_blocks_df.axhline(y=cost_upper_bound, color='black', linestyle='--', label='затраты за период')
         
-        x_max = cost_all_blocks_df.index[-40]
+        x_max = cost_all_blocks_df.index[-round(40*cost_all_blocks_df.shape[0]/365)]
         y_max = cost_all_blocks_df.max().max()
         ax_cost_all_blocks_df.text(
             x_max,
@@ -259,7 +264,7 @@ class Result_viewer:
                 ax_risk_df.axhline(y=max_risk_value, color='r', linestyle='--', label='верхняя граница риска')
                 ax_risk_df.legend(loc='upper left', fontsize=font_size - 2, ncol=1)
 
-            x_max = risk_df.index[40]
+            x_max = risk_df.index[round(40*cost_all_blocks_df.shape[0]/365)]
 
             # x_max = risk_df.idxmax().max()
             y_max = risk_df.max().max()
@@ -284,14 +289,96 @@ class Result_viewer:
         center_matplotlib_figure(fig, extra_y=-60, extra_x=40)
         plt.show(block=True)
         
+        image_builder = Image_builder(fig, self.scenario)
 
- 
+        return image_builder
+
+class Image_builder:
+    
+    def __init__(self, fig, scenario):
+        self.fig = fig
+        self.scenario = scenario
+        
+    def save(self, folder, format, dpi=100):
+        
+        folder = Path(folder)
+        if not folder.exists():
+            folder.mkdir(parents=True)
+        name = get_file_name_with_auto_number(folder, self.scenario, format)
+
+        path = folder / name
+        
+        self.fig.savefig(
+            path,
+            bbox_inches="tight",
+            dpi=dpi,
+            transparent=True,
+        )
+        print(f"Saved to {path}")
             
 
 class Control_block_viewer:
     
     def __init__(self, block_grouper):
         self.block_grouper = block_grouper
+        
+    def plot_npp_status(self, block):
+        
+        npp_status_df = self.block_grouper.get_npp_status_profile(block)
+
+        font_size = 6
+        max_y = 1.2 * npp_status_df.max().max()
+
+        print("npp_status",npp_status_df.sum().sum())
+
+        ax_profile_df = npp_status_df.plot(
+            kind="area",
+            ylim=(0, max_y),
+            legend="reverse",
+            color="black",
+            linewidth=0.5,
+            figsize=(7, 5),
+            fontsize=font_size,
+        )
+        
+        ax_profile_df.legend(loc="upper center", fontsize=font_size)
+        fig = plt.gcf()
+        fig.set_dpi(150)
+        
+        
+        center_matplotlib_figure(fig, extra_y=-60, extra_x=40)
+        
+        plt.show(block=True)
+        
+        
+        
+    def plot_control_stop_block(self, block):
+        
+        control_stop_block_profile_df = self.block_grouper.get_control_stop_block_profile(block)
+
+        font_size = 6
+        max_y = 1.2 * control_stop_block_profile_df.max().max()
+
+        print("control_stop_block",control_stop_block_profile_df.sum().sum())
+
+        ax_sink_profile_df = control_stop_block_profile_df.plot(
+            kind="area",
+            ylim=(0, max_y),
+            legend="reverse",
+            color="black",
+            linewidth=0.5,
+            figsize=(7, 5),
+            fontsize=font_size,
+        )
+        
+        ax_sink_profile_df.legend(loc="upper center", fontsize=font_size)
+        fig = plt.gcf()
+        fig.set_dpi(150)
+        
+        
+        center_matplotlib_figure(fig, extra_y=-60, extra_x=40)
+        
+        plt.show(block=True)
         
 
     def plot_sinks_profile(self, block, repair_id, risk_name):
@@ -315,6 +402,131 @@ class Control_block_viewer:
         fig = plt.gcf()
         fig.set_dpi(150)
         
+        
+        center_matplotlib_figure(fig, extra_y=-60, extra_x=40)
+        
+        plt.show(block=True)
+        
+        
+    def plot_npp_storage_data(self, block):
+        
+        npp_storage_data_dict = self.block_grouper.get_npp_storage_dict(block)
+        
+        input_flow_df = npp_storage_data_dict["input_flow"]
+        output_flow_df = npp_storage_data_dict["output_flow"]
+        storage_content_df = npp_storage_data_dict["storage_content"]
+
+        # res = pd.concat([input_flow_df, output_flow_df, storage_content_df], axis=1)
+
+        # print(res.head(5))
+
+        font_size = 6
+        max_y = 1.2 * storage_content_df.max().max()
+
+
+
+        ax_storage_content_df = storage_content_df.plot(
+            kind="area",
+            ylim=(0, max_y),
+            legend="reverse",
+            # color=color,
+            linewidth=0.01,
+            figsize=(7, 5),
+            fontsize=font_size,
+        )
+        
+        print("зарядка (npp_storage)",input_flow_df.sum().sum())
+        
+        
+        ax_input_df = input_flow_df.plot(
+            kind="line",
+            ylim=(0, max_y),
+            legend="reverse",
+            color="red",
+            linewidth=1,
+            figsize=(7, 5),
+            fontsize=font_size,
+            ax = ax_storage_content_df
+        )
+        
+        ax_output_df = output_flow_df.plot(
+            kind = "line",
+            ylim=(0, max_y),
+            legend="reverse",
+            color="blue",
+            linewidth=1,
+            figsize=(7, 5),
+            fontsize=font_size,
+            ax = ax_input_df
+        )
+
+        
+        ax_storage_content_df.legend(loc="upper center", fontsize=font_size)
+        fig = plt.gcf()
+        fig.set_dpi(150)
+        fig.canvas.manager.set_window_title("npp_storage")
+        
+        
+        center_matplotlib_figure(fig, extra_y=-60, extra_x=40)
+        
+        plt.show(block=True)
+        
+        
+        
+    def plot_repair_storage_max_uptime(self, block, repair_id):
+        
+        npp_storage_data_dict = self.block_grouper.get_repair_storage_max_uptime_dict(block, repair_id)
+        
+        input_flow_df = npp_storage_data_dict["input_flow"]
+        output_flow_df = npp_storage_data_dict["output_flow"]
+        storage_content_df = npp_storage_data_dict["storage_content"]
+
+        # res = pd.concat([input_flow_df, output_flow_df, storage_content_df], axis=1)
+
+        # print(res.head(5))
+
+        font_size = 6
+        max_y = 1.2 * storage_content_df.max().max()
+
+        ax_storage_content_df = storage_content_df.plot(
+            kind="area",
+            ylim=(0, max_y),
+            legend="reverse",
+            # color=color,
+            linewidth=0.01,
+            figsize=(7, 5),
+            fontsize=font_size,
+        )
+        
+        ax_input_df = input_flow_df.plot(
+            kind="line",
+            ylim=(0, max_y),
+            legend="reverse",
+            color="red",
+            linewidth=1,
+            figsize=(7, 5),
+            fontsize=font_size,
+            ax = ax_storage_content_df
+        )
+        
+        print("зарядка (repair_max_uptime_storage)",input_flow_df.sum().sum())
+        
+        ax_output_df = output_flow_df.plot(
+            kind = "line",
+            ylim=(0, max_y),
+            legend="reverse",
+            color="blue",
+            linewidth=1,
+            figsize=(7, 5),
+            fontsize=font_size,
+            ax = ax_input_df
+        )
+
+        
+        ax_storage_content_df.legend(loc="upper center", fontsize=font_size)
+        fig = plt.gcf()
+        fig.set_dpi(150)
+        fig.canvas.manager.set_window_title("repair_max_uptime_storage")
         
         center_matplotlib_figure(fig, extra_y=-60, extra_x=40)
         

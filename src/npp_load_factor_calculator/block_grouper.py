@@ -85,6 +85,58 @@ class Custom_block:
         res_df = res_df.clip(lower=0)
         return res_df
     
+    def get_control_stop_block_profile(self):
+        control_stop_block = self.block.control_npp_stop_source.block
+        block, output = control_stop_block.outputs_pair[0]
+        block_results = solph.views.node(self.results, output.label)["sequences"].dropna()
+        res_df = pd.DataFrame()
+        res_df[block.label] = block_results[((block.label, output.label), "flow")]
+        res_df = res_df.clip(lower=0)
+        return res_df
+    
+    def get_npp_status_profile(self):
+        block, output = self.block.outputs_pair[0]
+        block_results = solph.views.node(self.results, output.label)["sequences"].dropna()
+        res_df = pd.DataFrame()
+        res_df[block.label] = block_results[((block.label, output.label), "status")]
+        res_df = res_df.clip(lower=0)
+        return res_df
+    
+    def get_npp_storage_data_dict(self):
+        res_dict = {}
+        storage = self.block.control_npp_stop_source.block.specific_status_duration_storage
+        storage_results = solph.views.node(self.results, storage.label)["sequences"].dropna()
+        storage_content_df = pd.DataFrame()
+        storage_content_df["storage_content"] = storage_results[(storage.label, "None"), "storage_content"]
+        res_dict["storage_content"] = storage_content_df
+        input_flow_df = pd.DataFrame()
+        input_bus, block = storage.inputs_pair[0]
+        input_flow_df["input_flow"] = storage_results[(input_bus.label, block.label), "flow"]
+        res_dict["input_flow"] = input_flow_df
+        output_flow_df = pd.DataFrame()
+        block, output_bus = storage.outputs_pair[0]
+        output_flow_df["output_flow"] = storage_results[(block.label, output_bus.label), "flow"]
+        res_dict["output_flow"] = output_flow_df
+        return res_dict
+    
+    def get_repair_storage_max_uptime_dict(self, repair_id):
+        res_dict = {}
+        selected_repair_block = self.block.repairs_blocks[repair_id]
+        max_uptime_storage = selected_repair_block.max_uptime_storage 
+        storage_results = solph.views.node(self.results, max_uptime_storage.label)["sequences"].dropna()
+        storage_content_df = pd.DataFrame()
+        storage_content_df["storage_content"] = storage_results[(max_uptime_storage.label, "None"), "storage_content"]
+        res_dict["storage_content"] = storage_content_df
+        input_flow_df = pd.DataFrame()
+        input_bus, block = max_uptime_storage.inputs_pair[0]
+        input_flow_df["input_flow"] = storage_results[(input_bus.label, block.label), "flow"]
+        res_dict["input_flow"] = input_flow_df
+        output_flow_df = pd.DataFrame()
+        block, output_bus = max_uptime_storage.outputs_pair[0]
+        output_flow_df["output_flow"] = storage_results[(block.label, output_bus.label), "flow"]
+        res_dict["output_flow"] = output_flow_df
+        return res_dict
+            
     
 ###############################################################################################################    
 
@@ -210,6 +262,8 @@ class Block_grouper:
             colors = repair_df.colors
             repair_df *= custom_block.block.nominal_power * part
             repair_df = repair_df[:-1]
+            # repair_df = repair_df.clip(lower=0)
+            repair_df[repair_df <=0] = 0
             repair_df.colors = colors
             repair_df.block_color = block_color
             res[custom_block.block.label] = repair_df
@@ -232,6 +286,7 @@ class Block_grouper:
             res[custom_block.block.label] = custom_block.get_cost_profile()
         res = res.sum(axis=1).to_frame()
         res.columns = ["затраты на ремонты"]
+        # print(res.max().max())
         if cumulative:
             res = res.cumsum()
         res = res[:-1]
@@ -245,6 +300,28 @@ class Block_grouper:
         res = res[:-1]
         return res
     
+    
+    def get_control_stop_block_profile(self, block):
+        custom_block = [custom_block for custom_block in self.electr_groups if custom_block.block is block][0]
+        res = custom_block.get_control_stop_block_profile()
+        res = res[:-1]
+        return res
+    
+    def get_npp_status_profile(self, block):
+        custom_block = [custom_block for custom_block in self.electr_groups if custom_block.block is block][0]
+        res = custom_block.get_npp_status_profile()
+        res = res[:-1]
+        return res
+    
+    def get_npp_storage_dict(self, block):
+        custom_block = [custom_block for custom_block in self.electr_groups if custom_block.block is block][0]
+        res_dict = custom_block.get_npp_storage_data_dict()
+        return res_dict
+    
+    def get_repair_storage_max_uptime_dict(self, block, repair_id):
+        custom_block = [custom_block for custom_block in self.electr_groups if custom_block.block is block][0]
+        res_dict = custom_block.get_repair_storage_max_uptime_dict(repair_id)
+        return res_dict
     
     
     
