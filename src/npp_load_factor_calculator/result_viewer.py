@@ -247,6 +247,8 @@ class Result_viewer:
             if len(max_risk_value:=set(v["max_risk"] for v in risks_dict.values())) == 1:
                 max_risk_value = max_risk_value.pop()
                 max_y_cost = max_risk_value * 1.5
+            else:
+                raise Exception("Different max_risk values")
 
 
             ax_risk_df = risk_df.plot(
@@ -262,12 +264,10 @@ class Result_viewer:
             ax_right.legend(loc='upper left', fontsize=font_size - 2, ncol=1)
             
             
-            if len(set(v["max_risk"] for v in risks_dict.values())) == 1:
-                ax_right.legend(loc='upper left', fontsize=font_size - 2, ncol=1)
 
             x_max = risk_df.index[round(40*risk_df.shape[0]/365)]
-
             y_max = risk_df.max().max()
+
             ax_risk_df.text(
                 x_max,
                 max_risk_value * 1.03,
@@ -284,8 +284,6 @@ class Result_viewer:
             
             
             if not events_df.empty:
-                print(events_df.head(10))
-                
                 ax_events_df = events_df.plot(
                     kind="area",
                     ylim=(0, max_y_cost),
@@ -296,7 +294,13 @@ class Result_viewer:
                     ax=ax_right
                 )
             ax_events_df.legend(loc='upper right', fontsize=font_size - 2, ncol=1)    
+
+
             ax_risk_df.axhline(y=max_risk_value, color='r', linestyle='--', label='верхняя граница риска')
+
+
+
+
             ax_risk_df.legend(loc='upper right', fontsize=font_size - 2, ncol=1)    
 
         fig.set_dpi(dpi)

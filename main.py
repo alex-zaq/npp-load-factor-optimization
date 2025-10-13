@@ -50,15 +50,13 @@ repair_options = {
     },
     "medium-1": {
         "id": 3,
-        "status": False,
-        "startup_cost": 7e3,
+        "status": True,
+        "startup_cost": 1e3,
         "duration": 30,
         "min_downtime": 0,
-        # "risk_reset": {"r1","r2"},
-        "risk_reset": {},
-        "max_startup": 1,
-        "risk_reducing": {"r1": 0.9},
-        # "risk_reducing": {},
+        "max_startup": 3,
+        "risk_reset": {"r1"},
+        "risk_reducing": {},
         "min": 0,
         "start_day": {"status": True, "days": [1,]},
         "npp_stop": True,
@@ -168,14 +166,14 @@ oemof_model = Oemof_model(
     solver_settings = {
         "solver": "cplex",
         "solver_verbose": True,
-        "mip_gap": 0.001
+        "mip_gap": 0.0001
     } 
 )
 
 
 solution_processor = Solution_processor(oemof_model)
-# solution_processor.set_calc_mode(save_results=False)
-solution_processor.set_calc_mode(save_results=True)
+solution_processor.set_calc_mode(save_results=False)
+# solution_processor.set_calc_mode(save_results=True)
 solution_processor.set_dumps_folder("./dumps")
 solution_processor.set_excel_folder("./excel_results")
 
@@ -187,7 +185,7 @@ solution_processor.set_excel_folder("./excel_results")
 # solution_processor.set_restore_mode(file_number="09") 
 
 # solution_processor.set_restore_mode(file_number="39") 
-solution_processor.set_restore_mode(file_number="121") 
+# solution_processor.set_restore_mode(file_number="41") 
 
 solution_processor.apply()
 
@@ -222,7 +220,7 @@ block_grouper.set_options(
         "легкий ремонт-1": {"id": 0, "color": "#00FFAA"},
         "легкий ремонт-2": {"id": 1, "color": "#fdec02"},
         "текущий ремонт-1": {"id": 2, "color": "#0b07fc"},
-        "текущий ремонт-2": {"id": 3, "color": "#0080ff"},
+        "текущий ремонт-2": {"id": 3, "color": "#ff00b3"},
         "капитальный ремонт-1": {"id": 4, "color": "#ff4000"},
     },
     repairs_cost_options={
@@ -263,9 +261,8 @@ print("done")
 
 
 
-# отображение доп. событий риска на графике + ось
-# подпись время, дни
-# отображение множественных рисков
+# название блока верхней границе риска
+# добавить скобки в легенде
 # сделать расчет с ноутбука
 # фото с ноутбука
 # разные верхние границы максимумов
@@ -274,6 +271,7 @@ print("done")
 # параметры для записи и чтения у компонентов
 # блок-схема
 # взять реальные значения из двух источников
+# вывод в эксель
 
 
 

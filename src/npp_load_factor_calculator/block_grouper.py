@@ -143,7 +143,7 @@ class Custom_block:
             block, output = events_source.outputs_pair[0]
             block_results = solph.views.node(self.results, output.label)["sequences"].dropna()
             res_df = pd.DataFrame()
-            res_df[f"события риска {risk_name} {self.block.label}"] = block_results[((block.label, output.label), "flow")]
+            res_df[f"события риска {risk_name} ({self.block.label})"] = block_results[((block.label, output.label), "flow")]
             res_df = res_df.clip(lower=0)
             return res_df
     

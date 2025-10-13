@@ -55,6 +55,7 @@ class Wrapper_base:
         
     def add_group_equal_1(self, wrapper_block):
         self.constraints["group_equal_1"].append(wrapper_block)
+        # print(self.constraints["group_equal_1"])
         
     def create_pair_no_equal_status_lower_1(self, wrapper_block):
         keyword = f"{self.label}_{wrapper_block.label}_no_equal_status_lower_1"
