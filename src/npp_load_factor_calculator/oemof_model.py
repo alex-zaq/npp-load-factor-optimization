@@ -19,8 +19,6 @@ class Oemof_model:
         start_year = self.scenario["years"][0]
         end_year = self.scenario["years"][-1]
 
-        # first_time_step = datetime(start_year, 1, 1, 0, 0, 0)
-        # t_delta = datetime(end_year + 1, 1, 1, 0, 0, 0) - first_time_step
 
         first_time_step = datetime(start_year, 1, 1)
         t_delta = datetime(end_year + 1, 1, 1) - first_time_step
@@ -49,11 +47,15 @@ class Oemof_model:
         self.custom_es.add_new_npp()
     
     
+    def build_blocks_in_wrappers(self):
+        self.custom_es.build_blocks_in_wrappers()
+    
+    
     def add_constraints(self, constraints_processor):
-        constraints_processor.apply_equal_status()
-        constraints_processor.apply_no_equal_status_equal_1()
         constraints_processor.apply_no_equal_status_lower_0()
         constraints_processor.apply_no_equal_lower_1_status()
+        constraints_processor.apply_equal_status()
+        constraints_processor.apply_no_equal_status_equal_1()
         constraints_processor.apply_strict_order()
         constraints_processor.add_group_equal_1()
 

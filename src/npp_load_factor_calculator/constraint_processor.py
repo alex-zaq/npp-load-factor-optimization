@@ -1,5 +1,4 @@
 import pyomo.environ as po
-from oemof import solph
 
 
 class Constraint_processor:
@@ -8,59 +7,106 @@ class Constraint_processor:
         self.count = len(model.timeincrement)
         self.constraints = constraints
 
-
+    def _get_pairs_lst(self, groups_dict):
+        global_groups_lst = []
+        for main_block in groups_dict:
+            local_group_lst = []
+            for sub_block in groups_dict[main_block]:
+                main_block_pair = main_block.get_pair_after_building()
+                sub_block_pair = sub_block.get_pair_after_building()
+                local_group_lst.append((main_block_pair, sub_block_pair))
+            global_groups_lst.append(local_group_lst)
+    
+    
+    def _get_pairs_dict(self, groups_dict):
+        global_groups_dict = {}
+        for main_block in groups_dict:
+            local_group_dict = []
+            for sub_block in groups_dict[main_block]:
+                main_block_pair = main_block.get_pair_after_building()
+                sub_block_pair = sub_block.get_pair_after_building()
+                local_group_dict.append(sub_block_pair)
+            global_groups_dict[main_block_pair] = local_group_dict
+            
+    
     def apply_equal_status(self):
-        # items = self.constraints["equal_status"]
-        # model = self.model
-        # for item in items:
-        #     pair_1, pair_2  = item
-        #     for i in range(self.count):
-        #         solph.constraints.equate_variables(
-        #             model,
-        #             model.NonConvexFlowBlock.status[pair_1[0], pair_1[1], i],
-        #             model.NonConvexFlowBlock.status[pair_2[0], pair_2[1], i],
-        #         )
-                
-                
-        items = self.constraints["equal_status"]
         model = self.model
+        constraints = self.constraints["equal_status"]
+        global_groups_lst = self._get_pairs_lst(constraints) or []
         
         def rule(m, t, item_1, item_2, item_3, item_4):
              return m.NonConvexFlowBlock.status[item_1, item_2, t] == m.NonConvexFlowBlock.status[item_3, item_4, t]
 
-        model.equal_status_constraint = po.Constraint(
-            model.TIMESTEPS,
-            [item for item in items],
-            rule=rule
-        )
-        
-    
+        for i, items in enumerate(global_groups_lst):
+            setattr(
+                model,
+                f'equal_status_group_{i}',
+                po.Constraint(
+                    model.TIMESTEPS,
+                    [item for item in items],
+                    rule=rule
+                )
+            )
+
                 
                 
     def apply_no_equal_status_lower_0(self):
-        keywords = self.constraints["no_equal_status_lower_0"]
+        
         model = self.model
-        keywords = list(set(keywords))
-        for keyword in keywords:
-                solph.constraints.limit_active_flow_count_by_keyword(
-                model, keyword, lower_limit=0, upper_limit=1
+        constraints = self.constraints["no_equal_lower_0_status"]
+        global_groups_lst = self._get_pairs_lst(constraints) or []
+
+
+        def rule(m, t, current_group):
+            sum_of_statuses = sum(
+                m.NonConvexFlowBlock.status[pair[0], pair[1], t]
+                for pair in current_group
             )
+            return sum_of_statuses <= 1
+
+        for i, group in enumerate(global_groups_lst):
+             setattr(
+                    model,
+                    f'no_equal_lower_0_status_group_{i}',
+                    po.Constraint(
+                        model.TIMESTEPS,
+                        rule=lambda model, t, current_group=group:
+                            rule(model, t, current_group)
+                    )
+                )
                 
         
                 
     def apply_no_equal_lower_1_status(self):
-        keywords = self.constraints["no_equal_lower_1_status"]
+        
         model = self.model
-        keywords = list(set(keywords))
-        for keyword in keywords:
-                solph.constraints.limit_active_flow_count_by_keyword(
-                model, keyword, lower_limit=1, upper_limit=10
+        constraints = self.constraints["no_equal_lower_1_status"]
+        global_groups_lst = self._get_pairs_lst(constraints) or []
+                
+        def rule(m, t, current_group):
+            sum_of_statuses = sum(
+                m.NonConvexFlowBlock.status[pair[0], pair[1], t]
+                for pair in current_group
             )
+            return sum_of_statuses >= 1
+
+        for i, group in enumerate(global_groups_lst):
+             setattr(
+                    model,
+                    f'no_equal_lower_1_status_group_{i}',
+                    po.Constraint(
+                        model.TIMESTEPS,
+                        rule=lambda model, t, current_group=group:
+                            rule(model, t, current_group)
+                    )
+                )
                 
                 
     def apply_no_equal_status_equal_1(self):
-        groups = self.constraints["no_equal_status_equal_1"]
+        
         model = self.model
+        constraints = self.constraints["no_equal_status_equal_1"]
+        global_groups_lst = self._get_pairs_lst(constraints) or []
 
         def rule(m, t, current_group):
             sum_of_statuses = sum(
@@ -69,7 +115,7 @@ class Constraint_processor:
             )
             return sum_of_statuses == 1
 
-        for i, group in enumerate(groups):
+        for i, group in enumerate(global_groups_lst):
              setattr(
                     model,
                     f'no_equal_status_equal_1_group_{i}',
@@ -79,29 +125,33 @@ class Constraint_processor:
                             rule(model, t, current_group)
                     )
                 )
-             
-             
 
                 
     def apply_strict_order(self):
         
-        items = self.constraints["strict_order"]
         model = self.model
+        constraints = self.constraints["strict_order"]
+        global_groups_lst = self._get_pairs_lst(constraints) or []
         
-        def sequential_loading_rule(m, t, item_1, item_2, item_3, item_4):
+        def rule(m, t, item_1, item_2, item_3, item_4):
              return m.NonConvexFlowBlock.status[item_1, item_2, t] <= m.NonConvexFlowBlock.status[item_3, item_4, t]
 
-        model.sequential_loading_constraint = po.Constraint(
-            model.TIMESTEPS,
-            [item for item in items],
-            rule=sequential_loading_rule
-        )
+        for i, items in enumerate(global_groups_lst):
+            setattr(
+                model,
+                f'equal_status_group_{i}',
+                po.Constraint(
+                    model.TIMESTEPS,
+                    [item for item in items],
+                    rule=rule
+                )
+            )
         
         
     def add_group_equal_1(self):
-        
-        block_associations = self.constraints["group_equal_1"]
         model = self.model
+        constraints = self.constraints["group_equal_1"]
+        global_groups_dict = self._get_pairs_dict(constraints) or {}
         
         def dependency_rule_generalized(model, t, cheap_block_pair, expense_group_pairs):
             sum_of_group_statuses = sum(
@@ -118,7 +168,7 @@ class Constraint_processor:
             return sum_of_group_statuses <= 1
                     
 
-        for i, (cheap_block_pair, expense_group_pairs) in enumerate(block_associations):
+        for i, (cheap_block_pair, expense_group_pairs) in enumerate(global_groups_dict.items()):
             setattr(
                 model,
                 f'dependency_constraint_{i}',

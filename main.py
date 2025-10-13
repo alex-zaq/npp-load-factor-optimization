@@ -50,7 +50,7 @@ repair_options = {
     },
     "medium-1": {
         "id": 3,
-        "status": True,
+        "status": False,
         "startup_cost": 1e3,
         "duration": 30,
         "min_downtime": 0,
@@ -252,7 +252,7 @@ control_block_viewer.plot_repair_storage_max_uptime(bel_npp_block_1, repair_id=2
 
 # result_viewer.create_scheme("./schemes")
 # image_simple.save("./images","jpg", 600)
-# image_main.save("./images","jpg", 600)
+image_main.save("./images","jpg", 600)
 
 
 

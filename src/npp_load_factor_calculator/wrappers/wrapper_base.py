@@ -16,7 +16,6 @@ class Wrapper_base:
         self.alt_options = {}
         self.info = {}
         self.keywords = {}
-        self.constraints = defaultdict(list)
         self.block = None
         self.built = False
         
@@ -46,42 +45,7 @@ class Wrapper_base:
         
     def init_constraints_for_es(self):
         if not hasattr(self.es, "constraints"):
-            self.es.constraints = defaultdict(list)
-
-
-    def add_keyword_no_equal_status(self, keyword):
-        self.keywords[keyword] = True
-        self.constraints["no_equal_status"].append(keyword)
-        
-    def add_group_equal_1(self, wrapper_block):
-        self.constraints["group_equal_1"].append(wrapper_block)
-        # print(self.constraints["group_equal_1"])
-        
-    def create_pair_no_equal_status_lower_1(self, wrapper_block):
-        keyword = f"{self.label}_{wrapper_block.label}_no_equal_status_lower_1"
-        self.add_keyword_to_flow(keyword)
-        wrapper_block.add_keyword_to_flow(keyword)
-        self.constraints["no_equal_status_lower_1"].append(keyword)
-
-    def create_pair_no_equal_status_lower_0(self, wrapper_block):
-        keyword = f"{self.label}_{wrapper_block.label}no_equal_status_lower_0"
-        self.add_keyword_to_flow(keyword)
-        wrapper_block.add_keyword_to_flow(keyword)
-        self.constraints["no_equal_status_lower_0"].append(keyword)
-        
-    def create_pair_no_equal_status_equal_1(self, wrapper_block):
-        self.constraints["no_equal_status_equal_1"].append(wrapper_block)
-        
-
-    def create_pair_equal_status(self, wrapper_block):
-        self.constraints["equal_status"].append(wrapper_block)
-              
-              
-    def add_optional_active_after(self, wrapper_block):
-        self.constraints["strict_order"].append(wrapper_block)
-         
-         
-
+            self.es.constraints = defaultdict(lambda: defaultdict(list))
                             
  
     def add_specific_status_duration_in_period(
@@ -151,14 +115,10 @@ class Wrapper_base:
         
         if mode == "active":
             self.create_pair_equal_status(wrapper_charger_builder)
-            # wrapper_charger_builder.create_pair_equal_status(self)
         elif mode == "non_active":
             self.create_pair_no_equal_status_lower_0(wrapper_charger_builder)
-            # self.create_pair_no_equal_status_equal_1(wrapper_charger_builder)
-            # wrapper_charger_builder.create_pair_no_equal_status_lower_0(self)
-            # wrapper_charger_builder.create_pair_no_equal_status_lower_1(self)
 
-        wrapper_charger_builder.build()
+
 
     def add_max_uptime(self, max_uptime, coeff=1):
         
@@ -192,7 +152,6 @@ class Wrapper_base:
         
         self.update_options({"second_input_bus": storage_out_bus})
         charger_builder.create_pair_no_equal_status_lower_0(self)
-        charger_builder.build()
 
 
             
@@ -202,36 +161,31 @@ class Wrapper_base:
         self.options["startup_cost"] = np.where(mask == 1, startup_cost, 1e15)
 
 
-    def _apply_constraints(self):
-        constraint_groups_names = list(self.constraints.keys())
-        if not constraint_groups_names:
-            return
+
+
+    def create_pair_no_equal_status_lower_0(self, wrapper_block):
+        self.es.constraints["no_equal_status_lower_0"][self].append(wrapper_block)
+
+
+    def create_pair_no_equal_status_lower_1(self, wrapper_block):
+        self.es.constraints["no_equal_status_lower_1"][self].append(wrapper_block)
+
+
+    def create_pair_no_equal_status_equal_1(self, wrapper_block):
+        self.es.constraints["no_equal_status_equal_1"][self].append(wrapper_block)
+
+
+    def create_pair_equal_status(self, wrapper_block):
+        self.es.constraints["equal_status"][self].append(wrapper_block)
+
         
-        for constraint_group_name in constraint_groups_names:
-            match constraint_group_name:
-                case "no_equal_status_lower_0":
-                    self.es.constraints["no_equal_status_lower_0"].extend(self.constraints[constraint_group_name])
-                case "no_equal_status_lower_1":
-                    self.es.constraints["no_equal_status_lower_1"].extend(self.constraints[constraint_group_name])
-                case "equal_status":
-                    for wrapper_block in self.constraints[constraint_group_name]:
-                        pair_1 = self.get_pair_after_building()
-                        pair_2 = wrapper_block.get_pair_after_building()
-                        self.es.constraints["equal_status"].append((pair_1, pair_2))
-                case "no_equal_status_equal_1":
-                    first_pair = self.get_pair_after_building()
-                    remain_pairs = [wrapper_block.get_pair_after_building() for wrapper_block in self.constraints[constraint_group_name]]
-                    pairs = [first_pair] + remain_pairs
-                    self.es.constraints["no_equal_status_equal_1"].append(pairs)
-                case "strict_order":
-                    for wrapper_block in self.constraints[constraint_group_name]:
-                        pair_1 = self.get_pair_after_building()
-                        pair_2 = wrapper_block.get_pair_after_building()
-                        self.es.constraints["strict_order"].append((pair_1, pair_2))
-                case "group_equal_1":
-                        cheap_pair = self.get_pair_after_building()
-                        expense_pairs = [wrapper_block.get_pair_after_building() for wrapper_block in self.constraints[constraint_group_name]]
-                        self.es.constraints["group_equal_1"].append((cheap_pair, expense_pairs))
+    def add_optional_active_after(self, wrapper_block):
+        self.es.constraints["strict_order"][self].append(wrapper_block)
+         
+        
+    def add_group_equal_1(self, wrapper_block):
+        self.es.constraints["group_equal_1"][self].append(wrapper_block)
+             
 
                     
                     

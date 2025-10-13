@@ -26,8 +26,6 @@ source_1 = solph.components.Source(
 energysystem.add(source_1)
 
 
-
-
 source_2_flow = solph.Flow(
         nominal_value = 300,
         variable_costs=999,
