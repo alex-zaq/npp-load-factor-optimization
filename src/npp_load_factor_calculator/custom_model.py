@@ -35,16 +35,9 @@ class Custom_model:
         self.block_db.add_block("потребитель ээ", self.el_sink)
         
         
-    def build_blocks_in_wrappers(self):
-        constraints_copy = self.oemof_es.constraints.copy()
-        constraints_copy.clear()
-        for constraint_name, group_dict in self.oemof_es.constraints.items():
-            for wrapper_main, depend_wrapper_lst in group_dict.items():
-                block_main = wrapper_main.build()
-                depend_block_lst = [block.build() for block in depend_wrapper_lst]
-                constraints_copy[constraint_name][block_main] = depend_block_lst  
-
-        self.oemof_es.constraints = constraints_copy
+    def build_blocks(self):
+        [block.build() for block in self.oemof_es.block_build_lst]
+        
         
     def add_bel_npp(self):
                                

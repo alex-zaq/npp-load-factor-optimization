@@ -47,8 +47,8 @@ class Oemof_model:
         self.custom_es.add_new_npp()
     
     
-    def build_blocks_in_wrappers(self):
-        self.custom_es.build_blocks_in_wrappers()
+    def build_blocks(self):
+        self.custom_es.build_blocks()
     
     
     def add_constraints(self, constraints_processor):

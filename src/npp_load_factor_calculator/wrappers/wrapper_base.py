@@ -11,9 +11,9 @@ class Wrapper_base:
     def __init__(self, es, label):
         self.es = es
         self.init_constraints_for_es()
+        self.add_block_build_lst()
         self.label = label
         self.options = {}   
-        self.alt_options = {}
         self.info = {}
         self.keywords = {}
         self.block = None
@@ -47,6 +47,12 @@ class Wrapper_base:
         if not hasattr(self.es, "constraints"):
             self.es.constraints = defaultdict(lambda: defaultdict(list))
                             
+ 
+    def add_block_build_lst(self):
+        if not hasattr(self.es, "block_build_lst"):
+            self.es.block_build_lst = []
+        self.es.block_build_lst.append(self)
+ 
  
     def add_specific_status_duration_in_period(
         self,
@@ -162,7 +168,6 @@ class Wrapper_base:
 
 
 
-
     def create_pair_no_equal_status_lower_0(self, wrapper_block):
         self.es.constraints["no_equal_status_lower_0"][self].append(wrapper_block)
 
@@ -186,7 +191,6 @@ class Wrapper_base:
     def add_group_equal_1(self, wrapper_block):
         self.es.constraints["group_equal_1"][self].append(wrapper_block)
              
-
                     
                     
     def _get_nonconvex_flow(self):

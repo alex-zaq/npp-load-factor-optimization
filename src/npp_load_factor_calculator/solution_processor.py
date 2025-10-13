@@ -50,7 +50,7 @@ class Solution_processor:
     def calculate(self):
         self.oemof_model.init_oemof_model()
         self.oemof_model.init_custom_model()
-        self.oemof_model.build_blocks_in_wrappers()
+        self.oemof_model.build_blocks()
         self.oemof_model.launch_solver()
         self.custom_es = self.oemof_model.get_custom_es()
         self.oemof_es = self.oemof_model.get_oemof_es()

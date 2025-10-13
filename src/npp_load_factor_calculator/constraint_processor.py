@@ -6,6 +6,19 @@ class Constraint_processor:
         self.model = model
         self.count = len(model.timeincrement)
         self.constraints = constraints
+        # self._change_wrappers_to_blocks()
+        
+        
+    # def _change_wrappers_to_blocks(self):
+    #     constraints_copy = self.constraints.copy()
+    #     constraints_copy.clear()
+    #     for constraint_name, group_dict in self.constraints.items():
+    #         for wrapper_main, depend_wrapper_lst in group_dict.items():
+    #             block_main = wrapper_main.build()
+    #             depend_block_lst = [block.build() for block in depend_wrapper_lst]
+    #             constraints_copy[constraint_name][block_main] = depend_block_lst  
+    #     self.constraints = constraints_copy        
+        
 
     def _get_pairs_lst(self, groups_dict):
         global_groups_lst = []
@@ -16,6 +29,7 @@ class Constraint_processor:
                 sub_block_pair = sub_block.get_pair_after_building()
                 local_group_lst.append((main_block_pair, sub_block_pair))
             global_groups_lst.append(local_group_lst)
+        return global_groups_lst
     
     
     def _get_pairs_dict(self, groups_dict):
@@ -27,6 +41,7 @@ class Constraint_processor:
                 sub_block_pair = sub_block.get_pair_after_building()
                 local_group_dict.append(sub_block_pair)
             global_groups_dict[main_block_pair] = local_group_dict
+        return global_groups_dict
             
     
     def apply_equal_status(self):
@@ -47,11 +62,9 @@ class Constraint_processor:
                     rule=rule
                 )
             )
-
                 
                 
     def apply_no_equal_status_lower_0(self):
-        
         model = self.model
         constraints = self.constraints["no_equal_lower_0_status"]
         global_groups_lst = self._get_pairs_lst(constraints) or []
