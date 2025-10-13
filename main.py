@@ -91,9 +91,9 @@ repair_options = {
 }
 
 events = {
-    "2025-02-01": 0.002,
-    "2025-04-15": 0.005,
-    "2025-09-01": 0.002,
+    "2025-02-01": 0.05,
+    "2025-04-15": 0.15,
+    "2025-09-01": 0.05,
 }
 
 base_scen = {
@@ -187,7 +187,7 @@ solution_processor.set_excel_folder("./excel_results")
 # solution_processor.set_restore_mode(file_number="09") 
 
 # solution_processor.set_restore_mode(file_number="39") 
-solution_processor.set_restore_mode(file_number="33") 
+solution_processor.set_restore_mode(file_number="121") 
 
 solution_processor.apply()
 
@@ -214,7 +214,7 @@ block_grouper.set_options(
         "Новая АЭС (блок 1)": {"block": new_npp_block_1, "color": "#1f77b4"},
     },
     risks_options={
-        "показатель риска": {"risk_name": "r1", "style":"-", "color": "#181008"},
+        "показатель риска r1": {"risk_name": "r1", "style":"-", "color": "#181008"},
         "риск 2": {"risk_name": "r2", "style":"-", "color": "#1417d1"},
         "риск 3": {"risk_name": "r3", "style":"-", "color": "#10c42e"},
     },

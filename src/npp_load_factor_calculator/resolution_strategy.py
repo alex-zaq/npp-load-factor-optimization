@@ -152,7 +152,7 @@ class Daily_resolution_strategy(Resolution_strategy):
         for event in events:
             start_idx = int((pd.to_datetime(event) - self.timeindex[0]).total_seconds() // (3600*24))
             risk_per_hour = events[event]
-            profile[start_idx] += risk_per_hour
+            profile[start_idx] += risk_per_hour / 24
         return profile
     
     def get_every_year_first_step_mask(self):

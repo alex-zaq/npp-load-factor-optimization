@@ -338,6 +338,7 @@ class Block_grouper:
     def get_events_profile_by_block(self, block):
         custom_block = [custom_block for custom_block in self.electr_groups if custom_block.block is block][0]
         events_df = custom_block.get_events_profile()
+        events_df *= 24
         events_df = events_df[:-1]
         return events_df
     
@@ -346,6 +347,7 @@ class Block_grouper:
         res = pd.DataFrame()
         for custom_block in self.electr_groups:
             events_df = self.get_events_profile_by_block(custom_block.block)
+            # events_df *= 24
             res = pd.concat([res, events_df], axis=1)
         return res
     

@@ -114,7 +114,7 @@ class Result_viewer:
         fig = plt.gcf()
         ax_el_gen_df.tick_params(axis="both", which="major", labelsize=font_size - 2)
         ax_el_gen_df.tick_params(axis="both", which="minor", labelsize=font_size - 2)
-        # plt.xlabel("Время, часы", labelpad=0, fontsize=font_size)
+        # plt.xlabel("Время, дни", labelpad=0, fontsize=font_size)
         # plt.ylabel("Производство электроэнергии, МВт$\cdot$ч", labelpad=5, fontsize=font_size)
         fig.canvas.manager.set_window_title("Расчет плановых остановок (один блок)")
         fig.set_dpi(150)
@@ -216,7 +216,7 @@ class Result_viewer:
         ax_left.tick_params(axis="both", which="major", labelsize=font_size - 2)
         ax_left.tick_params(axis="both", which="minor", labelsize=font_size - 2)
 
-        ax_left.set_xlabel("Время, часы", fontsize=font_size - 2)
+        ax_left.set_xlabel("Время, дни", fontsize=font_size - 2)
         
         cost_upper_bound = cost_all_blocks_df.max().max()
         
@@ -258,28 +258,29 @@ class Result_viewer:
                 fontsize=font_size-2,
                 ax=ax_right
             )
-            ax_risk_df.set_ylabel('Условная величина риска', fontsize=font_size - 2)
-            ax_risk_df.legend(loc='upper left', fontsize=font_size - 2, ncol=1)
-            # if len(set(v["max_risk"] for v in risks_dict.values())) == 1:
-            #     ax_risk_df.axhline(y=max_risk_value, color='r', linestyle='--', label='верхняя граница риска')
-            #     ax_risk_df.legend(loc='upper left', fontsize=font_size - 2, ncol=1)
+            ax_right.set_ylabel('Условная величина риска', fontsize=font_size - 2)
+            ax_right.legend(loc='upper left', fontsize=font_size - 2, ncol=1)
+            
+            
+            if len(set(v["max_risk"] for v in risks_dict.values())) == 1:
+                ax_right.legend(loc='upper left', fontsize=font_size - 2, ncol=1)
 
-            # x_max = risk_df.index[round(40*cost_all_blocks_df.shape[0]/365)]
+            x_max = risk_df.index[round(40*risk_df.shape[0]/365)]
 
-            # y_max = risk_df.max().max()
-            # ax_risk_df.text(
-            #     x_max,
-            #     max_risk_value * 1.03,
-            #     f"max = {y_max:.3f}",
-            #     fontsize=font_size - 2,
-            #     horizontalalignment="center",
-            #     verticalalignment="bottom",
-            #     color="black",
-            # )
+            y_max = risk_df.max().max()
+            ax_risk_df.text(
+                x_max,
+                max_risk_value * 1.03,
+                f"max = {y_max:.3f}",
+                fontsize=font_size - 2,
+                horizontalalignment="center",
+                verticalalignment="bottom",
+                color="black",
+            )
 
 
-            # fig.subplots_adjust(wspace=0.3)
-            # ax_risk_df.set_xlabel("Время, часы", fontsize=font_size - 2)
+            fig.subplots_adjust(wspace=0.3)
+            ax_risk_df.set_xlabel("Время, дни", fontsize=font_size - 2)
             
             
             if not events_df.empty:
@@ -294,8 +295,9 @@ class Result_viewer:
                     fontsize=font_size-2,
                     ax=ax_right
                 )
-                
-
+            ax_events_df.legend(loc='upper right', fontsize=font_size - 2, ncol=1)    
+            ax_risk_df.axhline(y=max_risk_value, color='r', linestyle='--', label='верхняя граница риска')
+            ax_risk_df.legend(loc='upper right', fontsize=font_size - 2, ncol=1)    
 
         fig.set_dpi(dpi)
         center_matplotlib_figure(fig, extra_y=-60, extra_x=40)
