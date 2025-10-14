@@ -20,12 +20,12 @@ repair_options = {
     "maintence-2": {
         "id": 1,
         "status": True,
-        "startup_cost": 1e3,
+        "startup_cost": 1,
         "duration": 10,
         "min_downtime": 0,
         "max_startup": 36,
         "risk_reset": set(),
-        "risk_reducing": {"r1": 0.1},
+        "risk_reducing": {"r1": 0.15},
         "min": 1,
         "start_day": {"status": True, "days": [1,]},
         "npp_stop": False,
@@ -51,7 +51,7 @@ repair_options = {
     "medium-1": {
         "id": 3,
         "status": False,
-        "startup_cost": 1e3,
+        "startup_cost": 10e3,
         "duration": 30,
         "min_downtime": 0,
         "max_startup": 3,
@@ -67,7 +67,8 @@ repair_options = {
         "status": False,
         "startup_cost": 15e6,
         "duration": 15,
-        "min_downtime": 30,
+        "max_startup": 3,
+        "min_downtime": 0,
         "risk_reset": {"r1"},
         "risk_reducing": {},
         "min": 0,
@@ -76,15 +77,16 @@ repair_options = {
     },
     "capital": {
         "id": 5,
-        "status": False,
-        "startup_cost": 50e6,
-        "duration": 25,
-        "min_downtime": 30,
+        "status": True,
+        "startup_cost": 20e6,
+        "duration": 30,
+        "max_startup": 3,
+        "min_downtime": 0,
         "risk_reset": {"r1"},
         "risk_reducing": {},
         "min": 0,
         "npp_stop": True,
-        "forced_in_period": False,
+        "forced_in_period": True,
     },
 }
 
@@ -122,7 +124,7 @@ base_scen = {
             "risk_options": {
                 "status": True,
                 "risks": {
-                    "r1": {"id": 0, "value": 0.1, "max": 0.5, "start_risk_rel": 0.3, "events": events},
+                    "r1": {"id": 0, "value": 0.1, "max": 0.5, "start_risk_rel": 0.4, "events": events},
                     # "r2": {"id": 1, "value": 0.1, "max": 0.7, "start_risk_rel": 0.2, "events": None},
                     # "r3": {"id": 2, "value": 0.1, "max": 1, "start_risk_rel": 0, "events": None},
                 }},
@@ -143,11 +145,11 @@ base_scen = base_scen
 ###############################################################################
 
 # 
-scen = base_scen | {"№": 1, "name": "one_block_one_risk_one_year", "years": [2025]}
+# scen = base_scen | {"№": 1, "name": "one_block_one_risk_one_year", "years": [2025]}
 
 
 
-# scen = base_scen | {"№": 2, "name": "two_block_one_risk_two_years", "years": [2025, 2026]}
+scen = base_scen | {"№": 2, "name": "two_block_one_risk_two_years", "years": [2025, 2026]}
 
 
 
@@ -166,7 +168,7 @@ oemof_model = Oemof_model(
     solver_settings = {
         "solver": "cplex",
         "solver_verbose": True,
-        "mip_gap": 0.0001
+        "mip_gap": 0.001
     } 
 )
 
@@ -221,7 +223,8 @@ block_grouper.set_options(
         "легкий ремонт-2": {"id": 1, "color": "#fdec02"},
         "текущий ремонт-1": {"id": 2, "color": "#0b07fc"},
         "текущий ремонт-2": {"id": 3, "color": "#ff00b3"},
-        "капитальный ремонт-1": {"id": 4, "color": "#ff4000"},
+        "капитальный ремонт-1": {"id": 4, "color": "#501d0c"},
+        "капитальный ремонт-2": {"id": 5, "color": "#ff4000"},
     },
     repairs_cost_options={
         "БелАЭС (блок 1)-затраты": {"block": bel_npp_block_1, "style":"-", "color": "#18be2f"},
@@ -236,7 +239,7 @@ result_viewer = Result_viewer(block_grouper)
 control_block_viewer = Control_block_viewer(block_grouper)
 
 
-# image_simple = result_viewer.plot_general_graph(bel_npp_block_1)
+image_simple = result_viewer.plot_general_graph(bel_npp_block_1)
 image_main = result_viewer.plot_profile_all_blocks_graph(font_size=10, risk_graph=True, dpi=120)
 
 # result_viewer.plot_general_graph(bel_npp_block_2)
@@ -248,11 +251,13 @@ control_block_viewer.plot_npp_status(bel_npp_block_1)
 control_block_viewer.plot_npp_storage_data(bel_npp_block_1)
 control_block_viewer.plot_repair_storage_max_uptime(bel_npp_block_1, repair_id=1)
 control_block_viewer.plot_repair_storage_max_uptime(bel_npp_block_1, repair_id=2)
+control_block_viewer.plot_repair_storage_max_uptime(bel_npp_block_1, repair_id=3)
+control_block_viewer.plot_repair_storage_max_uptime(bel_npp_block_1, repair_id=5)
  
 
 # result_viewer.create_scheme("./schemes")
 # image_simple.save("./images","jpg", 600)
-image_main.save("./images","jpg", 600)
+# image_main.save("./images","jpg", 600)
 
 
 

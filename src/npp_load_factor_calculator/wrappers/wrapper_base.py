@@ -184,7 +184,7 @@ class Wrapper_base:
         self.es.constraints["equal_status"][self].append(wrapper_block)
 
         
-    def add_optional_active_after(self, wrapper_block):
+    def add_base_block_for(self, wrapper_block):
         self.es.constraints["strict_order"][self].append(wrapper_block)
          
         

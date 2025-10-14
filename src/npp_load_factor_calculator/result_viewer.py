@@ -293,7 +293,7 @@ class Result_viewer:
                     fontsize=font_size-2,
                     ax=ax_right
                 )
-            ax_events_df.legend(loc='upper right', fontsize=font_size - 2, ncol=1)    
+                ax_events_df.legend(loc='upper right', fontsize=font_size - 2, ncol=1)    
 
 
             ax_risk_df.axhline(y=max_risk_value, color='r', linestyle='--', label='верхняя граница риска')

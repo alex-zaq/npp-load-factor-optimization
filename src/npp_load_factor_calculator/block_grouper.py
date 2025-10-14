@@ -9,7 +9,7 @@ from oemof import solph
 class Custom_block:
 
     def __init__(self, block):
-        self.block = block
+        self.wrapper_block = block
         self.results = self.__class__.results
         self.risks_plot_dict = {}
         self.repair_plot_dict = {}
@@ -19,7 +19,7 @@ class Custom_block:
     
     
     def get_electricity_profile(self):
-        block,output_bus = self.block.outputs_pair[0]     
+        block,output_bus = self.wrapper_block.block.outputs_pair[0]     
         block_results = solph.views.node(self.results, output_bus.label)["sequences"].dropna()
         res_df = pd.DataFrame()
         res_df[block.label] = block_results[((block.label, output_bus.label), "flow")]
@@ -52,7 +52,7 @@ class Custom_block:
         colors = []
         for repair_label, repair_plot_data in self.repair_plot_dict.items():
             colors.append(repair_plot_data["color"])
-            block = repair_plot_data["repair_block"]
+            block = repair_plot_data["repair_block"].block
             output_bus = block.outputs_pair[0][1]
             results = solph.views.node(self.results, output_bus.label)["sequences"].dropna()
             res_df[repair_label] = results[((block.label, output_bus.label), "status")]
@@ -65,7 +65,7 @@ class Custom_block:
         colors = []
         for repair_label, repair_plot_data in self.repair_plot_dict.items():
             colors.append(repair_plot_data["color"])
-            block = repair_plot_data["repair_block"]
+            block = repair_plot_data["repair_block"].block
             output_bus = block.outputs_pair[0][1]
             startup_cost = block.startup_cost
             results = solph.views.node(self.results, output_bus.label)["sequences"].dropna()
@@ -76,7 +76,7 @@ class Custom_block:
         return res_df
     
     def get_sinks_profile(self, repair_id, risk_name):
-        selected_repair_block = self.block.repairs_blocks[repair_id]
+        selected_repair_block = self.wrapper_block.repairs_blocks[repair_id].block
         sink = selected_repair_block.sinks[risk_name]
         input_bus = sink.inputs_pair[0][0]
         res_df = pd.DataFrame()
@@ -86,7 +86,7 @@ class Custom_block:
         return res_df
     
     def get_control_stop_block_profile(self):
-        control_stop_block = self.block.control_npp_stop_source.block
+        control_stop_block = self.wrapper_block.block.control_npp_stop_source.block
         block, output = control_stop_block.outputs_pair[0]
         block_results = solph.views.node(self.results, output.label)["sequences"].dropna()
         res_df = pd.DataFrame()
@@ -95,7 +95,7 @@ class Custom_block:
         return res_df
     
     def get_npp_status_profile(self):
-        block, output = self.block.outputs_pair[0]
+        block, output = self.wrapper_block.block.outputs_pair[0]
         block_results = solph.views.node(self.results, output.label)["sequences"].dropna()
         res_df = pd.DataFrame()
         res_df[block.label] = block_results[((block.label, output.label), "status")]
@@ -104,7 +104,7 @@ class Custom_block:
     
     def get_npp_storage_data_dict(self):
         res_dict = {}
-        storage = self.block.control_npp_stop_source.block.specific_status_duration_storage
+        storage = self.wrapper_block.block.control_npp_stop_source.block.specific_status_duration_storage
         storage_results = solph.views.node(self.results, storage.label)["sequences"].dropna()
         storage_content_df = pd.DataFrame()
         storage_content_df["storage_content"] = storage_results[(storage.label, "None"), "storage_content"]
@@ -121,7 +121,7 @@ class Custom_block:
     
     def get_repair_storage_max_uptime_dict(self, repair_id):
         res_dict = {}
-        selected_repair_block = self.block.repairs_blocks[repair_id]
+        selected_repair_block = self.wrapper_block.block.repairs_blocks[repair_id].block
         max_uptime_storage = selected_repair_block.max_uptime_storage 
         storage_results = solph.views.node(self.results, max_uptime_storage.label)["sequences"].dropna()
         storage_content_df = pd.DataFrame()
@@ -139,11 +139,11 @@ class Custom_block:
            
                 
     def get_events_profile(self):
-        for risk_name, events_source in self.block.events_sources.items():
-            block, output = events_source.outputs_pair[0]
+        for risk_name, events_source in self.wrapper_block.block.events_sources.items():
+            block, output = events_source.block.outputs_pair[0]
             block_results = solph.views.node(self.results, output.label)["sequences"].dropna()
             res_df = pd.DataFrame()
-            res_df[f"события риска {risk_name} ({self.block.label})"] = block_results[((block.label, output.label), "flow")]
+            res_df[f"события риска {risk_name} ({self.wrapper_block.label})"] = block_results[((block.label, output.label), "flow")]
             res_df = res_df.clip(lower=0)
             return res_df
     
@@ -172,32 +172,32 @@ class Block_grouper:
         
             for custom_block in self.electr_groups:
                 for label, risk_data in risks_options.items():
-                    if risk_data["risk_name"]  in  custom_block.block.risks:
+                    if risk_data["risk_name"]  in  custom_block.wrapper_block.block.risks:
                         custom_block.risks_plot_dict[label] ={
                                 "color": risk_data["color"],
                                 "block_color": custom_block.color,
-                                "storage": custom_block.block.risks[risk_data["risk_name"]],
-                                "max_risk": custom_block.block.risks[risk_data["risk_name"]].nominal_storage_capacity
+                                "storage": custom_block.wrapper_block.block.risks[risk_data["risk_name"]],
+                                "max_risk": custom_block.wrapper_block.block.risks[risk_data["risk_name"]].nominal_storage_capacity
                                 }
                             
                                                 
             for custom_block in self.electr_groups:
                 for label, repair_data in repairs_options.items():
-                    if repair_data["id"] in custom_block.block.repairs_blocks:
+                    if repair_data["id"] in custom_block.wrapper_block.block.repairs_blocks:
                         custom_block.repair_plot_dict[label] = {
                                 "color": repair_data["color"],
-                                "repair_block": custom_block.block.repairs_blocks[repair_data["id"]]}
+                                "repair_block": custom_block.wrapper_block.block.repairs_blocks[repair_data["id"]]}
                             
         
             for custom_block in self.electr_groups:
                 for label, repair_cost_data in repairs_cost_options.items():
-                    if custom_block.block is repair_cost_data["block"]:
+                    if custom_block.wrapper_block.block is repair_cost_data["block"]:
                         custom_block.repair_cost_plot = {}
                         custom_block.repair_cost_plot[label] = {"color": repair_cost_data["color"]}
 
     
     def get_electricity_profile_by_block(self, block):
-        custom_blocks = [custom_block for custom_block in self.electr_groups if custom_block.block is block]
+        custom_blocks = [custom_block for custom_block in self.electr_groups if custom_block.wrapper_block is block]
         custom_block = custom_blocks[0]
         res = pd.DataFrame()
         colors = []
@@ -224,7 +224,7 @@ class Block_grouper:
  
     
     def get_risks_profile_by_block(self, block):
-        custom_block = [custom_block for custom_block in self.electr_groups if custom_block.block is block][0]
+        custom_block = [custom_block for custom_block in self.electr_groups if custom_block.wrapper_block is block][0]
         res = custom_block.get_risks_profile()
         colors = res.colors
         res = res[:-1]
@@ -238,7 +238,7 @@ class Block_grouper:
             risk_df = custom_block.get_risks_profile()
             risk_df = risk_df[:-1]
             max_risk_dict = custom_block.get_max_risk_dict()
-            block_label = custom_block.block.label
+            block_label = custom_block.wrapper_block.label
             risks = max_risk_dict.keys()
             for risk in risks:
                 risk_label = f"{risk} ({block_label})"
@@ -253,9 +253,9 @@ class Block_grouper:
     
     
     def get_repairs_profile_by_block(self, block, part=1):
-        custom_block = [custom_block for custom_block in self.electr_groups if custom_block.block is block][0]
+        custom_block = [custom_block for custom_block in self.electr_groups if custom_block.wrapper_block is block][0]
         res = custom_block.get_repair_status_profile()
-        res *= custom_block.block.nominal_power * part
+        res *= custom_block.wrapper_block.block.nominal_power * part
         colors = res.colors
         res = res[:-1]
         res.clip(lower=0)
@@ -269,18 +269,18 @@ class Block_grouper:
             repair_df = custom_block.get_repair_status_profile()
             block_color = custom_block.electr_plot[list(custom_block.electr_plot.keys())[0]]["color"]
             colors = repair_df.colors
-            repair_df *= custom_block.block.nominal_power * part
+            repair_df *= custom_block.wrapper_block.block.nominal_power * part
             repair_df = repair_df[:-1]
             # repair_df = repair_df.clip(lower=0)
             repair_df[repair_df <=0] = 0
             repair_df.colors = colors
             repair_df.block_color = block_color
-            res[custom_block.block.label] = repair_df
+            res[custom_block.wrapper_block.block.label] = repair_df
         return res
     
     
     def get_cost_profile_block(self, block, cumulative=False):
-        custom_block = [custom_block for custom_block in self.electr_groups if custom_block.block is block[0]][0]
+        custom_block = [custom_block for custom_block in self.electr_groups if custom_block.wrapper_block is block[0]][0]
         res = custom_block.get_cost_profile()
         if cumulative:
             res = res.cumsum()
@@ -292,7 +292,7 @@ class Block_grouper:
     def get_cost_profile_all_blocks(self, cumulative=False):
         res = pd.DataFrame()
         for custom_block in self.electr_groups:
-            res[custom_block.block.label] = custom_block.get_cost_profile()
+            res[custom_block.wrapper_block.label] = custom_block.get_cost_profile()
         res = res.sum(axis=1).to_frame()
         res.columns = ["затраты на ремонты"]
         # print(res.max().max())
@@ -304,40 +304,42 @@ class Block_grouper:
 
     
     def get_sinks_profile(self, block, repair_id, risk_id):
-        custom_block = [custom_block for custom_block in self.electr_groups if custom_block.block is block][0]
+        custom_block = [custom_block for custom_block in self.electr_groups if custom_block.wrapper_block is block][0]
         res = custom_block.get_sinks_profile(repair_id, risk_id)
         res = res[:-1]
         return res
     
     
     def get_control_stop_block_profile(self, block):
-        custom_block = [custom_block for custom_block in self.electr_groups if custom_block.block is block][0]
+        custom_block = [custom_block for custom_block in self.electr_groups if custom_block.wrapper_block is block][0]
         res = custom_block.get_control_stop_block_profile()
         res = res[:-1]
         return res
     
     def get_npp_status_profile(self, block):
-        custom_block = [custom_block for custom_block in self.electr_groups if custom_block.block is block][0]
+        custom_block = [custom_block for custom_block in self.electr_groups if custom_block.wrapper_block is block][0]
         res = custom_block.get_npp_status_profile()
         res = res[:-1]
         return res
     
     
     def get_npp_storage_dict(self, block):
-        custom_block = [custom_block for custom_block in self.electr_groups if custom_block.block is block][0]
+        custom_block = [custom_block for custom_block in self.electr_groups if custom_block.wrapper_block is block][0]
         res_dict = custom_block.get_npp_storage_data_dict()
         return res_dict
     
     
     def get_repair_storage_max_uptime_dict(self, block, repair_id):
-        custom_block = [custom_block for custom_block in self.electr_groups if custom_block.block is block][0]
+        custom_block = [custom_block for custom_block in self.electr_groups if custom_block.wrapper_block is block][0]
         res_dict = custom_block.get_repair_storage_max_uptime_dict(repair_id)
         return res_dict
     
         
     def get_events_profile_by_block(self, block):
-        custom_block = [custom_block for custom_block in self.electr_groups if custom_block.block is block][0]
+        custom_block = [custom_block for custom_block in self.electr_groups if custom_block.wrapper_block is block][0]
         events_df = custom_block.get_events_profile()
+        if events_df is None:
+            return pd.DataFrame()
         events_df *= 24
         events_df = events_df[:-1]
         return events_df
@@ -346,8 +348,7 @@ class Block_grouper:
     def get_events_profile_all_blocks_df(self):
         res = pd.DataFrame()
         for custom_block in self.electr_groups:
-            events_df = self.get_events_profile_by_block(custom_block.block)
-            # events_df *= 24
+            events_df = self.get_events_profile_by_block(custom_block.wrapper_block)
             res = pd.concat([res, events_df], axis=1)
         return res
     

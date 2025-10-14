@@ -27,9 +27,10 @@ class NPP_builder:
         bufer_bus = bus_factory.create_bus(f"{npp_block_builder.label}_bufer_bus", balanced=False)
         control_npp_stop_source = Wrapper_source(self.es, f"{npp_block_builder.label}_control_npp_stop_converter" )
         control_npp_stop_source.update_options({"output_bus": bufer_bus, "nominal_power": 1, "min": 1})
+
         control_npp_stop_source.create_pair_no_equal_status_lower_0(npp_block_builder)
 
-        npp_block_builder.create_pair_no_equal_status_equal_1(control_npp_stop_source)
+        # npp_block_builder.create_pair_no_equal_status_equal_1(control_npp_stop_source)
         
 
         
@@ -44,7 +45,9 @@ class NPP_builder:
             start_days_mask = self.resolution_strategy.get_months_start_points()
             
         outage_duration = self.resolution_strategy.convert_time(outage_options["planning_outage_duration"])
-        mask_for_storage = self.resolution_strategy.get_last_step_mask()
+        # mask_for_storage = self.resolution_strategy.get_last_step_mask()
+        mask_for_storage = self.resolution_strategy.get_every_year_first_step_mask()
+        plot_array(mask_for_storage)
         coeff = self.resolution_strategy.coeff
             
             
@@ -173,7 +176,8 @@ class NPP_builder:
                     coeff = self.resolution_strategy.coeff
                     repair_converter_builder.add_max_uptime(duration, coeff)
                     
-                    repair_converter_builder.add_optional_active_after(control_npp_stop_source)
+                    # repair_converter_builder.add_optional_active_after(control_npp_stop_source)
+                    control_npp_stop_source.add_base_block_for(repair_converter_builder)
                     control_npp_stop_source.add_group_equal_1(repair_converter_builder)
                     
                     repair_converter_builder.set_info("forced_in_period", options.get("forced_in_period"))
@@ -216,7 +220,7 @@ class NPP_builder:
                     repair_converter_builder.add_max_uptime(duration, coeff)
                     
                     
-                    repair_converter_builder.add_optional_active_after(control_npp_stop_source)
+                    control_npp_stop_source.add_base_block_for(repair_converter_builder)
                     control_npp_stop_source.add_group_equal_1(repair_converter_builder)
 
 
