@@ -460,6 +460,6 @@ def zero_inner_ones(arr):
             i += 1
     return result
 
-my_array = [0,0,1,1,1,1,1,1,1,1,1,0,0,0,0]
-transformed_array = zero_inner_ones(my_array)
-print(transformed_array) # Выведет: [0, 0, 1, 0, 0, 1, 0]
+
+    def get_repair_cost_by_proportion():
+

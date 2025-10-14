@@ -45,9 +45,7 @@ class NPP_builder:
             start_days_mask = self.resolution_strategy.get_months_start_points()
             
         outage_duration = self.resolution_strategy.convert_time(outage_options["planning_outage_duration"])
-        # mask_for_storage = self.resolution_strategy.get_last_step_mask()
         mask_for_storage = self.resolution_strategy.get_every_year_first_step_mask()
-        plot_array(mask_for_storage)
         coeff = self.resolution_strategy.coeff
             
             

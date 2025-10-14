@@ -1,9 +1,10 @@
+from src.npp_load_factor_calculator.excel_writer import Excel_writer
 from src.npp_load_factor_calculator import Block_grouper, Oemof_model, Result_viewer
 from src.npp_load_factor_calculator.result_viewer import Control_block_viewer
 from src.npp_load_factor_calculator.solution_processor import Solution_processor
 from src.npp_load_factor_calculator.utilites import all_months
 
-repair_options = {
+base_repair_options = {
     "maintence-1": {
         "id": 0,
         "status": False,
@@ -20,7 +21,7 @@ repair_options = {
     "maintence-2": {
         "id": 1,
         "status": True,
-        "startup_cost": 1,
+        "startup_cost": 5e3,
         "duration": 10,
         "min_downtime": 0,
         "max_startup": 36,
@@ -65,7 +66,7 @@ repair_options = {
     "medium-2": {
         "id": 4,
         "status": False,
-        "startup_cost": 15e6,
+        "startup_cost": 15e3,
         "duration": 15,
         "max_startup": 3,
         "min_downtime": 0,
@@ -78,7 +79,7 @@ repair_options = {
     "capital": {
         "id": 5,
         "status": True,
-        "startup_cost": 20e6,
+        "startup_cost": 20e3,
         "duration": 30,
         "max_startup": 3,
         "min_downtime": 0,
@@ -96,14 +97,8 @@ events = {
     "2025-09-01": 0.05,
 }
 
-base_scen = {
-        "№": 1,
-        "name": "test",
-        "years": [2025],
-        # "years": [2025, 2026],
-        # "years": [2025, 2026, 2027],
-        "freq": "D",
-        "bel_npp_block_1": (bel_npp_block_2 := {
+
+block_base =   {   
             "status": True,
             "nominal_power": 1170,
             "var_cost": -56.5,
@@ -112,52 +107,78 @@ base_scen = {
             "outage_options": {
                 "status": True,
                 "start_of_month": True,
-                # "allow_months": all_months - {"Jan"},
                 "allow_months": {"Jul"},
+                # "allow_months": all_months - {"Jan"},
                 # "allow_months": {"Feb", "Oct"},
                 "planning_outage_duration": 30,
-                # "fixed_mode": True,
-                # "fixed_mode": False,
-                # "fixed_outage_month":  {"Sep"},
-                # "fixed_outage_month":  {"Oct"},
             },
             "risk_options": {
                 "status": True,
                 "risks": {
                     "r1": {"id": 0, "value": 0.1, "max": 0.5, "start_risk_rel": 0.4, "events": events},
-                    # "r2": {"id": 1, "value": 0.1, "max": 0.7, "start_risk_rel": 0.2, "events": None},
-                    # "r3": {"id": 2, "value": 0.1, "max": 1, "start_risk_rel": 0, "events": None},
                 }},
             "repair_options": {
                 "status": True,
-                "options": repair_options
+                "options": base_repair_options
                 },
-        }),
-        # "bel_npp_block_2": bel_npp_block_2,
-        "bel_npp_block_2": {"status": False},
-        "new_npp_block_1": {"status": False},
-        # "new_npp_block_1": bel_npp_block_2,
+        }
+   
+
+b_1 = {"bel_npp_block_1": block_base}
+b_2 = {"bel_npp_block_2": block_base}
+block_3 = {"new_npp_block_1": block_base}
+
+
+
+base = {
+        "№": 1,
+        "name": "test",
+        "years": [2025],
+        "freq": "D",
+        "bel_npp_block_1": b_1,
+        "bel_npp_block_2": b_1,
+        "new_npp_block_1": b_1,
 }
 
-base_scen = base_scen
+
+one_year = {"years": [2025]}
+two_years = {"years": [2025, 2026]}
+three_years = {"years": [2025, 2026, 2027]}
+
+
+one_risk = {}
+one_risk_events_1 = {}
+one_risk_events_2 = {}
+one_risk_events_3 = {}
+
+two_risk = {}
+two_risk_events_4 = {}
+two_risk_events_5 = {}
+
+repair_reset = {}
+repair_npp_stop_concurent = {}
+repair_npp_no_stop_concurent_reset = {}
+repair_npp_no_stop_concurent_reduced = {}
+repair_forced_capital = {}
+
+outage_july = {}
+outage_november = {}
+outage_april = {}
+
+outage_july_june = {}
+outage_november_december = {}
+outage_april_may = {}
+
+
+
 
 # scenarios
 ###############################################################################
-
-# 
-# scen = base_scen | {"№": 1, "name": "one_block_one_risk_one_year", "years": [2025]}
-
-
-
-scen = base_scen | {"№": 2, "name": "two_block_one_risk_two_years", "years": [2025, 2026]}
+scen = base | {"№": 1} | one_year | (b_1.set(one_risk | repair_reset | outage_july)) 
+scen = base | {"№": 2} | one_year | (b_1.set(one_risk | repair_reset | outage_july)) | (b_2.set(one_risk | repair_reset | outage_july))
 
 
 
-
-
-
-
-# 3 блока - 3 года - 1 риск - 1 обяз.капремонт - 4 конкур. npp-stop reduce-20-10, 2 конкур. два non-stop reduce 10-15 дней, разн.ст. риски 
 
 
 ###############################################################################
@@ -199,7 +220,7 @@ results = solution_processor.get_results()
 
 
 
-bel_npp_block_1 = custom_es.block_db.get_bel_npp_block_1()
+b_1 = custom_es.block_db.get_bel_npp_block_1()
 bel_npp_block_2 = custom_es.block_db.get_bel_npp_block_2()
 new_npp_block_1 = custom_es.block_db.get_new_npp_block_1()
 
@@ -209,7 +230,7 @@ block_grouper = Block_grouper(results, custom_es)
 
 block_grouper.set_options(
     electricity_options={
-        "БелАЭС (блок 1)": {"block": bel_npp_block_1, "color": "#2ca02c"},
+        "БелАЭС (блок 1)": {"block": b_1, "color": "#2ca02c"},
         "БелАЭС (блок 2)": {"block": bel_npp_block_2, "color": "#ff7f0e"},
         "Новая АЭС (блок 1)": {"block": new_npp_block_1, "color": "#1f77b4"},
     },
@@ -227,32 +248,33 @@ block_grouper.set_options(
         "капитальный ремонт-2": {"id": 5, "color": "#ff4000"},
     },
     repairs_cost_options={
-        "БелАЭС (блок 1)-затраты": {"block": bel_npp_block_1, "style":"-", "color": "#18be2f"},
+        "БелАЭС (блок 1)-затраты": {"block": b_1, "style":"-", "color": "#18be2f"},
         "БелАЭС (блок 2)-затраты": {"block": bel_npp_block_2, "style":"-", "color": "#ff7f0e"},
         "Новая АЭС (блок 1)-затраты": {"block": new_npp_block_1, "style":"-", "color": "#1f77b4"},
     }  
 )
 
 
-solution_processor.set_block_grouper(block_grouper)
+solution_processor.set_block_grouper(block_grouper) #?
 result_viewer = Result_viewer(block_grouper)
+excel_writer = Excel_writer(block_grouper)
 control_block_viewer = Control_block_viewer(block_grouper)
 
 
-image_simple = result_viewer.plot_general_graph(bel_npp_block_1)
+image_simple = result_viewer.plot_general_graph(b_1)
 image_main = result_viewer.plot_profile_all_blocks_graph(font_size=10, risk_graph=True, dpi=120)
 
 # result_viewer.plot_general_graph(bel_npp_block_2)
 # result_viewer.plot_general_graph(new_npp_block_1)
 
-control_block_viewer.plot_control_stop_block(bel_npp_block_1)
-control_block_viewer.plot_npp_status(bel_npp_block_1)
+# control_block_viewer.plot_control_stop_block(bel_npp_block_1)
+# control_block_viewer.plot_npp_status(bel_npp_block_1)
 
-control_block_viewer.plot_npp_storage_data(bel_npp_block_1)
-control_block_viewer.plot_repair_storage_max_uptime(bel_npp_block_1, repair_id=1)
-control_block_viewer.plot_repair_storage_max_uptime(bel_npp_block_1, repair_id=2)
-control_block_viewer.plot_repair_storage_max_uptime(bel_npp_block_1, repair_id=3)
-control_block_viewer.plot_repair_storage_max_uptime(bel_npp_block_1, repair_id=5)
+# control_block_viewer.plot_npp_storage_data(bel_npp_block_1)
+# control_block_viewer.plot_repair_storage_max_uptime(bel_npp_block_1, repair_id=1)
+# control_block_viewer.plot_repair_storage_max_uptime(bel_npp_block_1, repair_id=2)
+# control_block_viewer.plot_repair_storage_max_uptime(bel_npp_block_1, repair_id=3)
+# control_block_viewer.plot_repair_storage_max_uptime(bel_npp_block_1, repair_id=5)
  
 
 # result_viewer.create_scheme("./schemes")
@@ -260,22 +282,21 @@ control_block_viewer.plot_repair_storage_max_uptime(bel_npp_block_1, repair_id=5
 # image_main.save("./images","jpg", 600)
 
 
-
+# excel_writer.write_to_excel("./excel_results")
 
 print("done")
 
 
-
-# название блока верхней границе риска
-# добавить скобки в легенде
+# конструктор сценариев
+# проверить min_downtime
+# визуализировать увеличение риска с учетом 3 - блоков
+# события -> увеличение риска
 # сделать расчет с ноутбука
 # фото с ноутбука
 # разные верхние границы максимумов
-# добавить отображения событий повышающих риск (вертикальные черты)
 # простое переключение сценариев
-# параметры для записи и чтения у компонентов
 # блок-схема
-# взять реальные значения из двух источников
+# взять реальные значения из двух источников (соотношение цены ремонтов)
 # вывод в эксель
 
 
@@ -303,7 +324,8 @@ print("done")
 # исходные данные
 # используемое ПО
 # серия примеров расчета (графики: работа АЭС, события риска, выполенные ремонты, изменения раска во времени, деньги за ремонты)
-
+# графики и таблицы
+# источника oemof-solph статья
 
 
 

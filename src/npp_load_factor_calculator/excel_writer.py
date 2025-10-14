@@ -3,8 +3,8 @@
 
 class Excel_writer:
     
-    def __init__(self):
-        pass
+    def __init__(self, block_grouper):
+        self.block_grouper = block_grouper
     
     
     def set_options(self):
