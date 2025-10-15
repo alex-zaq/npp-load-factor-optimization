@@ -4,6 +4,7 @@ import numpy as np
 from oemof import solph
 
 from src.npp_load_factor_calculator.generic_models import Generic_bus
+from src.npp_load_factor_calculator.utilites import plot_array
 
 
 class Wrapper_base:
@@ -57,19 +58,29 @@ class Wrapper_base:
     def add_specific_status_duration_in_period(
         self,
         mode,
-        duration,
         avail_months_mask,
         start_days_mask,
         mask,
         coeff,
+        min_duration,
+        max_duration = None,
         ):
+        
+        # plot_array(avail_months_mask)
+        # plot_array(start_days_mask)
+        # plot_array(mask)
+        
 
         if mode not in ("active", "non_active"):
             raise ValueError("mode must be active or non_active")
 
         charger_power = 1
-        storage_capacity = charger_power * duration
-        fix_profile = np.array(mask) * storage_capacity
+        storage_capacity = charger_power * min_duration
+        
+        if max_duration is not None:
+            storage_capacity = charger_power * max_duration
+            
+        fix_profile = np.array(mask) * charger_power * min_duration
 
 
         bus_factory = Generic_bus(self.es)
@@ -112,7 +123,7 @@ class Wrapper_base:
         wrapper_charger_builder.update_options({
             "nominal_power": charger_power,
             "output_bus": storage_in_bus,
-            "min_uptime": duration,
+            "min_uptime": min_duration,
             "min": 1,
             })
         

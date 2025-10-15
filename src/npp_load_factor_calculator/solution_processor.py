@@ -74,6 +74,7 @@ class Solution_processor:
         self.meta_results = self.oemof_es.results["meta"]
         self.restored_scenario = self.oemof_es.results["scenario"]
         self.oemof_model.init_custom_model(self.restored_scenario, self.oemof_es)
+        self.oemof_model.build_blocks()
         self.custom_es = self.oemof_model.get_custom_es()
 
 

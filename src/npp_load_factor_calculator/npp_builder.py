@@ -44,25 +44,37 @@ class NPP_builder:
         if outage_options["start_of_month"]:
             start_days_mask = self.resolution_strategy.get_months_start_points()
             
-        outage_duration = self.resolution_strategy.convert_time(outage_options["planning_outage_duration"])
+        min_outage_duration = self.resolution_strategy.convert_time(outage_options["min_duration"])
+        max_outage_duration = self.resolution_strategy.convert_time(outage_options["max_duration"])
+        
         mask_for_storage = self.resolution_strategy.get_every_year_first_step_mask()
         coeff = self.resolution_strategy.coeff
             
             
         allow_months = outage_options["allow_months"]
-        avail_months_mask = self.resolution_strategy.get_mask_from_first_day_of_months(allow_months, outage_duration)
-        grad_mask = self.resolution_strategy.get_grad_mask(allow_months, outage_duration)
-        npp_block_builder.update_options({"positive_gradient_limit": grad_mask})
+        avail_months_mask = self.resolution_strategy.get_mask_from_first_day_of_months(allow_months, max_outage_duration)
+        # plot_array(avail_months_mask, self.resolution_strategy.timeindex)
+        grad_mask_min_outage = self.resolution_strategy.get_grad_mask(allow_months, min_outage_duration)
+        grad_mask_max_outage = self.resolution_strategy.get_grad_mask(allow_months, max_outage_duration)
+        
+        # plot_array(grad_mask_min_outage, self.resolution_strategy.timeindex)
+        # plot_array(grad_mask_max_outage, self.resolution_strategy.timeindex)
+        
+        mask = grad_mask_max_outage | grad_mask_min_outage
+        # plot_array(mask, self.resolution_strategy.timeindex)
+        
+        npp_block_builder.update_options({"positive_gradient_limit": mask})
         
         
         
         control_npp_stop_source.add_specific_status_duration_in_period(
             mode="active",
-            duration=outage_duration,
+            min_duration=min_outage_duration,
             avail_months_mask=avail_months_mask,
             start_days_mask=start_days_mask,
             mask=mask_for_storage,
-            coeff=coeff
+            coeff=coeff,
+            max_duration=max_outage_duration
             )
         
 
@@ -339,7 +351,7 @@ class NPP_builder:
             repair_duration = repair_source_builder.options["min_uptime"]
             repair_source_builder.add_specific_status_duration_in_period(
                 mode = "active",
-                duration = repair_duration,
+                min_duration = repair_duration,
                 avail_months_mask = 1,
                 start_days_mask = None,
                 mask = last_step_mask,

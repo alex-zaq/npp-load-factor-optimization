@@ -178,7 +178,7 @@ class Daily_resolution_strategy(Resolution_strategy):
         res = zero_inner_ones(res)
         # print(np.sum(res))
         # plot_array(res, self.timeindex)
-        return res
+        return np.array(res)
     
     def get_start_points(self, start_days_of_month_lst):
         res = np.zeros(len(self.timeindex))

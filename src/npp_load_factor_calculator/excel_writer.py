@@ -12,20 +12,21 @@ class Excel_writer:
         self.block_grouper = block_grouper
 
 
-    def _write_data(self, writer):
-        res = pd.DataFrame()
-        res.to_excel(writer, sheet_name="results")
+    def _write_data(self, writer, sheet_name):
+        
+        res = self.block_grouper.get_electricity_profile_all_blocks() 
+        res.to_excel(writer, sheet_name=sheet_name)
 
     
-    def write_excel(self, folder):
+    def write(self, folder):
         scen = self.block_grouper.custom_es.scenario
         folder = Path(folder)
         if not folder.exists():
             folder.mkdir(parents=True)
         excel_file = get_file_name_with_auto_number(folder, scen, "xlsx")
-        writer = pd.ExcelWriter(excel_file, engine="openpyxl")
-        block_grouper = self.block_grouper
-        self._write_data(block_grouper, writer, "results")
+        path = folder / excel_file
+        writer = pd.ExcelWriter(path, engine="openpyxl")
+        self._write_data(writer, "results")
         writer._save()
         print("{}  ({})".format("excel файл создан", excel_file))
     
