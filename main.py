@@ -1,8 +1,20 @@
-from src.npp_load_factor_calculator.excel_writer import Excel_writer
 from src.npp_load_factor_calculator import Block_grouper, Oemof_model, Result_viewer
+from src.npp_load_factor_calculator.excel_writer import Excel_writer
 from src.npp_load_factor_calculator.result_viewer import Control_block_viewer
+from src.npp_load_factor_calculator.scen_builder import Scenario_builder
 from src.npp_load_factor_calculator.solution_processor import Solution_processor
-from src.npp_load_factor_calculator.utilites import all_months
+from src.npp_load_factor_calculator.utilites import (
+    all_months,
+    get_repair_costs_by_capital,
+)
+
+maintence_cost, medium_repair_cost, current_repair_cost ,capital_repair_cost = get_repair_costs_by_capital(10e8)
+
+# maintence_duration = 10
+# medium_duration = 40
+# current_duration = 30
+# capital_duration = 45
+
 
 base_repair_options = {
     "maintence-1": {
@@ -20,7 +32,7 @@ base_repair_options = {
     },
     "maintence-2": {
         "id": 1,
-        "status": True,
+        "status": False,
         "startup_cost": 5e3,
         "duration": 10,
         "min_downtime": 0,
@@ -35,7 +47,7 @@ base_repair_options = {
     
     "light": {
         "id": 2,
-        "status": True,
+        "status": False,
         "startup_cost": 15e3,
         "duration": 30,
         "min_downtime": 0,
@@ -78,7 +90,7 @@ base_repair_options = {
     },
     "capital": {
         "id": 5,
-        "status": True,
+        "status": False,
         "startup_cost": 20e3,
         "duration": 30,
         "max_startup": 3,
@@ -91,11 +103,6 @@ base_repair_options = {
     },
 }
 
-events = {
-    "2025-02-01": 0.05,
-    "2025-04-15": 0.15,
-    "2025-09-01": 0.05,
-}
 
 
 block_base =   {   
@@ -108,14 +115,12 @@ block_base =   {
                 "status": True,
                 "start_of_month": True,
                 "allow_months": {"Jul"},
-                # "allow_months": all_months - {"Jan"},
-                # "allow_months": {"Feb", "Oct"},
                 "planning_outage_duration": 30,
             },
             "risk_options": {
                 "status": True,
                 "risks": {
-                    "r1": {"id": 0, "value": 0.1, "max": 0.5, "start_risk_rel": 0.4, "events": events},
+                    "r1": {"id": 0, "value": 0.1, "max": 0.5, "start_risk_rel": 0.4, "events": None},
                 }},
             "repair_options": {
                 "status": True,
@@ -124,11 +129,9 @@ block_base =   {
         }
    
 
-b_1 = {"bel_npp_block_1": block_base}
-b_2 = {"bel_npp_block_2": block_base}
-block_3 = {"new_npp_block_1": block_base}
-
-
+b_1 = Scenario_builder({"bel_npp_block_1": block_base})
+b_2 = Scenario_builder({"bel_npp_block_2": block_base})
+block_3 = Scenario_builder({"new_npp_block_1": block_base})
 
 base = {
         "№": 1,
@@ -145,44 +148,114 @@ one_year = {"years": [2025]}
 two_years = {"years": [2025, 2026]}
 three_years = {"years": [2025, 2026, 2027]}
 
+outage_base = Scenario_builder({
+    "outage_options": {
+        "status": True,
+        "start_of_month": True,
+        "allow_months": all_months,
+        "planning_outage_duration": 30,
+    }
+})
 
-one_risk = {}
-one_risk_events_1 = {}
-one_risk_events_2 = {}
-one_risk_events_3 = {}
+one_risk_base = Scenario_builder(
+    {
+        "risk_options": {
+            "status": True,
+            "risks": {
+                "r1": {
+                    "id": 0,
+                    "value": 0.1,
+                    "max": 0.5,
+                    "start_risk_rel": 0.4,
+                    "events": None,
+                },
+            },
+        }
+    }
+)
 
-two_risk = {}
-two_risk_events_4 = {}
-two_risk_events_5 = {}
+repair_base = Scenario_builder({"repair_options": {"status": True, "options": base_repair_options}})
 
-repair_reset = {}
-repair_npp_stop_concurent = {}
-repair_npp_no_stop_concurent_reset = {}
+
+events_base = {
+    "2025-02-01": 0.05,
+    "2025-04-15": 0.15,
+    "2025-09-01": 0.05,
+}
+
+events_1 = events_base
+
+events_2 = events_1
+
+events_3 = {
+    "2025-02-01": 0.05,
+    "2025-04-15": 0.15,
+    "2025-09-01": 0.05,
+}
+
+events_4 = {
+    "2025-02-01": 0.05,
+    "2025-04-15": 0.15,
+    "2025-09-01": 0.05,
+}
+
+events_5 = {
+    "2025-02-01": 0.05,
+    "2025-04-15": 0.15,
+    "2025-09-01": 0.05,
+}
+
+
+
+
+one_risk = one_risk_base.update_risk({"r1": {"events": None}})
+
+one_risk_events_1 = one_risk_base.update_risk({"r1": {"events": events_1}})
+one_risk_events_2 = one_risk_base.update_risk({"r1": {"events": events_2}})
+one_risk_events_3 = one_risk_base.update_risk({"r1": {"events": events_3}})
+one_risk_events_4 = one_risk_base.update_risk({"r1": {"events": events_3}})
+one_risk_events_5 = one_risk_base.update_risk({"r1": {"events": events_3}})
+
+two_risk = one_risk_base.update_risk({"r1": {"events": None}, "r2": {"events": None}})
+two_risk_events_4 = two_risk.update_risk({"r1": {"events": events_4}, "r2": {"events": events_4}})
+two_risk_events_5 = two_risk.update_risk({"r1": {"events": events_5}, "r2": {"events": events_5}})
+
+
+repair_reset = repair_base.update_repair({"id": 0,  "data": {"risk_reset": {"r1"}}})
+repair_two_risk = repair_base.update_repair({"id": 0,  "data": {"risk_reset": {"r1", "r2"}}})
+repair_stop_conc_1 = {}
+repair_no_stop_conc_1 = {}
 repair_npp_no_stop_concurent_reduced = {}
-repair_forced_capital = {}
-
-outage_july = {}
-outage_november = {}
-outage_april = {}
-
-outage_july_june = {}
-outage_november_december = {}
-outage_april_may = {}
+repair_forced_capital = repair_base | {"id": 5,  "data": {"forced_in_period": True}}
 
 
+
+outage_july = outage_base.update({"allow_months": {"Jul"}})
+outage_november = outage_base.update({"allow_months": {"Nov"}})
+outage_april = outage_base.update({"allow_months": {"Apr"}})
+
+outage_july_june = outage_base.update({"allow_months": {"Jul", "Jun"}})
+outage_november_december = outage_base.update({"allow_months": {"Nov", "Dec"}})
+outage_april_may = outage_base.update({"allow_months": {"Apr", "May"}})
 
 
 # scenarios
 ###############################################################################
-scen = base | {"№": 1} | one_year | (b_1.set(one_risk | repair_reset | outage_july)) 
-scen = base | {"№": 2} | one_year | (b_1.set(one_risk | repair_reset | outage_july)) | (b_2.set(one_risk | repair_reset | outage_july))
+scen = base | {"№": 1} | one_year | (b_1.update(one_risk | repair_reset | outage_july)) 
+# scen = base | {"№": 2} | one_year | (b_1.update(one_risk_events_1 | repair_reset | outage_july))
+# scen = base | {"№": 3} | one_year | (b_1.update(two_risk_events_4 | repair_two_risk | outage_july))
+# scen = base | {"№": 4} | one_year | (b_1.update(one_risk_events_1 | repair_stop_conc_1 | repair_no_stop_conc_1 | outage_july_june))
 
+# scen = base | {"№": 5} | two_years | (b_1.update(one_risk_events_5 | repair_stop_conc_1 |repair_no_stop_conc_1 | outage_july_june)) 
+# scen = base | {"№": 6} | two_years | (b_1.update(two_risk_events_4 | repair_stop_conc_1 |repair_no_stop_conc_1 | outage_july_june)) 
+# scen = base | {"№": 7} | two_years | (b_1.update(one_risk_events_5 | repair_stop_conc_1 |repair_no_stop_conc_1 | outage_july_june)) 
+# scen = base | {"№": 8} | two_years | (b_1.update(one_risk_events_5 | repair_stop_conc_1 |repair_no_stop_conc_1 | outage_july_june)) 
 
-
-
-
+# scen = base | {"№": 9} | three_years | (b_1.update(one_risk_events_5 | repair_stop_conc_1 |repair_no_stop_conc_1 | outage_july_june)) 
+# scen = base | {"№": 10} | three_years | (b_1.update(one_risk_events_5 | repair_stop_conc_1 |repair_no_stop_conc_1 | outage_july_june)) 
+# scen = base | {"№": 11} | three_years | (b_1.update(one_risk_events_5 | repair_stop_conc_1 |repair_no_stop_conc_1 | outage_july_june)) 
+# scen = base | {"№": 12} | three_years | (b_1.update(one_risk_events_5 | repair_stop_conc_1 | repair_no_stop_conc_1 | outage_july_june)) 
 ###############################################################################
-
 
 oemof_model = Oemof_model(
     scenario = scen,
@@ -287,17 +360,18 @@ image_main = result_viewer.plot_profile_all_blocks_graph(font_size=10, risk_grap
 print("done")
 
 
-# конструктор сценариев
+# функция для расчета стоимости ремонтов
 # проверить min_downtime
 # визуализировать увеличение риска с учетом 3 - блоков
-# события -> увеличение риска
+# события -> увеличение риска легенда
 # сделать расчет с ноутбука
 # фото с ноутбука
 # разные верхние границы максимумов
 # простое переключение сценариев
 # блок-схема
 # взять реальные значения из двух источников (соотношение цены ремонтов)
-# вывод в эксель
+# вывод в эксель по месяцам
+# динамич. изменение длины остановки
 
 
 
@@ -326,6 +400,7 @@ print("done")
 # серия примеров расчета (графики: работа АЭС, события риска, выполенные ремонты, изменения раска во времени, деньги за ремонты)
 # графики и таблицы
 # источника oemof-solph статья
+# сложные два примера для показа снижения целевой функции
 
 
 

@@ -461,5 +461,11 @@ def zero_inner_ones(arr):
     return result
 
 
-    def get_repair_cost_by_proportion():
+def get_repair_costs_by_capital(capital_cost):
+        medium_repair_cost = capital_cost / 0.67
+        current_repair_cost = capital_cost / 0.40
+        maintence_cost = capital_cost / 0.20
+        
+        return maintence_cost, medium_repair_cost, current_repair_cost, capital_cost
+        
 
