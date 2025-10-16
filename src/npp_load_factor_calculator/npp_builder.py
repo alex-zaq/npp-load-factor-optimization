@@ -38,7 +38,6 @@ class NPP_builder:
         npp_block_builder.set_info("bufer_bus", bufer_bus)
         npp_block_builder.set_info("control_npp_stop_source", control_npp_stop_source)
         npp_block_builder.set_info("allow_months", outage_options["allow_months"])
-
         
         start_days_mask = None
         if outage_options["start_of_month"]:
@@ -168,7 +167,12 @@ class NPP_builder:
         risks = npp_block_builder.get_info("risks")
         bufer_bus = npp_block_builder.get_info("bufer_bus")
         control_npp_stop_source = npp_block_builder.get_info("control_npp_stop_source")
-        allow_months = npp_block_builder.get_info("allow_months")
+        # allow_months = npp_block_builder.get_info("allow_months")
+        allow_parallel_repairs = repair_options["allow_parallel_repairs"]
+        
+        
+            
+            
             
         all_risk_set = set(risk_out_bus_dict.keys())
         
@@ -195,9 +199,13 @@ class NPP_builder:
                     coeff = self.resolution_strategy.coeff
                     repair_converter_builder.add_max_uptime(duration, coeff)
                     
-                    # repair_converter_builder.add_optional_active_after(control_npp_stop_source)
+                    
                     control_npp_stop_source.add_base_block_for(repair_converter_builder)
-                    control_npp_stop_source.add_group_equal_1(repair_converter_builder)
+                    if allow_parallel_repairs:
+                        control_npp_stop_source.add_group_equal_or_greater_1(repair_converter_builder)
+                    else:
+                        control_npp_stop_source.add_group_equal_1(repair_converter_builder)
+                    
                     
                     repair_converter_builder.set_info("forced_in_period", options.get("forced_in_period"))
                     repair_converter_builder.set_info("startup_cost", options["startup_cost"])
@@ -240,7 +248,12 @@ class NPP_builder:
                     
                     
                     control_npp_stop_source.add_base_block_for(repair_converter_builder)
-                    control_npp_stop_source.add_group_equal_1(repair_converter_builder)
+                    
+                    if allow_parallel_repairs:
+                        control_npp_stop_source.add_group_equal_or_greater_1(repair_converter_builder)
+                    else:
+                        control_npp_stop_source.add_group_equal_1(repair_converter_builder)
+                    
 
 
                     repair_converter_builder.set_info("forced_in_period", options.get("forced_in_period"))

@@ -1,5 +1,8 @@
 
 
+from copy import deepcopy
+
+
 class Scenario_builder:
     
     def __init__(self, scenario_dict):
@@ -23,7 +26,7 @@ class Scenario_builder:
     def update_outage(self, inner_dict):
         single_key = "outage_options"
         self.scenario_dict[single_key].update(inner_dict)
-        return self
+        return deepcopy(self)
 
 
     def update_risk(self, inner_dict):
@@ -34,7 +37,7 @@ class Scenario_builder:
                 risk_options[key_to_update].update(data_to_update)
             else:
                 raise ValueError
-        return self
+        return deepcopy(self)
 
     def update_repair(self, inner_dict):
         repair_options = self.scenario_dict["repair_options"]["options"]
@@ -45,7 +48,9 @@ class Scenario_builder:
                 repair_options[key_to_update].update(data_to_update)
             else:
                 raise ValueError
-        return self
+            if "allow_parallel_repairs" in inner_dict:
+                self.scenario_dict["repair_options"]["allow_parallel_repairs"] = inner_dict["allow_parallel_repairs"]
+        return deepcopy(self)
     
     
     def __or__(self, other):

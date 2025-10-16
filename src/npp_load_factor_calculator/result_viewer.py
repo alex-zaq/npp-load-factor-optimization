@@ -224,16 +224,17 @@ class Result_viewer:
         
         ax_cost_all_blocks_df.axhline(y=cost_upper_bound, color='black', linestyle='--', label='затраты за период')
         
-        x_max = cost_all_blocks_df.index[-round(40*cost_all_blocks_df.shape[0]/365)]
+        x_max = cost_all_blocks_df.index[-round(85*cost_all_blocks_df.shape[0]/365)]
         y_max = cost_all_blocks_df.max().max()
         ax_cost_all_blocks_df.text(
             x_max,
             y_max * 1.03,
-            f"max = {y_max:.3f}",
+            f"затраты на ремонты = {y_max:.2f}",
             fontsize=font_size - 2,
             horizontalalignment="center",
             verticalalignment="bottom",
             color="black",
+            weight="bold"
             )
         
         if risk_graph:
@@ -267,17 +268,18 @@ class Result_viewer:
             
             
 
-            x_max = risk_df.index[round(40*risk_df.shape[0]/365)]
+            x_max = risk_df.index[round(85*risk_df.shape[0]/365)]
             y_max = risk_df.max().max()
 
             ax_risk_df.text(
                 x_max,
                 1 * 1.03,
-                f"max = {1:.1f}",
+                f"Условная граница риска = {max_risk_value:.1f}",
                 fontsize=font_size - 2,
                 horizontalalignment="center",
                 verticalalignment="bottom",
                 color="black",
+                weight="bold"
             )
 
 
@@ -313,19 +315,19 @@ class Result_viewer:
                 ax_risk_increase_df.legend(loc='upper right', fontsize=font_size - 2, ncol=1)    
 
            
-            min_y = risk_decrease_df.min().min() * 1.1
+            # min_y = risk_decrease_df.min().min() * 1.1
             
-            if not risk_decrease_df.empty:
-                ax_risk_decrease_df= risk_decrease_df.plot(
-                    kind="area",
-                    ylim=(min_y, max_y_cost),
-                    legend="reverse",
-                    color="green",
-                    linewidth=0.7,
-                    fontsize=font_size-2,
-                    ax=ax_right
-                )
-                ax_risk_decrease_df.legend(loc='upper right', fontsize=font_size - 2, ncol=1)    
+            # if not risk_decrease_df.empty:
+            #     ax_risk_decrease_df= risk_decrease_df.plot(
+            #         kind="area",
+            #         ylim=(min_y, max_y_cost),
+            #         legend="reverse",
+            #         color="green",
+            #         linewidth=0.7,
+            #         fontsize=font_size-2,
+            #         ax=ax_right
+            #     )
+            #     ax_risk_decrease_df.legend(loc='upper right', fontsize=font_size - 2, ncol=1)    
 
 
 
@@ -339,7 +341,7 @@ class Result_viewer:
 
 
 
-            ax_risk_df.legend(loc='upper right', fontsize=font_size - 2, ncol=1)    
+            # ax_risk_df.legend(loc='upper right', fontsize=font_size - 2, ncol=1)    
 
         fig.set_dpi(dpi)
         center_matplotlib_figure(fig, extra_y=-60, extra_x=40)

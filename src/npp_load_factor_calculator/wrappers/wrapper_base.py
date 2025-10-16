@@ -209,6 +209,10 @@ class Wrapper_base:
         self.es.constraints["group_equal_1"][self].append(wrapper_block)
              
                     
+    def add_group_equal_or_greater_1(self, wrapper_block):
+        self.es.constraints["group_equal_or_greater_1"][self].append(wrapper_block)
+             
+                    
                     
     def _get_nonconvex_flow(self):
         if "fix" in self.options:
