@@ -172,13 +172,40 @@ class Daily_resolution_strategy(Resolution_strategy):
         return res
     
         
-    def get_grad_mask(self, month, duration):
-        res = self.get_mask_from_first_day_of_months(month, duration)
+    def get_grad_mask(self, months, duration):
+        res = self.get_mask_from_first_day_of_months(months, duration)
         # plot_array(res, self.timeindex)
         res = zero_inner_ones(res)
         # print(np.sum(res))
         # plot_array(res, self.timeindex)
         return np.array(res)
+    
+    
+    def get_grad_mask_repair(self, months, duration, divider):
+        res = self.get_mask_from_first_day_of_months(months, duration)
+        # plot_array(res, self.timeindex)
+        res = zero_inner_ones(res)
+        
+        # print(np.sum(res))
+        # plot_array(res, self.timeindex)
+        return np.array(res)
+    
+    def add_one_by_devider(self, months, duration, divider):
+        
+        res = self.get_grad_mask(months, duration)
+        # plot_array(res)
+        one_indices = np.where(res == 1)[0]
+        if len(one_indices) > 0:
+            first_one_index = one_indices[0]
+            last_one_index = one_indices[-1]
+            all_indices = np.arange(len(res))
+            mask = (all_indices >= first_one_index) & \
+            (all_indices <= last_one_index) & \
+            ((all_indices - first_one_index) % divider == 0) & \
+            (res == 0)
+            res[mask] = 1
+        # plot_array(res)
+        return res
     
     def get_start_points(self, start_days_of_month_lst):
         res = np.zeros(len(self.timeindex))

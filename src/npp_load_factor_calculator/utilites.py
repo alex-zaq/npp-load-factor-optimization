@@ -182,6 +182,7 @@ def add_white_spaces_and_colors_el_gen(df, value):
             new_colors.insert(len(new_colors) - 1 + 1, "white")
     
     new_df.colors = new_colors
+    new_df.clip(lower=0)
     return new_df
 
 def add_white_spaces_and_colors_repairs(dict_value, value):
@@ -461,11 +462,14 @@ def zero_inner_ones(arr):
     return result
 
 
+
+
+
 def get_repair_costs_by_capital(capital_cost):
-        medium_repair_cost = capital_cost / 0.67
-        current_repair_cost = capital_cost / 0.40
-        maintence_cost = capital_cost / 0.20
+        maintence_cost = capital_cost * 0.20
+        current_repair_cost = capital_cost * 0.40
+        medium_repair_cost = capital_cost * 0.67
         
-        return maintence_cost, medium_repair_cost, current_repair_cost, capital_cost
+        return maintence_cost, current_repair_cost ,medium_repair_cost, capital_cost
         
 

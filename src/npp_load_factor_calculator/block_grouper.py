@@ -146,6 +146,34 @@ class Custom_block:
             res_df[f"события риска {risk_name} ({self.wrapper_block.label})"] = block_results[((block.label, output.label), "flow")]
             res_df = res_df.clip(lower=0)
             return res_df
+        
+        
+    def get_risk_increase_profile(self):
+        res = pd.DataFrame()
+        res_df = pd.DataFrame()
+        risks = self.wrapper_block.block.risks
+        for risk_name, storage in risks.items():
+            input_bus, block = storage.inputs_pair[0]
+            block_results = solph.views.node(self.results, storage.label)["sequences"].dropna()
+            res_df[f"увеличение риска {risk_name} ({self.wrapper_block.label})"] = block_results[((input_bus.label, block.label), "flow")]
+            res_df = res_df.clip(lower=0)
+            res = pd.concat([res, res_df], axis=1)
+        return res_df
+        
+    
+    def get_risk_decrease_profile(self):
+        res = pd.DataFrame()
+        res_df = pd.DataFrame()
+        risks = self.wrapper_block.block.risks
+        for risk_name, storage in risks.items():
+            block, output_bus = storage.outputs_pair[0]
+            block_results = solph.views.node(self.results, storage.label)["sequences"].dropna()
+            res_df[f"снижение риска {risk_name} ({self.wrapper_block.label})"] = block_results[((block.label, output_bus.label), "flow")]
+            res_df = res_df.clip(lower=0)
+            res = pd.concat([res, res_df], axis=1)
+        return res_df
+                      
+        
     
 ###############################################################################################################    
 
@@ -352,6 +380,25 @@ class Block_grouper:
             res = pd.concat([res, events_df], axis=1)
         return res
     
+    
+    def get_increase_all_blocks_df(self):
+        res = pd.DataFrame()
+        for custom_block in self.electr_groups:
+            res_loc =  custom_block.get_risk_increase_profile()
+            res_loc *= 24
+            res = pd.concat([res, res_loc], axis=1)
+        res = res[:-1]
+        return res
+    
+    
+    def get_decrease_all_blocks_df(self):
+        res = pd.DataFrame()
+        for custom_block in self.electr_groups:
+            res_loc =  custom_block.get_risk_decrease_profile()
+            res_loc *= -24
+            res = pd.concat([res, res_loc], axis=1)
+        res = res[:-1]
+        return res
     
     
     

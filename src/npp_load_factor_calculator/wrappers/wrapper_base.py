@@ -178,6 +178,12 @@ class Wrapper_base:
         self.options["startup_cost"] = np.where(mask == 1, startup_cost, 1e15)
 
 
+    def add_shutdown_cost_by_mask(self, mask):
+        mask = np.array(mask)
+        shutdown_cost = self.options.get("shutdown_cost", 0)
+        self.options["shutdown_cost"] = np.where(mask == 1, shutdown_cost, 1e15)
+        # print(np.sum(self.options["shutdown_cost"]))
+
 
     def create_pair_no_equal_status_lower_0(self, wrapper_block):
         self.es.constraints["no_equal_status_lower_0"][self].append(wrapper_block)

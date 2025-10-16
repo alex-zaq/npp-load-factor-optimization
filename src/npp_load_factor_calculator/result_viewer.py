@@ -143,7 +143,9 @@ class Result_viewer:
         el_gen_df = self.block_grouper.get_electricity_profile_all_blocks()
         repairs_dict = self.block_grouper.get_repairs_profile_by_all_blocks_dict()
         cost_all_blocks_df = self.block_grouper.get_cost_profile_all_blocks(cumulative=True)
-        events_df = self.block_grouper.get_events_profile_all_blocks_df()
+        risk_increase_df = self.block_grouper.get_increase_all_blocks_df()
+        risk_decrease_df = self.block_grouper.get_decrease_all_blocks_df()
+        # events_df = self.block_grouper.get_events_profile_all_blocks_df()
         
         el_gen_df = add_white_spaces_and_colors_el_gen(el_gen_df, 1170)
         repairs_df = add_white_spaces_and_colors_repairs(repairs_dict, 1170)
@@ -246,7 +248,7 @@ class Result_viewer:
 
             if len(max_risk_value:=set(v["max_risk"] for v in risks_dict.values())) == 1:
                 max_risk_value = max_risk_value.pop()
-                max_y_cost = max_risk_value * 1.5
+                max_y_cost = 1 * 1.5
             else:
                 raise Exception("Different max_risk values")
 
@@ -270,8 +272,8 @@ class Result_viewer:
 
             ax_risk_df.text(
                 x_max,
-                max_risk_value * 1.03,
-                f"max = {y_max:.3f}",
+                1 * 1.03,
+                f"max = {1:.1f}",
                 fontsize=font_size - 2,
                 horizontalalignment="center",
                 verticalalignment="bottom",
@@ -283,8 +285,23 @@ class Result_viewer:
             ax_risk_df.set_xlabel("Время, дни", fontsize=font_size - 2)
             
             
-            if not events_df.empty:
-                ax_events_df = events_df.plot(
+            # if not events_df.empty:
+            #     ax_events_df = events_df.plot(
+            #         kind="area",
+            #         ylim=(0, max_y_cost),
+            #         legend="reverse",
+            #         color="red",
+            #         linewidth=0.7,
+            #         fontsize=font_size-2,
+            #         ax=ax_right
+            #     )
+            #     ax_events_df.legend(loc='upper right', fontsize=font_size - 2, ncol=1)    
+
+
+           
+            
+            if not risk_increase_df.empty:
+                ax_risk_increase_df = risk_increase_df.plot(
                     kind="area",
                     ylim=(0, max_y_cost),
                     legend="reverse",
@@ -293,10 +310,31 @@ class Result_viewer:
                     fontsize=font_size-2,
                     ax=ax_right
                 )
-                ax_events_df.legend(loc='upper right', fontsize=font_size - 2, ncol=1)    
+                ax_risk_increase_df.legend(loc='upper right', fontsize=font_size - 2, ncol=1)    
+
+           
+            min_y = risk_decrease_df.min().min() * 1.1
+            
+            if not risk_decrease_df.empty:
+                ax_risk_decrease_df= risk_decrease_df.plot(
+                    kind="area",
+                    ylim=(min_y, max_y_cost),
+                    legend="reverse",
+                    color="green",
+                    linewidth=0.7,
+                    fontsize=font_size-2,
+                    ax=ax_right
+                )
+                ax_risk_decrease_df.legend(loc='upper right', fontsize=font_size - 2, ncol=1)    
 
 
-            ax_risk_df.axhline(y=max_risk_value, color='r', linestyle='--', label='верхняя граница риска')
+
+
+
+
+
+
+            ax_risk_df.axhline(y=1, color='r', linestyle='--', label='верхняя граница риска')
 
 
 

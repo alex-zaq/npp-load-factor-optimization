@@ -15,6 +15,17 @@ class Excel_writer:
     def _write_data(self, writer, sheet_name):
         
         res = self.block_grouper.get_electricity_profile_all_blocks() 
+        
+        
+        # мощность
+        # выработка
+        # увеличение риска
+        # уменьшение риска
+        # накополенный риск
+        # затраты на ремонты
+        # суммарные затраты
+        
+        
         res.to_excel(writer, sheet_name=sheet_name)
 
     

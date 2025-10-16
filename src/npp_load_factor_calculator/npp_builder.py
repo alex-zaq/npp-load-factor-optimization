@@ -28,16 +28,16 @@ class NPP_builder:
         control_npp_stop_source = Wrapper_source(self.es, f"{npp_block_builder.label}_control_npp_stop_converter" )
         control_npp_stop_source.update_options({"output_bus": bufer_bus, "nominal_power": 1, "min": 1})
 
-        control_npp_stop_source.create_pair_no_equal_status_lower_0(npp_block_builder)
+        # control_npp_stop_source.create_pair_no_equal_status_lower_0(npp_block_builder)
 
-        # npp_block_builder.create_pair_no_equal_status_equal_1(control_npp_stop_source)
+        npp_block_builder.create_pair_no_equal_status_equal_1(control_npp_stop_source)
         
 
         
         
         npp_block_builder.set_info("bufer_bus", bufer_bus)
         npp_block_builder.set_info("control_npp_stop_source", control_npp_stop_source)
-        
+        npp_block_builder.set_info("allow_months", outage_options["allow_months"])
 
         
         start_days_mask = None
@@ -61,9 +61,17 @@ class NPP_builder:
         # plot_array(grad_mask_max_outage, self.resolution_strategy.timeindex)
         
         mask = grad_mask_max_outage | grad_mask_min_outage
+        
+        
         # plot_array(mask, self.resolution_strategy.timeindex)
         
-        npp_block_builder.update_options({"positive_gradient_limit": mask})
+        npp_block_builder.update_options({
+            "positive_gradient_limit": mask,
+            "negative_gradient_limit": mask,
+            })
+        
+        # npp_block_builder.add_shutdown_cost_by_mask(mask)
+    
         
         
         
@@ -160,6 +168,7 @@ class NPP_builder:
         risks = npp_block_builder.get_info("risks")
         bufer_bus = npp_block_builder.get_info("bufer_bus")
         control_npp_stop_source = npp_block_builder.get_info("control_npp_stop_source")
+        allow_months = npp_block_builder.get_info("allow_months")
             
         all_risk_set = set(risk_out_bus_dict.keys())
         
@@ -246,11 +255,19 @@ class NPP_builder:
                         sink_builder = Wrapper_sink(self.es, f"{npp_block_builder.label}_{name}_{selected_risk_bus}_sink")
                         risk_reducing = options["risk_reducing"][selected_risk_bus]
                         duration = self.resolution_strategy.convert_time(options["duration"])
+                        # grad = self.resolution_strategy.add_one_by_devider(allow_months, options["duration"], 5)
+                        # print(len(grad))
+                        # plot_array(grad)
                         sink_power =  risk_reducing / duration
                         sink_power = sink_power / coeff
                         min_val = options["min"]
                         sink_builder.update_options({
-                            "input_bus": risk_out_bus_dict[selected_risk_bus], "nominal_power": sink_power, "min": min_val})
+                            "input_bus": risk_out_bus_dict[selected_risk_bus],
+                            "nominal_power": sink_power,
+                            "min": min_val,
+                            # "positive_gradient_limit": grad,
+                            # "negative_gradient_limit": grad
+                            })
                         sink_builder.create_pair_equal_status(repair_converter_builder)
                         sinks[selected_risk_bus] = sink_builder
                     repair_converter_builder.sinks = sinks
@@ -274,6 +291,9 @@ class NPP_builder:
                     })
                     duration = self.resolution_strategy.convert_time(options["duration"])
                     repair_converter_builder.add_max_uptime(duration)
+                    
+                    control_npp_stop_source.create_pair_no_equal_status_lower_0(repair_converter_builder)
+                    
                     repair_converter_builder.set_info("forced_in_period", options.get("forced_in_period"))
                     self._add_start_days_if_required(repair_converter_builder, options.get("start_day"))
                     self._add_forced_active_if_required(repair_converter_builder, options.get("forced_in_period"))
@@ -310,6 +330,9 @@ class NPP_builder:
                     duration = self.resolution_strategy.convert_time(options["duration"])
                     coeff = self.resolution_strategy.coeff
                     repair_converter_builder.add_max_uptime(duration, coeff)
+                    
+                    control_npp_stop_source.create_pair_no_equal_status_lower_0(repair_converter_builder)
+                    
                     repair_converter_builder.set_info("forced_in_period", options.get("forced_in_period"))
                     repair_converter_builder.set_info("startup_cost", options["startup_cost"])
                     repair_converter_builder.set_info("npp_stop_required", False)

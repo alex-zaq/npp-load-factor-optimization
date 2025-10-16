@@ -8,7 +8,7 @@ from src.npp_load_factor_calculator.utilites import (
     get_repair_costs_by_capital,
 )
 
-maintence_cost, medium_repair_cost, current_repair_cost ,capital_repair_cost = get_repair_costs_by_capital(10e8)
+maintence_cost, current_repair_cost ,medium_repair_cost, capital_cost = get_repair_costs_by_capital(50e6)
 
 # maintence_duration = 10
 # medium_duration = 40
@@ -20,11 +20,11 @@ base_repair_options = {
     "maintence-1": {
         "id": 0,
         "status": False,
-        "startup_cost": 4e3,
+        "startup_cost": maintence_cost,
         "duration": 10,
         "min_downtime": 0,
         "max_startup": 36,
-        "risk_reset": set(),
+        "risk_reset": {},
         "risk_reducing": {"r1": 0.1},
         "min": 0,
         "npp_stop": False,
@@ -33,11 +33,11 @@ base_repair_options = {
     "maintence-2": {
         "id": 1,
         "status": False,
-        "startup_cost": 5e3,
+        "startup_cost": maintence_cost,
         "duration": 10,
         "min_downtime": 0,
         "max_startup": 36,
-        "risk_reset": set(),
+        "risk_reset": {},
         "risk_reducing": {"r1": 0.2},
         "min": 1,
         "start_day": {"status": True, "days": [1,]},
@@ -48,14 +48,14 @@ base_repair_options = {
     "current-1": {
         "id": 2,
         "status": False,
-        "startup_cost": 15e3,
+        "startup_cost": current_repair_cost,
         "duration": 30,
         "min_downtime": 0,
         "max_startup": 3,
-        "risk_reset": {"r1"},
-        # "risk_reset": {},
-        "risk_reducing": {},
-        # "risk_reducing": {"r1": 0.9},
+        # "risk_reset": {"r1"},
+        "risk_reset": {},
+        # "risk_reducing": {},
+        "risk_reducing": {"r1": 0.6},
         "min": 0,
         "start_day": {"status": True, "days": [1,]},
         "npp_stop": True,
@@ -64,12 +64,12 @@ base_repair_options = {
     "current-2": {
         "id": 3,
         "status": False,
-        "startup_cost": 10e3,
-        "duration": 30,
+        "startup_cost": current_repair_cost,
+        "duration": 10,
         "min_downtime": 0,
         "max_startup": 3,
-        "risk_reset": {"r1"},
-        "risk_reducing": {},
+        "risk_reset": {},
+        "risk_reducing": {"r1": 0.4},
         "min": 0,
         "start_day": {"status": True, "days": [1,]},
         "npp_stop": True,
@@ -78,12 +78,12 @@ base_repair_options = {
     "medium-1": {
         "id": 4,
         "status": False,
-        "startup_cost": 15e3,
-        "duration": 15,
+        "startup_cost": medium_repair_cost,
+        "duration": 30,
         "max_startup": 3,
         "min_downtime": 0,
-        "risk_reset": {"r1"},
-        "risk_reducing": {},
+        "risk_reset": {},
+        "risk_reducing": {"r1": 0.9},
         "min": 0,
         "npp_stop": True,
         "forced_in_period": False,
@@ -91,11 +91,11 @@ base_repair_options = {
     "medium-2": {
         "id": 5,
         "status": False,
-        "startup_cost": 20e3,
+        "startup_cost": medium_repair_cost,
         "duration": 30,
         "max_startup": 3,
         "min_downtime": 0,
-        "risk_reset": {"r1"},
+        "risk_reset": {},
         "risk_reducing": {},
         "min": 0,
         "npp_stop": True,
@@ -104,12 +104,12 @@ base_repair_options = {
     "capital": {
         "id": 6,
         "status": False,
-        "startup_cost": 50e3,
+        "startup_cost": capital_cost,
         "duration": 30,
         "max_startup": 3,
         "min_downtime": 0,
-        "risk_reset": {"r1"},
-        "risk_reducing": {},
+        "risk_reset": {},
+        "risk_reducing": {"r1": 0.9},
         "min": 0,
         "npp_stop": True,
         "forced_in_period": False,
@@ -122,7 +122,7 @@ base_repair_options = {
 block_base =   {   
             "status": True,
             "nominal_power": 1170,
-            "var_cost": -56.5,
+            "var_cost": -56.5 * 10,
             "min_uptime": 10,
             # "min_uptime": 0,
             "outage_options": {
@@ -180,9 +180,9 @@ one_risk_base = Scenario_builder(
             "risks": {
                 "r1": {
                     "id": 0,
-                    "value": 0.1,
-                    "max": 0.5,
-                    "start_risk_rel": 0.4,
+                    "value": 0.15,
+                    "max": 1.0,
+                    "start_risk_rel": 0.3,
                     "events": None,
                 },
             },
@@ -226,6 +226,7 @@ events_5 = {
 one_risk = one_risk_base.update_risk({"r1": {"events": None}})
 outage = outage_base.update_outage({"allow_months": {"Jul"}})
 
+# repair_reset = repair_base.update_repair({"maintence-2": {}, "current-1": {}, "current-2": {}, "medium-1": {}})
 repair_reset = repair_base.update_repair({"maintence-2": {}, "current-1": {}})
 repair_reset = repair_reset.update_repair({"capital": {"forced_in_period": True, "duration": 40}})
 
@@ -309,7 +310,7 @@ solution_processor.set_excel_folder("./excel_results")
 # solution_processor.set_restore_mode(file_number="09") 
 
 # solution_processor.set_restore_mode(file_number="39") 
-solution_processor.set_restore_mode(file_number="45") 
+# solution_processor.set_restore_mode(file_number="122") 
 
 solution_processor.apply()
 
