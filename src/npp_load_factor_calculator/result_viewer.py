@@ -299,38 +299,47 @@ class Result_viewer:
             #     )
             #     ax_events_df.legend(loc='upper right', fontsize=font_size - 2, ncol=1)    
 
-
-           
+            risk_increase_colors = ["#e41a1c",  "#0400ff"]
             
+             
             if not risk_increase_df.empty:
                 ax_risk_increase_df = risk_increase_df.plot(
-                    kind="area",
+                    kind="line",
+                    # kind="area",
                     ylim=(0, max_y_cost),
                     legend="reverse",
-                    color="red",
-                    linewidth=0.7,
+                    color=risk_increase_colors,
+                    linewidth=1,
                     fontsize=font_size-2,
                     ax=ax_right
                 )
-                ax_risk_increase_df.legend(loc='upper right', fontsize=font_size - 2, ncol=1)    
+                
+            ax_risk_increase_df.legend(loc='upper right', fontsize=font_size - 2, ncol=1)    
 
-           
-            # min_y = risk_decrease_df.min().min() * 1.1
+
+            # risk_decrease_df = risk_decrease_df.mul(-1)
             
             # if not risk_decrease_df.empty:
             #     ax_risk_decrease_df= risk_decrease_df.plot(
             #         kind="area",
-            #         ylim=(min_y, max_y_cost),
-            #         legend="reverse",
-            #         color="green",
-            #         linewidth=0.7,
+            #         ylim=(0, max_y_cost),
+            #         legend=False,
+            #         color=risk_colors,
+            #         linewidth=0.01,
             #         fontsize=font_size-2,
             #         ax=ax_right
             #     )
-            #     ax_risk_decrease_df.legend(loc='upper right', fontsize=font_size - 2, ncol=1)    
+                
+            # ax_risk_increase_df.legend(loc='upper right', fontsize=font_size - 2, ncol=1)    
+           
+            # min_y = risk_decrease_df.min().min() * 1.1
+            
+
+                # ax_risk_decrease_df.legend_.remove()
+            # ax_risk_decrease_df.legend(loc='upper right', fontsize=font_size - 2, ncol=1)    
 
 
-
+            
 
 
 

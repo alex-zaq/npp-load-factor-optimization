@@ -6,18 +6,6 @@ class Constraint_processor:
         self.model = model
         self.count = len(model.timeincrement)
         self.constraints = constraints
-        # self._change_wrappers_to_blocks()
-        
-        
-    # def _change_wrappers_to_blocks(self):
-    #     constraints_copy = self.constraints.copy()
-    #     constraints_copy.clear()
-    #     for constraint_name, group_dict in self.constraints.items():
-    #         for wrapper_main, depend_wrapper_lst in group_dict.items():
-    #             block_main = wrapper_main.build()
-    #             depend_block_lst = [block.build() for block in depend_wrapper_lst]
-    #             constraints_copy[constraint_name][block_main] = depend_block_lst  
-    #     self.constraints = constraints_copy        
         
 
     def _get_pairs_lst(self, groups_dict):
@@ -31,6 +19,10 @@ class Constraint_processor:
                 local_group_lst+=[sub_block_pair]
             global_groups_lst.append(local_group_lst)
         return global_groups_lst
+    
+    
+    def _get_pairs_lst_cg(self, groups_lst):
+        return [[block.get_pair_after_building() for block in group] for group in groups_lst]
     
     
     def _get_pairs_dict(self, groups_dict):
@@ -220,14 +212,7 @@ class Constraint_processor:
                 for pair in expense_group_pairs
             )
             return model.NonConvexFlowBlock.status[cheap_block_pair[0], cheap_block_pair[1], t] <= sum_of_group_statuses
-
-        # def rule_2(model, t, expense_group_pairs):
-        #     sum_of_group_statuses = sum(
-        #         model.NonConvexFlowBlock.status[pair[0], pair[1], t]
-        #         for pair in expense_group_pairs
-        #     )
-        #     return sum_of_group_statuses <= 1
-                    
+      
 
         for i, (cheap_block_pair, expense_group_pairs) in enumerate(global_groups_dict.items()):
             setattr(
@@ -239,16 +224,29 @@ class Constraint_processor:
                         rule_1(model, t, cheap_block_pair, expense_group_pairs)
                 )
             )
-
-            # setattr(
-            #     model,
-            #     f'group_equal_or_greater_1_mutual_exclusion_constraint_{i}',
-            #     po.Constraint(
-            #         model.TIMESTEPS,
-            #         rule=lambda model, t, expense_group_pairs=expense_group_pairs:
-            #             rule_2(model, t, expense_group_pairs)
-            #     )
-            # )
             
+    def cg_group_no_equal_lower_0(self):
+        model = self.model
+        constraints = self.constraints["cg_group_no_equal_lower_0"]
+        groups_lst = self._get_pairs_lst_cg(constraints) or []
+                
+        def rule(m, t, current_group):
+            sum_of_statuses = sum(
+                m.NonConvexFlowBlock.status[pair[0], pair[1], t]
+                for pair in current_group
+            )
+            return sum_of_statuses <= 1
+
+        for i, group in enumerate(groups_lst):
+                setattr(
+                    model,
+                    f'cg_group_no_equal_lower_0_{i}',
+                    po.Constraint(
+                        model.TIMESTEPS,
+                        rule=lambda model, t, current_group=group:
+                            rule(model, t, current_group)
+                    ))
+                
+
 
 

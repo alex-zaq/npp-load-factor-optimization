@@ -45,6 +45,10 @@ class Oemof_model:
         self.custom_es.add_electricity_demand()
         self.custom_es.add_bel_npp()
         self.custom_es.add_new_npp()
+        
+        
+    def add_model_level_constraints(self):
+        self.custom_es.add_model_level_constraints()
     
     
     def build_blocks(self):
@@ -59,6 +63,7 @@ class Oemof_model:
         constraints_processor.apply_strict_order()
         constraints_processor.add_group_equal_1()
         constraints_processor.group_equal_or_greater_1()
+        constraints_processor.cg_group_no_equal_lower_0()
 
 
     def launch_solver(self):

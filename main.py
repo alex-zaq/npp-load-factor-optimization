@@ -146,6 +146,8 @@ base = {
         "name": "test",
         "years": [2025],
         "freq": "D",
+        "allow_parallel_repairs_npp_stop_for_model_level": False,
+        "allow_parallel_repairs_npp_no_stop_model_level": False,
         "bel_npp_block_1": {"status": False},
         "bel_npp_block_2": {"status": False},
         "new_npp_block_1": {"status": False},
@@ -170,16 +172,7 @@ one_risk_base = Scenario_builder(
     {
         "risk_options": {
             "status": True,
-            "risks": {
-                "r1": {
-                    "id": 0,
-                    "value": 0.12,
-                    # "value": 0.3,
-                    "max": 1.0,
-                    "start_risk_rel": 0.3,
-                    "events": None,
-                },
-            },
+            "risks": {},
         }
     }
 )
@@ -188,7 +181,7 @@ repair_base = Scenario_builder({
     "repair_options": {
         "status": True,
         "options": base_repair_options,
-        "allow_parallel_repairs": False,
+        "allow_parallel_repairs_npp_stop_npp_level": False,
         }})
 
 events_base_1 = {
@@ -221,21 +214,20 @@ events_base_3 = {
 
 
 
+base = base | {"allow_parallel_repairs_npp_stop_for_model_level": False, "allow_parallel_repairs_npp_no_stop_model_level": True}
 
-one_risk = one_risk_base.update_risk({"r1": {"events": None}})
-one_risk_events = one_risk_base.update_risk({"r1": {"events": events_base_1}})
-outage_jul = outage_base.update_outage({"allow_months": {"Jul"}})
-outage_nov = outage_base.update_outage({"allow_months": {"Nov"}})
-# outage_multiply_all = outage_base.update_outage({"allow_months": {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"}})
+
 
 # repair_reset = repair_base.update_repair({"maintence-2": {}, "current-1": {}, "current-2": {}, "medium-1": {}})
 repair_base = repair_base.update_repair({"maintence-2": {}, "current-1": {}})
-repair_base = repair_base.update_repair({"capital": {"forced_in_period": True, "duration": 40}})
+# repair_base = repair_base.update_repair({"capital": {"forced_in_period": True, "duration": 40}})
 
+outage_jul = outage_base.update_outage({"allow_months": {"Jul"}})
+outage_nov = outage_base.update_outage({"allow_months": {"Nov"}})
 
 # risk = one_risk
 risk_b1 = one_risk_base.update_risk({"r1": {"events": events_base_1, "start_risk_rel": 0.2}})
-risk_b2 = one_risk_base.update_risk({"r1": {"events": events_base_2, "start_risk_rel": 0.4}})
+risk_b2 = one_risk_base.update_risk({"r1": {"events": events_base_2, "start_risk_rel": 0.3}})
 # outage = outage_jul 
 # outage = outage_multiply
 # outage = outage_multiply_all
@@ -308,7 +300,7 @@ oemof_model = Oemof_model(
     solver_settings = {
         "solver": "cplex",
         "solver_verbose": True,
-        "mip_gap": 0.001
+        "mip_gap": 0.06
     } 
 )
 
@@ -327,7 +319,7 @@ solution_processor.set_excel_folder("./excel_results")
 # solution_processor.set_restore_mode(file_number="09") 
 
 # solution_processor.set_restore_mode(file_number="39") 
-solution_processor.set_restore_mode(file_number="184") 
+solution_processor.set_restore_mode(file_number="46") 
 
 solution_processor.apply()
 
@@ -352,6 +344,7 @@ block_grouper.set_options(
     electricity_options={
         "БелАЭС (блок 1)": {"block": b_1, "color": "#2ca02c"},
         "БелАЭС (блок 2)": {"block": b_2, "color": "#0a6470"},
+        # "БелАЭС (блок 2)": {"block": b_2, "color": "#ff7f0e"},
         "Новая АЭС (блок 1)": {"block": b_3, "color": "#ff7f0e"},
     },
     risks_options={
@@ -382,7 +375,7 @@ control_block_viewer = Control_block_viewer(block_grouper)
 
 
 # image_simple = result_viewer.plot_general_graph(b_1)
-image_main = result_viewer.plot_profile_all_blocks_graph(font_size=10, risk_graph=False, dpi=170)
+image_main = result_viewer.plot_profile_all_blocks_graph(font_size=10, risk_graph=True, dpi=140)
 
 # result_viewer.plot_general_graph(bel_npp_block_2)
 # result_viewer.plot_general_graph(new_npp_block_1)
@@ -402,15 +395,13 @@ image_main = result_viewer.plot_profile_all_blocks_graph(font_size=10, risk_grap
 # image_main.save("./images","jpg", 600)
 
 
-excel_writer.write("./excel_results")
+# excel_writer.write("./excel_results")
 
 print("done")
 
 
-
 # запрет на одновременные ремонты с вкл аэс
 # события для второго и третьего блока
-# разные цвета событий
 # вывод в эксель по месяцам
 # простое переключение сценариев
 # проверить min_downtime

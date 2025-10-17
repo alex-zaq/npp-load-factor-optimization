@@ -50,6 +50,7 @@ class Solution_processor:
     def calculate(self):
         self.oemof_model.init_oemof_model()
         self.oemof_model.init_custom_model()
+        self.oemof_model.add_model_level_constraints()
         self.oemof_model.build_blocks()
         self.oemof_model.launch_solver()
         self.custom_es = self.oemof_model.get_custom_es()
@@ -110,30 +111,3 @@ class Solution_processor:
     
     def get_results(self):
         return self.results
-
-    # def write_excel_file(self, excel_file_name=None):
-
-    #     if excel_file_name is None:
-    #         self.excel_file_name = f"{self.get_dumps_file_name()}.xlsx"
-    #     else:
-    #         self.excel_file_name = excel_file_name
-
-    #     Excel_writer.set_options(self.excel_folder, self.excel_file_name)
-    #     Excel_writer.set_group_options(self.group_options)
-    #     Excel_writer.set_block_grouper(self.block_grouper)
-    #     # Excel_writer.set_alt_block_grouper(self.alt_block_grouper)
-    #     Excel_writer.write_excel_data()
-
-    # def create_block_scheme(self, file, **kwargs):
-    #     image_format = kwargs.get("image_format", "png")
-    #     txt_fontsize = kwargs.get("txt_fontsize", 12)
-    #     txt_width = kwargs.get("txt_width", 40)
-    #     gr = ESGraphRenderer(
-    #         energy_system=self.oemof_es,
-    #         filepath=file,
-    #         img_format=image_format,
-    #         txt_fontsize=txt_fontsize,
-    #         txt_width=txt_width,
-    #         legend=False,
-    #     )
-    #     gr.view()

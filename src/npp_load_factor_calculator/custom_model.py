@@ -1,20 +1,11 @@
 
 
 from src.npp_load_factor_calculator.block_db import Block_db
+from src.npp_load_factor_calculator.constraint_grouper import Constraint_grouper
 from src.npp_load_factor_calculator.generic_models.generic_bus import Generic_bus
 from src.npp_load_factor_calculator.generic_models.generic_sink import Generic_sink
 from src.npp_load_factor_calculator.npp_builder import NPP_builder
 from src.npp_load_factor_calculator.resolution_strategy import Resolution_strategy
-
-# from src.npp_load_factor_calculator.utilites import (
-    # get_main_risk_by_inner_types,
-    # get_profile_for_all_repair_types,
-    # get_repair_mode_for_block,
-    # get_risk_events_profile,
-    # plot_array,
-    # get_valid_profile_by_months,
-    # plot_array,
-# )
 
 
 class Custom_model:
@@ -25,6 +16,7 @@ class Custom_model:
         self.bus_factory = Generic_bus(oemof_es)
         self.sink_factory = Generic_sink(oemof_es)
         self.block_db = Block_db()
+        self.oemof_es.constraint_grouper = Constraint_grouper(oemof_es)
         resolution_strategy = Resolution_strategy.create_strategy(self.scenario["freq"], self.oemof_es.custom_timeindex)
         self.npp_builder = NPP_builder(oemof_es, resolution_strategy)
         
@@ -39,8 +31,30 @@ class Custom_model:
         [block.build() for block in self.oemof_es.block_build_lst]
         
         
+    def add_block_model_level_constraints(self):
+        
+        npp_stop_for_model_level = self.scenario["allow_parallel_repairs_npp_stop_for_model_level"]
+        npp_no_stop_model_level = self.scenario["allow_parallel_repairs_npp_no_stop_model_level"]
+        
+        if not (npp_stop_for_model_level or npp_no_stop_model_level):
+            return
+        
+        b_1 = self.block_db.get_bel_npp_block_1()
+        b_2 = self.block_db.get_bel_npp_block_2()
+        b_3 = self.block_db.get_new_npp_block_1()
+        blocks = [b_1, b_2, b_3]
+        active_blocks = [b for b in blocks if b]
+    
+        if npp_stop_for_model_level:
+            all_npp_stop_repair_blocks = [repair for active_b in active_blocks for repair in active_b.get_info("repairs_blocks_npp_stop")]
+            self.oemof_es.constraint_grouper.group_no_equal_status_lower_0(all_npp_stop_repair_blocks)
+            
+        if npp_no_stop_model_level:
+            all_no_npp_stop_repair_blocks = [repair for active_b in active_blocks for repair in active_b.get_info("repairs_blocks_npp_no_stop")]
+            self.oemof_es.constraint_grouper.group_equal_status_lower_0(all_no_npp_stop_repair_blocks)
+        
+        
     def add_bel_npp(self):
-                               
 
         status_1 = self.scenario["bel_npp_block_1"]["status"]
         status_2 = self.scenario["bel_npp_block_2"]["status"]
@@ -87,6 +101,10 @@ class Custom_model:
                 outage_options = outage_options_2
             )
             self.block_db.add_block("аэс", bel_npp_block_2)
+            
+            
+        # npp_block_builder.set_info("repairs_blocks_npp_stop", repair_blocks_npp_stop)
+        # npp_block_builder.set_info("repairs_blocks_npp_no_stop", repair_blocks_npp_no_stop)
 
        
     
