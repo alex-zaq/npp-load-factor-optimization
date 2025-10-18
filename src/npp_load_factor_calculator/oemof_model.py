@@ -29,6 +29,7 @@ class Oemof_model:
         date_timeindex = pd.date_range(first_time_step, periods=periods_count, freq=self.scenario["freq"])
         self.oemof_es = solph.EnergySystem(timeindex=date_timeindex, infer_last_interval=True)
         self.oemof_es.custom_timeindex = date_timeindex
+        self.oemof_es.years = self.scenario["years"]
 
        
     def _get_periods_count(self, t_delta, freq):

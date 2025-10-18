@@ -462,9 +462,6 @@ def zero_inner_ones(arr):
     return result
 
 
-
-
-
 def get_repair_costs_by_capital(capital_cost):
         maintence_cost = capital_cost * 0.20
         current_repair_cost = capital_cost * 0.40
@@ -472,4 +469,7 @@ def get_repair_costs_by_capital(capital_cost):
         
         return maintence_cost, current_repair_cost ,medium_repair_cost, capital_cost
         
+
+def filter_dates_dict_by_year(dates_dict, years):
+    return {k: v for k, v in dates_dict.items() if any(k.startswith(str(year)) for year in years)}
 

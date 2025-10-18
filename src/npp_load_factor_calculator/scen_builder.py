@@ -25,21 +25,25 @@ class Scenario_builder:
     
     def update_outage(self, inner_dict):
         single_key = "outage_options"
+        self.scenario_dict[single_key]["status"] = bool(inner_dict)
         self.scenario_dict[single_key].update(inner_dict)
         return deepcopy(self)
 
 
     def update_risk(self, inner_dict):
+        self.scenario_dict["risk_options"]["status"] = bool(inner_dict)
         risk_options = self.scenario_dict["risk_options"]["risks"]
         for risk_to_update, data_to_update in inner_dict.items():
-            key_to_update = next((k for k,v in risk_options.items() if k == risk_to_update), None)
-            if key_to_update:
-                risk_options[key_to_update].update(data_to_update)
-            else:
-                raise ValueError
+            # key_to_update = next((k for k,v in risk_options.items() if k == risk_to_update), None)
+            # if key_to_update:
+            risk_options[risk_to_update] = risk_options.get(risk_to_update, {})
+            risk_options[risk_to_update].update(data_to_update)
+            # else:
+                # raise ValueError
         return deepcopy(self)
 
     def update_repair(self, inner_dict):
+        self.scenario_dict["repair_options"]["status"] = bool(inner_dict)
         repair_options = self.scenario_dict["repair_options"]["options"]
         for repair_name, data_to_update in inner_dict.items():
             key_to_update = next((k for k,v in repair_options.items() if k == repair_name), None)

@@ -160,18 +160,18 @@ three_years = {"years": [2025, 2026, 2027]}
 
 outage_base = Scenario_builder({
     "outage_options": {
-        "status": True,
-        "start_of_month": True,
-        "allow_months": all_months,
-        "min_duration": 30,
-        "max_duration": 40,
+        "status": False,
+        # "start_of_month": True,
+        # "allow_months": all_months,
+        # "min_duration": 30,
+        # "max_duration": 40,
     }
 })
 
 one_risk_base = Scenario_builder(
     {
         "risk_options": {
-            "status": True,
+            "status": False,
             "risks": {},
         }
     }
@@ -179,9 +179,9 @@ one_risk_base = Scenario_builder(
 
 repair_base = Scenario_builder({
     "repair_options": {
-        "status": True,
-        "options": base_repair_options,
+        "status": False,
         "allow_parallel_repairs_npp_stop_npp_level": False,
+        "options": base_repair_options,
         }})
 
 events_base_1 = {
@@ -214,7 +214,8 @@ events_base_3 = {
 
 
 
-base = base | {"allow_parallel_repairs_npp_stop_for_model_level": False, "allow_parallel_repairs_npp_no_stop_model_level": True}
+base_parallel = base | {"allow_parallel_repairs_npp_stop_for_model_level": False, "allow_parallel_repairs_npp_no_stop_model_level": True}
+base_no_parallel = base | {"allow_parallel_repairs_npp_stop_for_model_level": False, "allow_parallel_repairs_npp_no_stop_model_level": False}
 
 
 
@@ -222,12 +223,13 @@ base = base | {"allow_parallel_repairs_npp_stop_for_model_level": False, "allow_
 repair_base = repair_base.update_repair({"maintence-2": {}, "current-1": {}})
 # repair_base = repair_base.update_repair({"capital": {"forced_in_period": True, "duration": 40}})
 
-outage_jul = outage_base.update_outage({"allow_months": {"Jul"}})
-outage_nov = outage_base.update_outage({"allow_months": {"Nov"}})
 
-# risk = one_risk
-risk_b1 = one_risk_base.update_risk({"r1": {"events": events_base_1, "start_risk_rel": 0.2}})
-risk_b2 = one_risk_base.update_risk({"r1": {"events": events_base_2, "start_risk_rel": 0.3}})
+outage_jul = outage_base.update_outage({"start_of_month": True, "allow_months": {"Jul"}, "min_duration": 30, "max_duration": 40})
+outage_nov = outage_base.update_outage({"start_of_month": True, "allow_months": {"Nov"}, "min_duration": 30, "max_duration": 40})
+
+
+risk_b1 = one_risk_base.update_risk({"r1": {"id": 0, "events": events_base_1, "max": 1, "value": 0.12, "start_risk_rel": 0.2}})
+risk_b2 = one_risk_base.update_risk({"r1": {"id": 0, "events": events_base_2, "max": 1, "value": 0.12, "start_risk_rel": 0.3}})
 # outage = outage_jul 
 # outage = outage_multiply
 # outage = outage_multiply_all
@@ -270,12 +272,12 @@ risk_b2 = one_risk_base.update_risk({"r1": {"events": events_base_2, "start_risk
 # scen = base | {"№": 1} | three_years | (b_1.update(risk_b1 | repair_reset | outage)) 
 
 
-# b1 = (b_1.update(risk_b1 | repair_base | outage_jul))
-# b2 = (b_2.update(risk_b2 | repair_base | outage_nov))
-# c = b1 | b2
+# scen = base_parallel | {"№": 1} | one_year | (b_1.update(risk_b1 | repair_base | outage_jul)) | (b_2.update(risk_b2 | repair_base | outage_nov)) 
+# scen = base_no_parallel | {"№": 1} | one_year | (b_1.update(risk_b1 | repair_base | outage_jul)) | (b_2.update(risk_b2 | repair_base | outage_nov)) 
+# scen = base | {"№": 1} | three_years | (b_1.update(risk_b1 | repair_base | outage_jul)) | (b_2.update(risk_b2 | repair_base | outage_nov)) 
 
-scen = base | {"№": 1} | three_years | (b_1.update(risk_b1 | repair_base | outage_jul)) | (b_2.update(risk_b2 | repair_base | outage_nov)) 
 
+scen = base_no_parallel | {"№": 1} | two_years | (b_1.update(risk_b1 | repair_base | outage_jul)) | (b_2.update(risk_b2 | repair_base | outage_nov)) 
 
 
 
@@ -300,7 +302,7 @@ oemof_model = Oemof_model(
     solver_settings = {
         "solver": "cplex",
         "solver_verbose": True,
-        "mip_gap": 0.06
+        "mip_gap": 0.01
     } 
 )
 
@@ -309,7 +311,6 @@ solution_processor = Solution_processor(oemof_model)
 # solution_processor.set_calc_mode(save_results=False)
 solution_processor.set_calc_mode(save_results=True)
 solution_processor.set_dumps_folder("./dumps")
-solution_processor.set_excel_folder("./excel_results")
 
 # solution_processor.set_restore_mode(file_number="00") 
 # solution_processor.set_restore_mode(file_number="01") 
@@ -319,7 +320,7 @@ solution_processor.set_excel_folder("./excel_results")
 # solution_processor.set_restore_mode(file_number="09") 
 
 # solution_processor.set_restore_mode(file_number="39") 
-solution_processor.set_restore_mode(file_number="46") 
+solution_processor.set_restore_mode(file_number="189") 
 
 solution_processor.apply()
 
@@ -375,7 +376,7 @@ control_block_viewer = Control_block_viewer(block_grouper)
 
 
 # image_simple = result_viewer.plot_general_graph(b_1)
-image_main = result_viewer.plot_profile_all_blocks_graph(font_size=10, risk_graph=True, dpi=140)
+# image_main = result_viewer.plot_profile_all_blocks_graph(font_size=10, risk_graph=True, dpi=140)
 
 # result_viewer.plot_general_graph(bel_npp_block_2)
 # result_viewer.plot_general_graph(new_npp_block_1)
@@ -395,18 +396,17 @@ image_main = result_viewer.plot_profile_all_blocks_graph(font_size=10, risk_grap
 # image_main.save("./images","jpg", 600)
 
 
-# excel_writer.write("./excel_results")
+excel_writer.write("./excel_results")
 
 print("done")
 
 
-# запрет на одновременные ремонты с вкл аэс
-# события для второго и третьего блока
 # вывод в эксель по месяцам
 # простое переключение сценариев
 # проверить min_downtime
 # график без риска
 # график только с риском
+# события для второго и третьего блока
 # фото с ноутбука
 # сделать расчет с ноутбука
 # блок-схема
@@ -419,6 +419,11 @@ print("done")
 
 
 
+
+
+
+# моника - разработанная модель - структура отчета
+# таблица для Трифонова плановые остановки затраты, время
 # время расчета, точность, по в отчет
 # ключевые формулировки актульности (моника)
 # формализованная блок-схема расчет

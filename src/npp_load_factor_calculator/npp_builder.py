@@ -4,7 +4,10 @@ from src.npp_load_factor_calculator.generic_models.generic_bus import Generic_bu
 from src.npp_load_factor_calculator.generic_models.generic_storage import (
     Generic_storage,
 )
-from src.npp_load_factor_calculator.utilites import plot_array
+from src.npp_load_factor_calculator.utilites import (
+    filter_dates_dict_by_year,
+    plot_array,
+)
 from src.npp_load_factor_calculator.wrappers.wrapper_converter import Wrapper_converter
 from src.npp_load_factor_calculator.wrappers.wrapper_sink import Wrapper_sink
 from src.npp_load_factor_calculator.wrappers.wrapper_source import Wrapper_source
@@ -128,7 +131,8 @@ class NPP_builder:
             risks[risk_name] = storage
             
             if risk_data["events"]:
-                events_fix_profile = self.resolution_strategy.get_profile_by_events(risk_data["events"])
+                valid_events = filter_dates_dict_by_year(risk_data["events"], self.es.years)
+                events_fix_profile = self.resolution_strategy.get_profile_by_events(valid_events)
                 events_source_builder = Wrapper_source(self.es, f"{npp_label}_{risk_name}_events_source")
                 events_source_builder.update_options({
                     "nominal_power": 1,
@@ -170,7 +174,7 @@ class NPP_builder:
         bufer_bus = npp_block_builder.get_info("bufer_bus")
         control_npp_stop_source = npp_block_builder.get_info("control_npp_stop_source")
         # allow_months = npp_block_builder.get_info("allow_months")
-        allow_parallel_repairs_npp_level = repair_options["allow_parallel_repairs_npp_stop_for_npp_level"]
+        allow_parallel_repairs_npp_level = repair_options["allow_parallel_repairs_npp_stop_npp_level"]
         
         
             

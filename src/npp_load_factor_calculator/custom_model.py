@@ -31,13 +31,13 @@ class Custom_model:
         [block.build() for block in self.oemof_es.block_build_lst]
         
         
-    def add_block_model_level_constraints(self):
+    def add_model_level_constraints(self):
         
-        npp_stop_for_model_level = self.scenario["allow_parallel_repairs_npp_stop_for_model_level"]
-        npp_no_stop_model_level = self.scenario["allow_parallel_repairs_npp_no_stop_model_level"]
+        allow_npp_stop_for_model_level = self.scenario["allow_parallel_repairs_npp_stop_for_model_level"]
+        allow_npp_no_stop_model_level = self.scenario["allow_parallel_repairs_npp_no_stop_model_level"]
         
-        if not (npp_stop_for_model_level or npp_no_stop_model_level):
-            return
+        # if not (allow_npp_stop_for_model_level or allow_npp_no_stop_model_level):
+        #     return
         
         b_1 = self.block_db.get_bel_npp_block_1()
         b_2 = self.block_db.get_bel_npp_block_2()
@@ -45,13 +45,13 @@ class Custom_model:
         blocks = [b_1, b_2, b_3]
         active_blocks = [b for b in blocks if b]
     
-        if npp_stop_for_model_level:
+        if not allow_npp_stop_for_model_level:
             all_npp_stop_repair_blocks = [repair for active_b in active_blocks for repair in active_b.get_info("repairs_blocks_npp_stop")]
             self.oemof_es.constraint_grouper.group_no_equal_status_lower_0(all_npp_stop_repair_blocks)
             
-        if npp_no_stop_model_level:
+        if not allow_npp_no_stop_model_level:
             all_no_npp_stop_repair_blocks = [repair for active_b in active_blocks for repair in active_b.get_info("repairs_blocks_npp_no_stop")]
-            self.oemof_es.constraint_grouper.group_equal_status_lower_0(all_no_npp_stop_repair_blocks)
+            self.oemof_es.constraint_grouper.group_no_equal_status_lower_0(all_no_npp_stop_repair_blocks)
         
         
     def add_bel_npp(self):

@@ -22,7 +22,13 @@ class Constraint_processor:
     
     
     def _get_pairs_lst_cg(self, groups_lst):
-        return [[block.get_pair_after_building() for block in group] for group in groups_lst]
+        result = []
+        for group_lst in groups_lst["group_lst"]:
+            local_group_lst = []
+            for block in group_lst:
+                local_group_lst.append(block.get_pair_after_building())
+            result.append(local_group_lst)
+        return result
     
     
     def _get_pairs_dict(self, groups_dict):
@@ -227,7 +233,7 @@ class Constraint_processor:
             
     def cg_group_no_equal_lower_0(self):
         model = self.model
-        constraints = self.constraints["cg_group_no_equal_lower_0"]
+        constraints = self.constraints["cg_group_no_equal_status_lower_0"]
         groups_lst = self._get_pairs_lst_cg(constraints) or []
                 
         def rule(m, t, current_group):
@@ -240,7 +246,7 @@ class Constraint_processor:
         for i, group in enumerate(groups_lst):
                 setattr(
                     model,
-                    f'cg_group_no_equal_lower_0_{i}',
+                    f'cg_group_no_equal_status_lower_0_{i}',
                     po.Constraint(
                         model.TIMESTEPS,
                         rule=lambda model, t, current_group=group:
