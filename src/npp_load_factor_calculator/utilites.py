@@ -473,3 +473,67 @@ def get_repair_costs_by_capital(capital_cost):
 def filter_dates_dict_by_year(dates_dict, years):
     return {k: v for k, v in dates_dict.items() if any(k.startswith(str(year)) for year in years)}
 
+
+class Converter:
+    """
+    Утилитарный класс для конвертации энергетических единиц.
+    Все конвертации выполняются через базовую единицу - МВтч.
+    """
+
+    # Словарь, содержащий коэффициенты пересчета каждой единицы в МВтч.
+    # Ключи - названия единиц, значения - эквивалентное количество МВтч.
+    MWTH_RELATIONS_DICT = {
+        "МВтч": 1.0,
+        "тут": 0.123,
+        "млн.м3": 0.000108,
+        "млрд.м3": 1.08e-7,
+    }
+
+    @staticmethod
+    def convert(value: float, input_unit: str, output_unit: str) -> float:
+        """
+        Конвертирует заданное значение из одной единицы измерения в другую.
+
+        Аргументы:
+            value: Числовое значение для конвертации.
+            input_unit: Единица измерения входного значения (например, "МВтч", "тут").
+            output_unit: Желаемая единица измерения для выходного значения (например, "МВтч", "тут").
+
+        Возвращает:
+            Конвертированное значение в выходной единице измерения.
+
+        Вызывает:
+            ValueError: Если входная или выходная единица не распознаны.
+            ZeroDivisionError: Если коэффициент пересчета для выходной единицы в МВтч равен нулю.
+        """
+        # Проверка на корректность входных единиц
+        if input_unit not in Converter.MWTH_RELATIONS_DICT:
+            raise ValueError(
+                f"Неизвестная входная единица: '{input_unit}'. "
+                f"Допустимые единицы: {list(Converter.MWTH_RELATIONS_DICT.keys())}"
+            )
+        if output_unit not in Converter.MWTH_RELATIONS_DICT:
+            raise ValueError(
+                f"Неизвестная выходная единица: '{output_unit}'. "
+                f"Допустимые единицы: {list(Converter.MWTH_RELATIONS_DICT.keys())}"
+            )
+
+        # Получаем коэффициенты пересчета для входной и выходной единиц
+        input_to_mwth_factor = Converter.MWTH_RELATIONS_DICT[input_unit]
+        output_to_mwth_factor = Converter.MWTH_RELATIONS_DICT[output_unit]
+
+        # Проверяем, чтобы избежать деления на ноль, хотя с текущими значениями это маловероятно
+        if output_to_mwth_factor == 0:
+            raise ZeroDivisionError(
+                f"Коэффициент пересчета для '{output_unit}' в МВтч равен нулю, "
+                f"невозможно выполнить преобразование."
+            )
+
+        # 1. Сначала переводим входное значение в базовую единицу (МВтч)
+        value_in_mwth = value * input_to_mwth_factor
+
+        # 2. Затем переводим значение из МВтч в желаемую выходную единицу
+        converted_value = value_in_mwth / output_to_mwth_factor
+
+        return converted_value
+

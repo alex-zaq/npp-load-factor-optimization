@@ -319,8 +319,8 @@ solution_processor.set_dumps_folder("./dumps")
 # solution_processor.set_restore_mode(file_number="06") 
 # solution_processor.set_restore_mode(file_number="09") 
 
-# solution_processor.set_restore_mode(file_number="39") 
-solution_processor.set_restore_mode(file_number="189") 
+solution_processor.set_restore_mode(file_number="34") 
+# solution_processor.set_restore_mode(file_number="189") 
 
 solution_processor.apply()
 
@@ -345,7 +345,6 @@ block_grouper.set_options(
     electricity_options={
         "БелАЭС (блок 1)": {"block": b_1, "color": "#2ca02c"},
         "БелАЭС (блок 2)": {"block": b_2, "color": "#0a6470"},
-        # "БелАЭС (блок 2)": {"block": b_2, "color": "#ff7f0e"},
         "Новая АЭС (блок 1)": {"block": b_3, "color": "#ff7f0e"},
     },
     risks_options={
@@ -375,8 +374,8 @@ excel_writer = Excel_writer(block_grouper)
 control_block_viewer = Control_block_viewer(block_grouper)
 
 
-# image_simple = result_viewer.plot_general_graph(b_1)
-# image_main = result_viewer.plot_profile_all_blocks_graph(font_size=10, risk_graph=True, dpi=140)
+# # image_simple = result_viewer.plot_general_graph(b_1)
+image_main = result_viewer.plot_profile_all_blocks_graph(font_size=10, risk_graph=True, dpi=140)
 
 # result_viewer.plot_general_graph(bel_npp_block_2)
 # result_viewer.plot_general_graph(new_npp_block_1)

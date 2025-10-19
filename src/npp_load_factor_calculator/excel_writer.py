@@ -19,9 +19,20 @@ class Excel_writer:
 
     def _write_results_data(self, writer, sheet_name):
         
-        res = self.block_grouper.get_electricity_profile_all_blocks() 
-        
-        
+        res = pd.DataFrame()
+        # el_gen_df = self.block_grouper.get_electricity_profile_all_blocks().resample('M').max()
+        el_gen_df = self.block_grouper.get_electricity_profile_all_blocks().resample('M').sum()
+        # risk_increase_df = self.block_grouper.get_increase_all_blocks_df().resample('M').sum()
+        # risk_decrease_df = self.block_grouper.get_decrease_all_blocks_df().resample('M').sum()
+        cost_all_blocks_df = self.block_grouper.get_cost_profile_all_blocks(cumulative=False).resample('M').sum()
+        cost_all_blocks_df = cost_all_blocks_df.cumsum()
+        # repairs_dict = self.block_grouper.get_repairs_profile_by_all_blocks_dict()
+        risks_dict = self.block_grouper.get_risks_profile_by_all_blocks_dict()
+        risk_data_dict = {k: v["risk_line_col"] for k, v in risks_dict.items()}
+        risk_df = pd.DataFrame(risk_data_dict).resample('M').max()
+
+        res = pd.concat([el_gen_df, risk_df, cost_all_blocks_df], axis=1)
+
         # мощность
         # выработка
         # увеличение риска

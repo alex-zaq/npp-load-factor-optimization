@@ -327,7 +327,7 @@ class Block_grouper:
         if cumulative:
             res = res.cumsum()
         res = res[:-1]
-        res = res / 1e6
+        res = (res / 1e6)
         return res
 
     

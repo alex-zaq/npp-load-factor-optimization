@@ -145,7 +145,6 @@ class Result_viewer:
         cost_all_blocks_df = self.block_grouper.get_cost_profile_all_blocks(cumulative=True)
         risk_increase_df = self.block_grouper.get_increase_all_blocks_df()
         risk_decrease_df = self.block_grouper.get_decrease_all_blocks_df()
-        # events_df = self.block_grouper.get_events_profile_all_blocks_df()
         
         el_gen_df = add_white_spaces_and_colors_el_gen(el_gen_df, 1170)
         repairs_df = add_white_spaces_and_colors_repairs(repairs_dict, 1170)
@@ -181,7 +180,8 @@ class Result_viewer:
         )
         
         max_y_cost = cost_all_blocks_df.max().max() * 1.5
-        
+        # sum_val=cost_all_blocks_df.sum().sum()
+        # sum2=cost_all_blocks_df.resample('M').sum()
         ax_cost_all_blocks_df = cost_all_blocks_df.plot(
             kind="line",
             ylim=(0, max_y_cost),
