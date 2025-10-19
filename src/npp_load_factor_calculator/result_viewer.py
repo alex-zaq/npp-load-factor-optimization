@@ -248,12 +248,28 @@ class Result_viewer:
         
     
             if cost_balance_graph:
+                ...
                 
-                cost_balance_by_repair_name = self.block_grouper.get_cost_balance_by_repair_name_all_blocks()
+                # cost_balance_by_repair_name = self.block_grouper.get_cost_balance_by_repair_name_all_blocks()
     
-                print(cost_balance_by_repair_name)
+                # print(cost_balance_by_repair_name)
                     
-    
+                # cost_balance_df = pd.DataFrame(cost_by_groups, index=["2040 год"])
+                # cost_balance_df.rename(columns={"ВИЭ": "ВИЭ (энергосистема)"}, inplace=True)
+
+                # fontsize = 9
+                # max_Y = cost_balance_df.sum(axis=1)[0]
+
+                # ax = cost_balance_df.plot(
+                #     kind="bar",
+                #     stacked=True,
+                #     figsize=(6.5, 6),
+                #     ylim=(0, max_Y * 1.2),
+                #     width=0.1,
+                #     legend="reverse",
+                #     fontsize=fontsize,
+                #     color=colors,
+                # )
     
     
     
