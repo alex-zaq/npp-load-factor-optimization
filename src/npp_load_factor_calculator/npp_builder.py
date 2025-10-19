@@ -5,6 +5,7 @@ from src.npp_load_factor_calculator.generic_models.generic_storage import (
     Generic_storage,
 )
 from src.npp_load_factor_calculator.utilites import (
+    filter_dates_dict_by_npp_stop,
     filter_dates_dict_by_year,
     plot_array,
 )
@@ -132,6 +133,7 @@ class NPP_builder:
             
             if risk_data["events"]:
                 valid_events = filter_dates_dict_by_year(risk_data["events"], self.es.years)
+                valid_events = filter_dates_dict_by_npp_stop(valid_events, npp_block_builder.get_info("allow_months"))
                 events_fix_profile = self.resolution_strategy.get_profile_by_events(valid_events)
                 events_source_builder = Wrapper_source(self.es, f"{npp_label}_{risk_name}_events_source")
                 events_source_builder.update_options({

@@ -34,7 +34,8 @@ class Custom_block:
             colors.append(risk_plot_data["color"])
             storage = risk_plot_data["storage"]
             results = solph.views.node(self.results, storage.label)["sequences"].dropna()
-            res_df[risk_label] = results[(storage.label, "None"), "storage_content"]
+            # res_df[f"{risk_label} ({self.wrapper_block.label})"] = results[(storage.label, "None"), "storage_content"]
+            res_df[f"{risk_label}"] = results[(storage.label, "None"), "storage_content"]
             res_df = res_df.clip(lower=0)
         res_df.colors = colors
         return res_df
@@ -74,6 +75,20 @@ class Custom_block:
         res_df = res_df.sum(axis=1)
         res_df.colors = colors
         return res_df
+    
+    
+    def get_cost_repair_balance(self):
+        res = {}
+        for repair_label, repair_plot_data in self.repair_plot_dict.items():
+            block = repair_plot_data["repair_block"].block
+            output_bus = block.outputs_pair[0][1]
+            startup_cost = block.startup_cost
+            results = solph.views.node(self.results, output_bus.label)["sequences"].dropna()
+            buf = results[((block.label, output_bus.label), "startup")]
+            buf  = buf * startup_cost
+            res[repair_label] = buf.sum().sum()
+        return res
+        
     
     def get_sinks_profile(self, repair_id, risk_name):
         selected_repair_block = self.wrapper_block.repairs_blocks[repair_id].block
@@ -297,7 +312,8 @@ class Block_grouper:
             repair_df = custom_block.get_repair_status_profile()
             block_color = custom_block.electr_plot[list(custom_block.electr_plot.keys())[0]]["color"]
             colors = repair_df.colors
-            repair_df *= custom_block.wrapper_block.block.nominal_power * part
+            if part:
+                repair_df *= custom_block.wrapper_block.block.nominal_power * part
             repair_df = repair_df[:-1]
             # repair_df = repair_df.clip(lower=0)
             repair_df[repair_df <=0] = 0
@@ -329,6 +345,15 @@ class Block_grouper:
         res = res[:-1]
         res = (res / 1e6)
         return res
+    
+    
+    def get_cost_balance_by_repair_name_all_blocks(self):
+        res_dict = {}
+        for custom_block in self.electr_groups:
+            res_dict_loc = custom_block.get_cost_repair_balance()
+            for k in res_dict_loc:
+                res_dict[k] = res_dict_loc[k] if k not in res_dict else res_dict[k] + res_dict_loc[k]
+        return res_dict
 
     
     def get_sinks_profile(self, block, repair_id, risk_id):
@@ -390,6 +415,13 @@ class Block_grouper:
         res = res[:-1]
         return res
     
+    def get_increase_by_block_df(self, block):
+        custom_block = [custom_block for custom_block in self.electr_groups if custom_block.wrapper_block is block][0]
+        res = custom_block.get_risk_increase_profile()
+        res *= 24
+        res = res[:-1]
+        return res
+    
     
     def get_decrease_all_blocks_df(self):
         res = pd.DataFrame()
@@ -400,6 +432,12 @@ class Block_grouper:
         res = res[:-1]
         return res
     
+    def get_decrease_by_block_df(self, block):
+        custom_block = [custom_block for custom_block in self.electr_groups if custom_block.wrapper_block is block][0]
+        res = custom_block.get_risk_decrease_profile()
+        res *= -24
+        res = res[:-1]
+        return res
     
     
     

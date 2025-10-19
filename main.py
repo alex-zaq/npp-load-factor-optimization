@@ -319,8 +319,8 @@ solution_processor.set_dumps_folder("./dumps")
 # solution_processor.set_restore_mode(file_number="06") 
 # solution_processor.set_restore_mode(file_number="09") 
 
-solution_processor.set_restore_mode(file_number="34") 
-# solution_processor.set_restore_mode(file_number="189") 
+# solution_processor.set_restore_mode(file_number="34") 
+solution_processor.set_restore_mode(file_number="189") 
 
 solution_processor.apply()
 
@@ -333,7 +333,6 @@ results = solution_processor.get_results()
 
 
 b_1 = custom_es.block_db.get_bel_npp_block_1()
-# b_1.build()
 b_2 = custom_es.block_db.get_bel_npp_block_2()
 b_3 = custom_es.block_db.get_new_npp_block_1()
 
@@ -374,11 +373,23 @@ excel_writer = Excel_writer(block_grouper)
 control_block_viewer = Control_block_viewer(block_grouper)
 
 
-# # image_simple = result_viewer.plot_general_graph(b_1)
-image_main = result_viewer.plot_profile_all_blocks_graph(font_size=10, risk_graph=True, dpi=140)
+# image_simple = result_viewer.plot_single_block_graph(b_1, dpi=170)
+# image_simple = result_viewer.plot_single_block_graph(b_2, dpi=170)
+# image_simple = result_viewer.plot_single_block_graph(b_3, dpi=170)
 
-# result_viewer.plot_general_graph(bel_npp_block_2)
-# result_viewer.plot_general_graph(new_npp_block_1)
+# result_viewer.plot_all_blocks_with_risks_graph(outages_graph=True, cost_balance_graph=False, dpi=190)
+result_viewer.plot_all_blocks_with_risks_graph(outages_graph=True, cost_balance_graph=True, dpi=170)
+
+
+image_main = result_viewer.plot_all_blocks_with_cost_graph(outages_graph=True, risk_graph=True, dpi=140)
+# image_main = result_viewer.plot_all_blocks_with_cost_graph(outage_graph=True, risk_graph=False, dpi=160)
+# image_main = result_viewer.plot_all_blocks_with_cost_graph(outage_graph=False, risk_graph=True, dpi=160)
+# image_main = result_viewer.plot_all_blocks_with_cost_graph(font_size=10, risk_graph=True, dpi=140)
+
+
+
+
+
 
 # control_block_viewer.plot_control_stop_block(bel_npp_block_1)
 # control_block_viewer.plot_npp_status(bel_npp_block_1)
@@ -395,16 +406,17 @@ image_main = result_viewer.plot_profile_all_blocks_graph(font_size=10, risk_grap
 # image_main.save("./images","jpg", 600)
 
 
-excel_writer.write("./excel_results")
+# excel_writer.write("./excel_results")
 
 print("done")
 
 
-# вывод в эксель по месяцам
+
+
+# опционально структура затрат на ремонты
+# удалять событии риска во время остановк до расчета
 # простое переключение сценариев
-# проверить min_downtime
-# график без риска
-# график только с риском
+# проверить min_downtime на мал блоках
 # события для второго и третьего блока
 # фото с ноутбука
 # сделать расчет с ноутбука
@@ -420,7 +432,8 @@ print("done")
 
 
 
-
+# список сценариев
+# компактная таблица дя описания сценария
 # моника - разработанная модель - структура отчета
 # таблица для Трифонова плановые остановки затраты, время
 # время расчета, точность, по в отчет

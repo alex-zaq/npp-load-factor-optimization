@@ -23,6 +23,21 @@ all_months = {
     "Dec",
 }
 
+eng_rus_months = {
+    "January": "Январь",
+    "February": "Февраль",
+    "March": "Март",
+    "April": "Апрель",
+    "May": "Май",
+    "June": "Июнь",
+    "July": "Июль",
+    "August": "Август",
+    "September": "Сентябрь",
+    "October": "Октябрь",
+    "November": "Ноябрь",
+    "December": "Декабрь",
+}
+
 
 start_day_by_month = {
     "Jan": [1, 15],
@@ -211,6 +226,13 @@ def add_white_spaces_and_colors_repairs(dict_value, value):
     return new_df
     
 
+def get_all_block_repairs_df_by_dict(repair_dict):
+    res = pd.DataFrame()
+    for block_name, block_repair_dict in repair_dict.items():
+        for repair_type, series in block_repair_dict.items():
+            df = series.to_frame()
+            res[f"{repair_type} ({block_name})"] = df.iloc[:, 0]
+    return res
 
 
 def get_profile_for_all_repair_types(start_year, end_year, events):
@@ -473,6 +495,23 @@ def get_repair_costs_by_capital(capital_cost):
 def filter_dates_dict_by_year(dates_dict, years):
     return {k: v for k, v in dates_dict.items() if any(k.startswith(str(year)) for year in years)}
 
+def filter_dates_dict_by_npp_stop(dates_dict, allow_months):
+    filtered_dict = {}
+    for date_str, value in dates_dict.items():
+        date_obj = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
+        month_abbr = date_obj.strftime("%b")
+        if month_abbr not in allow_months:
+                filtered_dict[date_str] = value
+    return filtered_dict
+
+def get_months_name_by_date_range(date_range):
+    return [eng_rus_months[date.strftime("%B")] for date in date_range]
+
+
+def get_years_by_date_range(date_range):
+    return [date.year for date in date_range]
+
+
 
 class Converter:
     """
@@ -483,10 +522,12 @@ class Converter:
     # Словарь, содержащий коэффициенты пересчета каждой единицы в МВтч.
     # Ключи - названия единиц, значения - эквивалентное количество МВтч.
     MWTH_RELATIONS_DICT = {
-        "МВтч": 1.0,
+        "мвтч": 1.0,
         "тут": 0.123,
         "млн.м3": 0.000108,
         "млрд.м3": 1.08e-7,
+        "млрд.квтч": 1.00e-6,
+        "млн.квтч": 1.00e-3
     }
 
     @staticmethod
@@ -533,7 +574,7 @@ class Converter:
         value_in_mwth = value * input_to_mwth_factor
 
         # 2. Затем переводим значение из МВтч в желаемую выходную единицу
-        converted_value = value_in_mwth / output_to_mwth_factor
+        converted_value = value_in_mwth * output_to_mwth_factor
 
         return converted_value
 

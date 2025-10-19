@@ -39,19 +39,16 @@ class Result_viewer:
         gr.view()
 
 
-    def plot_general_graph(self, block):
+    def plot_single_block_graph(self, block, dpi, font_size = 10):
                 
         el_gen_df = self.block_grouper.get_electricity_profile_by_block(block)
         risks_df = self.block_grouper.get_risks_profile_by_block(block)
         repairs_df = self.block_grouper.get_repairs_profile_by_block(block, part=1)
+        risk_increase_df = self.block_grouper.get_increase_by_block_df(block)
 
-
-        font_size = 8
         max_y = 3 * el_gen_df.max().max()
 
-
         fig, ax_base = plt.subplots()
-        
         
         ax_el_gen_df = el_gen_df.plot(
             kind="area",
@@ -60,184 +57,332 @@ class Result_viewer:
             color=el_gen_df.colors,
             linewidth=0.01,
             fontsize=font_size,
-            ax= ax_base
+            ax=ax_base
         )
         ax_el_gen_df.set_ylabel('Мощность АЭС, МВт', fontsize=font_size - 2)
         ax_el_gen_df.tick_params(axis="both", which="major", labelsize=font_size - 2)
         ax_el_gen_df.tick_params(axis="both", which="minor", labelsize=font_size - 2)
-        ax_el_gen_df.legend(loc="upper center", fontsize=font_size - 2)
+        # ax_el_gen_df.legend(loc="upper center", fontsize=font_size - 2)
+        ax_el_gen_df.legend_.remove()
 
-        ax_repair_df = None
-        if not repairs_df.empty:
-            
-            count_nonzero = repairs_df.astype(bool).sum().sum()
-            print("repair_duration",count_nonzero)
-            
-            ax_repair_df = repairs_df.plot(
-                kind="area",
-                ylim=(0, max_y),
-                legend="reverse",
-                stacked=False,
-                color=repairs_df.colors,
-                linewidth=0.01,
-                fontsize=font_size,
-                alpha=0.5,
-                ax=ax_base
-            )
-        
+        ax_repair_df = repairs_df.plot(
+            kind="area",
+            ylim=(0, max_y),
+            legend="reverse",
+            stacked=False,
+            color=repairs_df.colors,
+            linewidth=0.01,
+            fontsize=font_size,
+            alpha=0.5,
+            ax=ax_base
+        )
         max_risk_val = risks_df.max().max()
         max_risk_val = 1 if max_risk_val < 1 else max_risk_val
-
-        if not repairs_df.empty:
-            ax_risks_df = risks_df.plot(
+        ax_risks_df = risks_df.plot(
                 kind="line",
                 style="-",
-                ylim=(0, max_risk_val * 1.2),
+                ylim=(0, max_risk_val * 1.5),
                 legend="reverse",
                 color=risks_df.colors,
                 linewidth=0.5,
                 fontsize=font_size,
-                ax=ax_repair_df.twinx() if ax_repair_df is not None else ax_base.twinx()
+                ax=ax_base.twinx()
             )
-            ax_risks_df.set_ylabel('Величина риска', fontsize=font_size - 2)
-            ax_base.set_xlabel('Время, дни', fontsize=font_size - 2)
-            ax_risks_df.tick_params(axis="both", which="major", labelsize=font_size - 2)
-            ax_risks_df.tick_params(axis="both", which="minor", labelsize=font_size - 2)
-            ax_risks_df.legend_.remove()
-            ax_el_gen_df.legend_.remove()
-            lines, labels = ax_el_gen_df.get_legend_handles_labels()
-            # lines2, labels2 = ax_repair_df.get_legend_handles_labels()
-            lines3, labels3 = ax_risks_df.get_legend_handles_labels()
-            ax_base.legend(lines  + lines3, labels + labels3, loc='upper center', fontsize=font_size - 2, ncol=4)
-                       
+        ax_risks_df.set_ylabel('Величина риска', fontsize=font_size - 2)
+        ax_risks_df.tick_params(axis="both", which="major", labelsize=font_size - 2)
+        ax_risks_df.tick_params(axis="both", which="minor", labelsize=font_size - 2)
+        ax_risks_df.legend_.remove()
+
+        risk_increase_colors = ["#e41a1c",  "#0400ff"]
+        ax_risk_increase_df = risk_increase_df.plot(
+                    kind="line",
+                    legend="reverse",
+                    ylim=(0, max_risk_val * 1.5),
+                    color=risk_increase_colors,
+                    linewidth=1,
+                    fontsize=font_size-2,
+                    ax=ax_risks_df,
+                )             
+        ax_risk_increase_df.legend_.remove()
+
+        
+        lines_1, labels_1 = ax_base.get_legend_handles_labels()
+        lines_2, labels_2 = ax_risks_df.get_legend_handles_labels()
+        lines = lines_1 + lines_2
+        labels = labels_1 + labels_2
+        ax_base.legend(lines, labels, loc='upper center', fontsize=font_size - 2, ncol=2)
+        ax_base.set_xlabel('Время, дни', fontsize=font_size - 2)
+
+
+        x_max = risks_df.index[round(risks_df.shape[0]/2)]
+        ax_risks_df.text(
+                x_max,
+                1 * 1.03,
+                f"условная граница риска = {1:.1f}",
+                fontsize=font_size - 2,
+                horizontalalignment="center",
+                verticalalignment="bottom",
+                color="black",
+                # weight="bold"
+            )
+        
+        ax_risks_df.axhline(y=1, color='r', linestyle='--', label='верхняя граница риска')
+    
     
         fig = plt.gcf()
-        ax_el_gen_df.tick_params(axis="both", which="major", labelsize=font_size - 2)
-        ax_el_gen_df.tick_params(axis="both", which="minor", labelsize=font_size - 2)
-        # plt.xlabel("Время, дни", labelpad=0, fontsize=font_size)
-        # plt.ylabel("Производство электроэнергии, МВт$\cdot$ч", labelpad=5, fontsize=font_size)
-        fig.canvas.manager.set_window_title("Расчет плановых остановок (один блок)")
-        fig.set_dpi(150)
+        ax_base.tick_params(axis="both", which="major", labelsize=font_size - 2)
+        ax_base.tick_params(axis="both", which="minor", labelsize=font_size - 2)
+        fig.canvas.manager.set_window_title(f"Расчет плановых остановок (один блок) - {block.label}")
+        fig.set_dpi(dpi)
+  
         
         center_matplotlib_figure(fig, extra_y=-60, extra_x=40)
-  
         plt.show(block=True)
-        
         
         image_builder = Image_builder(fig, self.scenario)
         
         return image_builder
         
-                
-   
-    def plot_profile_all_blocks_graph(self, font_size, risk_graph=False, dpi=120):
+          
+    def plot_all_blocks_with_risks_graph(self, outages_graph, cost_balance_graph=False, dpi=120, font_size = 10):
+    
+    
+        if not (outages_graph or cost_balance_graph):
+            raise ValueError("At least one of npp_graph or risk_graph must be True")
         
-        
-        if risk_graph:
+        if (outages_graph and cost_balance_graph):
             fig, (ax_left, ax_right) = plt.subplots(1, 2, figsize=(13, 5))
         else:
             fig, ax_left = plt.subplots()
                 
-          
+        
+    
+    
+        if outages_graph:
+            
+            el_gen_df = self.block_grouper.get_electricity_profile_all_blocks()
+            el_gen_df = add_white_spaces_and_colors_el_gen(el_gen_df, 1170)
+            repairs_dict = self.block_grouper.get_repairs_profile_by_all_blocks_dict()
+            repairs_df = add_white_spaces_and_colors_repairs(repairs_dict, 1170)
+            risk_increase_df = self.block_grouper.get_increase_all_blocks_df()
+
+            risks_dict = self.block_grouper.get_risks_profile_by_all_blocks_dict()
+            # risk_colors = [v["color"] for v in risks_dict.values()]
+            risk_data_dict = {k: v["risk_line_col"] for k, v in risks_dict.items()}
+            risk_df = pd.DataFrame(risk_data_dict)
+        
+    
+            max_y = el_gen_df.sum(axis=1).max() * 2
+            ax_el_gen_df = el_gen_df.plot(
+                kind="area",
+                ylim=(0, max_y),
+                legend="reverse",
+                color=el_gen_df.colors,
+                linewidth=0.01,
+                alpha=1,
+                fontsize=font_size,
+                ax=ax_left
+            )
+            
+            ax_repairs_df = repairs_df.plot(
+                kind="area",
+                ylim=(0, max_y),
+                legend="reverse",
+                stacked=True,
+                color=repairs_df.colors,
+                linewidth=0.01,
+                alpha=0.6,
+                fontsize=font_size,
+                ax=ax_left
+            )
+            risk_increase_colors = ["#e41a1c",  "#0400ff", "#00ff00", "#ff0"]
+            max_y_cost = risk_df.max().max() * 1.5
+            ax_risk_df = risk_df.plot(
+                kind="line",
+                ylim=(0, max_y_cost),
+                legend="reverse",
+                style="--",
+                color=risk_increase_colors,
+                linewidth=0.7,
+                fontsize=font_size-2,
+                ax=ax_left.twinx()
+            )
+            ax_risk_df.set_ylabel('Условная величина риска', fontsize=font_size - 2)
+            ax_risk_df.legend(loc='upper left', fontsize=font_size - 2, ncol=1)
+            ax_risk_df.legend_.remove()
+            
+            
+            
+            ax_risk_increase_df = risk_increase_df.plot(
+                kind="line",
+                ylim=(0, max_y_cost),
+                legend="reverse",
+                color=risk_increase_colors,
+                linewidth=1,
+                fontsize=font_size-2,
+                ax=ax_risk_df,
+            )             
+            ax_risk_increase_df.legend_.remove()
+            
+            x_max = risk_df.index[round(risk_df.shape[0]/2)]
+            ax_risk_df.text(
+                    x_max,
+                    1 * 1.03,
+                    f"условная граница риска = {1:.1f}",
+                    fontsize=font_size - 2,
+                    horizontalalignment="center",
+                    verticalalignment="bottom",
+                    color="black",
+                    # weight="bold"
+                )
+            ax_risk_df.axhline(y=1, color='r', linestyle='--')
+           
+            
+            lines_1, labels_1 = ax_left.get_legend_handles_labels()
+            lines_2, labels_2 = ax_risk_df.get_legend_handles_labels()
+            main_legend_dict = dict(zip(labels_1, lines_1))
+            legend_dict_updated = {k:v for k,v in main_legend_dict.items() if "white" not in k}
+            updated_lines = list(legend_dict_updated.values()) + lines_2
+            updated_labels = list(legend_dict_updated.keys()) + labels_2
+            ax_left.legend(updated_lines, updated_labels, loc='upper left', fontsize=font_size - 2, ncol=2)
+        
+    
+            if cost_balance_graph:
+                
+                cost_balance_by_repair_name = self.block_grouper.get_cost_balance_by_repair_name_all_blocks()
+    
+                print(cost_balance_by_repair_name)
+                    
+    
+    
+    
+    
+    
+        fig = plt.gcf()
+        ax_left.set_ylabel('Мощность АЭС, МВт', fontsize=font_size - 2)
+        ax_left.set_xlabel('Время, дни', fontsize=font_size - 2)
+        ax_left.tick_params(axis="both", which="major", labelsize=font_size - 2)
+        ax_left.tick_params(axis="both", which="minor", labelsize=font_size - 2)
+        fig.canvas.manager.set_window_title("Расчет плановых остановок")
+        fig.set_dpi(dpi)
+  
+        
+        center_matplotlib_figure(fig, extra_y=-60, extra_x=40)
+        plt.show(block=True)
+        
+        image_builder = Image_builder(fig, self.scenario)
+        return image_builder
+              
+               
+               
+                
+   
+    def plot_all_blocks_with_cost_graph(self, outages_graph, risk_graph=False, dpi=120, font_size = 10):
+        
+        if not (outages_graph or risk_graph):
+            raise ValueError("At least one of npp_graph or risk_graph must be True")
+        
+        if (outages_graph and risk_graph):
+            fig, (ax_left, ax_right) = plt.subplots(1, 2, figsize=(13, 5))
+        else:
+            fig, ax_left = plt.subplots()
+                
+                          
                        
         el_gen_df = self.block_grouper.get_electricity_profile_all_blocks()
         repairs_dict = self.block_grouper.get_repairs_profile_by_all_blocks_dict()
         cost_all_blocks_df = self.block_grouper.get_cost_profile_all_blocks(cumulative=True)
         risk_increase_df = self.block_grouper.get_increase_all_blocks_df()
-        risk_decrease_df = self.block_grouper.get_decrease_all_blocks_df()
+        # risk_decrease_df = self.block_grouper.get_decrease_all_blocks_df()
         
         el_gen_df = add_white_spaces_and_colors_el_gen(el_gen_df, 1170)
         repairs_df = add_white_spaces_and_colors_repairs(repairs_dict, 1170)
         
 
-        # font_size = 10
-        # max_y = 5000
-        max_y = el_gen_df.sum(axis=1).max() * 2
-        
-        
-
-        ax_el_gen_df = el_gen_df.plot(
-            kind="area",
-            ylim=(0, max_y),
-            legend="reverse",
-            color=el_gen_df.colors,
-            linewidth=0.01,
-            alpha=1,
-            fontsize=font_size,
-            ax=ax_left
-        )
-        
-        ax_repairs_df = repairs_df.plot(
-            kind="area",
-            ylim=(0, max_y),
-            legend="reverse",
-            stacked=True,
-            color=repairs_df.colors,
-            linewidth=0.01,
-            alpha=0.6,
-            fontsize=font_size,
-            ax=ax_left
-        )
-        
-        max_y_cost = cost_all_blocks_df.max().max() * 1.5
-        # sum_val=cost_all_blocks_df.sum().sum()
-        # sum2=cost_all_blocks_df.resample('M').sum()
-        ax_cost_all_blocks_df = cost_all_blocks_df.plot(
-            kind="line",
-            ylim=(0, max_y_cost),
-            legend="reverse",
-            color="black",
-            style="-",
-            linewidth=1,
-            fontsize=font_size-2,
-            ax=ax_left.twinx()
-        )
-        ax_cost_all_blocks_df.set_ylabel('Затраты, млн. долл. США', fontsize=font_size - 2)
-        ax_cost_all_blocks_df.legend_.remove()
-        
-        ax_left.set_ylabel('Мощность АЭС, МВт', fontsize=font_size - 2)
-
-        lines, labels = ax_cost_all_blocks_df.get_legend_handles_labels()
-        
-        legen_cost_dict = dict(zip(labels, lines))
-   
-    
-        lines, labels = ax_left.get_legend_handles_labels()
-        
-        
-        main_legend_dict = dict(zip(labels, lines))
-        
-        main_legend_dict.update(legen_cost_dict)
-        
-        legend_dict_updated = {k:v for k,v in main_legend_dict.items() if "white" not in k}
-        
-        updated_lines = list(legend_dict_updated.values())
-        updated_labels = list(legend_dict_updated.keys())
-        ax_left.legend(updated_lines, updated_labels, loc='upper left', fontsize=font_size - 2, ncol=2)
-        
-        ax_left.tick_params(axis="both", which="major", labelsize=font_size - 2)
-        ax_left.tick_params(axis="both", which="minor", labelsize=font_size - 2)
-
-        ax_left.set_xlabel("Время, дни", fontsize=font_size - 2)
-        
-        cost_upper_bound = cost_all_blocks_df.max().max()
-        
-        ax_cost_all_blocks_df.axhline(y=cost_upper_bound, color='black', linestyle='--', label='затраты за период')
-        
-        x_max = cost_all_blocks_df.index[-round(85*cost_all_blocks_df.shape[0]/365)]
-        y_max = cost_all_blocks_df.max().max()
-        ax_cost_all_blocks_df.text(
-            x_max,
-            y_max * 1.03,
-            f"затраты на ремонты = {y_max:.2f}",
-            fontsize=font_size - 2,
-            horizontalalignment="center",
-            verticalalignment="bottom",
-            color="black",
-            weight="bold"
+        if outages_graph:
+            max_y = el_gen_df.sum(axis=1).max() * 2
+            ax_el_gen_df = el_gen_df.plot(
+                kind="area",
+                ylim=(0, max_y),
+                legend="reverse",
+                color=el_gen_df.colors,
+                linewidth=0.01,
+                alpha=1,
+                fontsize=font_size,
+                ax=ax_left
+            )
+                
+            ax_repairs_df = repairs_df.plot(
+                kind="area",
+                ylim=(0, max_y),
+                legend="reverse",
+                stacked=True,
+                color=repairs_df.colors,
+                linewidth=0.01,
+                alpha=0.6,
+                fontsize=font_size,
+                ax=ax_left
             )
         
+            max_y_cost = cost_all_blocks_df.max().max() * 1.5
+            ax_cost_all_blocks_df = cost_all_blocks_df.plot(
+                kind="line",
+                ylim=(0, max_y_cost),
+                legend="reverse",
+                color="black",
+                style="-",
+                linewidth=1,
+                fontsize=font_size-2,
+                ax=ax_left.twinx()
+            )
+            ax_cost_all_blocks_df.set_ylabel('Затраты, млн. долл. США', fontsize=font_size - 2)
+            ax_cost_all_blocks_df.legend_.remove()
+        
+            ax_left.set_ylabel('Мощность АЭС, МВт', fontsize=font_size - 2)
+
+            lines, labels = ax_cost_all_blocks_df.get_legend_handles_labels()
+            
+            legen_cost_dict = dict(zip(labels, lines))
+    
+        
+            lines, labels = ax_left.get_legend_handles_labels()
+            
+            
+            main_legend_dict = dict(zip(labels, lines))
+            
+            main_legend_dict.update(legen_cost_dict)
+            
+            legend_dict_updated = {k:v for k,v in main_legend_dict.items() if "white" not in k}
+            
+            updated_lines = list(legend_dict_updated.values())
+            updated_labels = list(legend_dict_updated.keys())
+            ax_left.legend(updated_lines, updated_labels, loc='upper left', fontsize=font_size - 2, ncol=2)
+            
+            ax_left.tick_params(axis="both", which="major", labelsize=font_size - 2)
+            ax_left.tick_params(axis="both", which="minor", labelsize=font_size - 2)
+
+            ax_left.set_xlabel("Время, дни", fontsize=font_size - 2)
+            
+            cost_upper_bound = cost_all_blocks_df.max().max()
+            
+            ax_cost_all_blocks_df.axhline(y=cost_upper_bound, color='black', linestyle='--', label='затраты за период')
+            
+            x_max = cost_all_blocks_df.index[-round(85*cost_all_blocks_df.shape[0]/365)]
+            y_max = cost_all_blocks_df.max().max()
+            ax_cost_all_blocks_df.text(
+                x_max,
+                y_max * 1.03,
+                f"затраты на ремонты = {y_max:.2f}",
+                fontsize=font_size - 2,
+                horizontalalignment="center",
+                verticalalignment="bottom",
+                color="black",
+                weight="bold"
+                )
+        
         if risk_graph:
+
+            ax_right = ax_left if not outages_graph else ax_right     
 
             ax_right = ax_right
             risks_dict = self.block_grouper.get_risks_profile_by_all_blocks_dict()
@@ -266,7 +411,6 @@ class Result_viewer:
             ax_right.set_ylabel('Условная величина риска', fontsize=font_size - 2)
             ax_right.legend(loc='upper left', fontsize=font_size - 2, ncol=1)
             
-            
 
             x_max = risk_df.index[round(85*risk_df.shape[0]/365)]
             y_max = risk_df.max().max()
@@ -287,18 +431,6 @@ class Result_viewer:
             ax_risk_df.set_xlabel("Время, дни", fontsize=font_size - 2)
             
             
-            # if not events_df.empty:
-            #     ax_events_df = events_df.plot(
-            #         kind="area",
-            #         ylim=(0, max_y_cost),
-            #         legend="reverse",
-            #         color="red",
-            #         linewidth=0.7,
-            #         fontsize=font_size-2,
-            #         ax=ax_right
-            #     )
-            #     ax_events_df.legend(loc='upper right', fontsize=font_size - 2, ncol=1)    
-
             risk_increase_colors = ["#e41a1c",  "#0400ff"]
             
              
@@ -339,18 +471,8 @@ class Result_viewer:
             # ax_risk_decrease_df.legend(loc='upper right', fontsize=font_size - 2, ncol=1)    
 
 
-            
-
-
-
-
-
             ax_risk_df.axhline(y=1, color='r', linestyle='--', label='верхняя граница риска')
 
-
-
-
-            # ax_risk_df.legend(loc='upper right', fontsize=font_size - 2, ncol=1)    
 
         fig.set_dpi(dpi)
         center_matplotlib_figure(fig, extra_y=-60, extra_x=40)
