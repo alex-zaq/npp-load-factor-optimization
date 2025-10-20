@@ -513,6 +513,23 @@ def get_years_by_date_range(date_range):
 
 
 
+def get_colors_by_repair_name(repair_dict):
+    colors = []
+    
+    buf = {}
+    for block_name, repair_df in repair_dict.items():
+        buf[block_name] = list(zip(repair_df.columns, repair_df.colors))
+    
+    repair_names = set()
+    for block_name in buf:
+        for repair_name, color in buf[block_name]:
+            if repair_name not in repair_names:
+                repair_names.add(repair_name)
+                colors.append(color)
+    
+    return colors
+
+
 class Converter:
     """
     Утилитарный класс для конвертации энергетических единиц.

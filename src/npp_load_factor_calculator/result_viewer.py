@@ -8,6 +8,7 @@ from src.npp_load_factor_calculator.utilites import (
     add_white_spaces_and_colors_el_gen,
     add_white_spaces_and_colors_repairs,
     center_matplotlib_figure,
+    get_colors_by_repair_name,
     get_file_name_with_auto_number,
 )
 
@@ -78,9 +79,10 @@ class Result_viewer:
         )
         max_risk_val = risks_df.max().max()
         max_risk_val = 1 if max_risk_val < 1 else max_risk_val
+        risk_increase_colors = ["#e41a1c",  "#0400ff"]
         ax_risks_df = risks_df.plot(
                 kind="line",
-                style="-",
+                style="--",
                 ylim=(0, max_risk_val * 1.5),
                 legend="reverse",
                 color=risks_df.colors,
@@ -93,7 +95,6 @@ class Result_viewer:
         ax_risks_df.tick_params(axis="both", which="minor", labelsize=font_size - 2)
         ax_risks_df.legend_.remove()
 
-        risk_increase_colors = ["#e41a1c",  "#0400ff"]
         ax_risk_increase_df = risk_increase_df.plot(
                     kind="line",
                     legend="reverse",
@@ -151,7 +152,7 @@ class Result_viewer:
             raise ValueError("At least one of npp_graph or risk_graph must be True")
         
         if (outages_graph and cost_balance_graph):
-            fig, (ax_left, ax_right) = plt.subplots(1, 2, figsize=(13, 5))
+            fig, (ax_left, ax_right) = plt.subplots(1, 2, figsize=(13, 6), gridspec_kw={'width_ratios': [1.7, 1]})
         else:
             fig, ax_left = plt.subplots()
                 
@@ -167,7 +168,6 @@ class Result_viewer:
             risk_increase_df = self.block_grouper.get_increase_all_blocks_df()
 
             risks_dict = self.block_grouper.get_risks_profile_by_all_blocks_dict()
-            # risk_colors = [v["color"] for v in risks_dict.values()]
             risk_data_dict = {k: v["risk_line_col"] for k, v in risks_dict.items()}
             risk_df = pd.DataFrame(risk_data_dict)
         
@@ -245,40 +245,60 @@ class Result_viewer:
             updated_lines = list(legend_dict_updated.values()) + lines_2
             updated_labels = list(legend_dict_updated.keys()) + labels_2
             ax_left.legend(updated_lines, updated_labels, loc='upper left', fontsize=font_size - 2, ncol=2)
-        
+            ax_left.set_ylabel('Мощность АЭС, МВт', fontsize=font_size - 2)
+            ax_left.set_xlabel('Время, дни', fontsize=font_size - 2)
     
-            if cost_balance_graph:
-                ...
+        if cost_balance_graph:
+                                
+                ax_cost = ax_right if outages_graph else ax_left
                 
-                # cost_balance_by_repair_name = self.block_grouper.get_cost_balance_by_repair_name_all_blocks()
-    
-                # print(cost_balance_by_repair_name)
-                    
-                # cost_balance_df = pd.DataFrame(cost_by_groups, index=["2040 год"])
-                # cost_balance_df.rename(columns={"ВИЭ": "ВИЭ (энергосистема)"}, inplace=True)
+                cost_balance_by_repair_name = self.block_grouper.get_cost_balance_by_repair_name_all_blocks()
+                repairs_dict = self.block_grouper.get_repairs_profile_by_all_blocks_dict()
+                cost_balance_colors = get_colors_by_repair_name(repairs_dict)
+                cost_balance_df = pd.DataFrame(cost_balance_by_repair_name, index=["затраты на ремонты"])/ 1e6
 
-                # fontsize = 9
-                # max_Y = cost_balance_df.sum(axis=1)[0]
+                max_Y = cost_balance_df.sum(axis=1)[0]
 
-                # ax = cost_balance_df.plot(
-                #     kind="bar",
-                #     stacked=True,
-                #     figsize=(6.5, 6),
-                #     ylim=(0, max_Y * 1.2),
-                #     width=0.1,
-                #     legend="reverse",
-                #     fontsize=fontsize,
-                #     color=colors,
-                # )
+                ax_cost_balance_df = cost_balance_df.plot(
+                    kind="bar",
+                    stacked=True,
+                    # figsize=(6.5, 6),
+                    ylim=(0, max_Y * 1.5),
+                    width=0.1,
+                    legend="reverse",
+                    fontsize=font_size-2,
+                    alpha=0.6,
+                    ax = ax_cost,
+                    color=cost_balance_colors,
+                )
+                
+                y_res = 0
+                x_res = ax_cost_balance_df.patches[0].get_x() + ax_cost_balance_df.patches[0].get_width() / 2
+                for p in ax_cost_balance_df.patches:
+                    width = p.get_width()
+                    height = p.get_height()
+                    y_res += height
+                    x, y = p.get_x(), p.get_y()
+                    ax_cost_balance_df.text(x+width/2, y+height/2, f"{height:.0f}", ha='center', va='center', fontsize=font_size-2)
+                
+                total = max_Y
+                ax_cost_balance_df.text(x_res, total*1.03, f"{total:.0f}", ha="center", va="center", fontsize=font_size-2, fontweight='bold')
+
+                
+                ax_cost_balance_df.tick_params(axis='x', rotation=0)
+                ax_cost_balance_df.set_ylabel('Затраты, млн. долл. США', fontsize=font_size - 2)
+                ax_cost_balance_df.legend(loc='upper right', fontsize=font_size - 2, ncol=1)
+                fig.subplots_adjust(wspace=0.25)
     
     
     
     
-        fig = plt.gcf()
-        ax_left.set_ylabel('Мощность АЭС, МВт', fontsize=font_size - 2)
-        ax_left.set_xlabel('Время, дни', fontsize=font_size - 2)
+    
+
+        
         ax_left.tick_params(axis="both", which="major", labelsize=font_size - 2)
         ax_left.tick_params(axis="both", which="minor", labelsize=font_size - 2)
+        fig = plt.gcf()
         fig.canvas.manager.set_window_title("Расчет плановых остановок")
         fig.set_dpi(dpi)
   
@@ -383,7 +403,8 @@ class Result_viewer:
             
             ax_cost_all_blocks_df.axhline(y=cost_upper_bound, color='black', linestyle='--', label='затраты за период')
             
-            x_max = cost_all_blocks_df.index[-round(85*cost_all_blocks_df.shape[0]/365)]
+            # x_max = cost_all_blocks_df.index[-round(85*cost_all_blocks_df.shape[0]/365)]
+            x_max = cost_all_blocks_df.index[-round(cost_all_blocks_df.shape[0]/2)]
             y_max = cost_all_blocks_df.max().max()
             ax_cost_all_blocks_df.text(
                 x_max,
@@ -428,7 +449,8 @@ class Result_viewer:
             ax_right.legend(loc='upper left', fontsize=font_size - 2, ncol=1)
             
 
-            x_max = risk_df.index[round(85*risk_df.shape[0]/365)]
+            # x_max = risk_df.index[round(85*risk_df.shape[0]/365)]
+            x_max = risk_df.index[round(risk_df.shape[0]/2)]
             y_max = risk_df.max().max()
 
             ax_risk_df.text(

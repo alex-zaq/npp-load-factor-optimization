@@ -373,18 +373,18 @@ excel_writer = Excel_writer(block_grouper)
 control_block_viewer = Control_block_viewer(block_grouper)
 
 
-# image_simple = result_viewer.plot_single_block_graph(b_1, dpi=170)
-# image_simple = result_viewer.plot_single_block_graph(b_2, dpi=170)
-# image_simple = result_viewer.plot_single_block_graph(b_3, dpi=170)
+image_simple = result_viewer.plot_single_block_graph(b_1, dpi=180)
+image_simple = result_viewer.plot_single_block_graph(b_2, dpi=180)
+# image_simple = result_viewer.plot_single_block_graph(b_3, dpi=180)
 
-# result_viewer.plot_all_blocks_with_risks_graph(outages_graph=True, cost_balance_graph=False, dpi=190)
-result_viewer.plot_all_blocks_with_risks_graph(outages_graph=True, cost_balance_graph=True, dpi=170)
+image_all_block_with_risks = result_viewer.plot_all_blocks_with_risks_graph(outages_graph=True, cost_balance_graph=False, dpi=180)
+image_all_block_with_risks = result_viewer.plot_all_blocks_with_risks_graph(outages_graph=True, cost_balance_graph=True, dpi=140)
+image_all_block_with_risks = result_viewer.plot_all_blocks_with_risks_graph(outages_graph=False, cost_balance_graph=True, dpi=180)
 
 
-image_main = result_viewer.plot_all_blocks_with_cost_graph(outages_graph=True, risk_graph=True, dpi=140)
-# image_main = result_viewer.plot_all_blocks_with_cost_graph(outage_graph=True, risk_graph=False, dpi=160)
-# image_main = result_viewer.plot_all_blocks_with_cost_graph(outage_graph=False, risk_graph=True, dpi=160)
-# image_main = result_viewer.plot_all_blocks_with_cost_graph(font_size=10, risk_graph=True, dpi=140)
+image_all_block_with_cost = result_viewer.plot_all_blocks_with_cost_graph(outages_graph=True, risk_graph=True, dpi=180)
+image_all_block_with_cost = result_viewer.plot_all_blocks_with_cost_graph(outages_graph=True, risk_graph=False, dpi=140)
+image_all_block_with_cost = result_viewer.plot_all_blocks_with_cost_graph(outages_graph=False, risk_graph=True, dpi=180)
 
 
 
@@ -402,8 +402,8 @@ image_main = result_viewer.plot_all_blocks_with_cost_graph(outages_graph=True, r
  
 
 # result_viewer.create_scheme("./schemes")
-# image_simple.save("./images","jpg", 600)
-# image_main.save("./images","jpg", 600)
+# image_all_block_with_risks.save("./images","jpg", 600)
+# image_all_block_with_cost.save("./images","jpg", 600)
 
 
 # excel_writer.write("./excel_results")
@@ -413,8 +413,9 @@ print("done")
 
 
 
-# опционально структура затрат на ремонты
-# удалять событии риска во время остановк до расчета
+# увеление на повышение в легенды
+# добавить название блока в накопленный риск
+# включить логгер
 # простое переключение сценариев
 # проверить min_downtime на мал блоках
 # события для второго и третьего блока
