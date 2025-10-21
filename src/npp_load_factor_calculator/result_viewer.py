@@ -9,6 +9,7 @@ from src.npp_load_factor_calculator.utilites import (
     add_white_spaces_and_colors_repairs,
     center_matplotlib_figure,
     get_colors_by_repair_name,
+    get_file_name_by_scenario,
     get_file_name_with_auto_number,
 )
 
@@ -534,9 +535,16 @@ class Image_builder:
         folder = Path(folder)
         if not folder.exists():
             folder.mkdir(parents=True)
-        name = get_file_name_with_auto_number(folder, self.scenario, format)
+            
+            
+        scenario_folder  = folder / get_file_name_by_scenario(self.scenario)
+        if not scenario_folder.exists():
+            scenario_folder.mkdir(parents=True)
+            
+        file_name = get_file_name_by_scenario(self.scenario)    
+        name = get_file_name_with_auto_number(scenario_folder, file_name, format)
 
-        path = folder / name
+        path = scenario_folder / name
         
         self.fig.savefig(
             path,

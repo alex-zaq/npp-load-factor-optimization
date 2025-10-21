@@ -6,6 +6,7 @@ from src.npp_load_factor_calculator.custom_model import Custom_model
 from src.npp_load_factor_calculator.excel_writer import Excel_writer
 from src.npp_load_factor_calculator.logging_options import get_logger
 from src.npp_load_factor_calculator.utilites import (
+    get_file_name_by_scenario,
     get_file_name_with_auto_number,
     get_full_filename,
 )
@@ -64,7 +65,8 @@ class Solution_processor:
         self.oemof_es.results["main"] = self.results
         self.oemof_es.results["meta"] = self.meta_results
         self.oemof_es.results["scenario"] = scenario
-        file_name = get_file_name_with_auto_number(self.dumps_folder, scenario, "oemof")
+        file_name = get_file_name_by_scenario(scenario)
+        file_name = get_file_name_with_auto_number(self.dumps_folder, file_name, "oemof")
         self.oemof_es.dump(dpath=self.dumps_folder, filename=file_name)
 
 

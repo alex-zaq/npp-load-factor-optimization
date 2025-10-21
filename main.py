@@ -28,6 +28,7 @@ base_repair_options = {
         "risk_reducing": {"r1": 0.2},
         "min": 0,
         "npp_stop": False,
+        "parallel": True,
         "forced_in_period": False,
     },
     "maintence-2": {
@@ -42,6 +43,7 @@ base_repair_options = {
         "min": 1,
         "start_day": {"status": True, "days": [1,]},
         "npp_stop": False,
+        "parallel": True,
         "forced_in_period": False,
     },
     
@@ -59,6 +61,7 @@ base_repair_options = {
         "min": 0,
         "start_day": {"status": True, "days": [1,]},
         "npp_stop": True,
+        "parallel": True,
         "forced_in_period": False,
     },
     "current-2": {
@@ -73,6 +76,7 @@ base_repair_options = {
         "min": 0,
         "start_day": {"status": True, "days": [1,]},
         "npp_stop": True,
+        "parallel": True,
         "forced_in_period": False,
     },
     "medium-1": {
@@ -86,6 +90,7 @@ base_repair_options = {
         "risk_reducing": {"r1": 0.9},
         "min": 0,
         "npp_stop": True,
+        "parallel": True,
         "forced_in_period": False,
     },
     "medium-2": {
@@ -99,6 +104,7 @@ base_repair_options = {
         "risk_reducing": {},
         "min": 0,
         "npp_stop": True,
+        "parallel": True,
         "forced_in_period": False,
     },
     "capital": {
@@ -112,6 +118,7 @@ base_repair_options = {
         "risk_reducing": {"r1": 0.9},
         "min": 0,
         "npp_stop": True,
+        "parallel": True,
         "forced_in_period": False,
     },
     
@@ -270,9 +277,11 @@ risk_b2 = one_risk_base.update_risk({"r1": {"id": 0, "events": events_base_2, "m
 # дать представление о возможностях модели
 
 # 1 - год - 1 блок - 1 риск с событиями
-
 # 1 - год - 2 блока - 1 риск с событиями  
 
+
+scen = base_no_parallel | {"№": 1} | two_years | (b_1.update(risk_b1 | repair_base | outage_jul)) | (b_2.update(risk_b2 | repair_base | outage_nov)) 
+# scen = base_parallel | {"№": 2} | two_years | (b_1.update(risk_b1 | repair_base | outage_jul)) | (b_2.update(risk_b2 | repair_base | outage_nov)) 
 
 
 
@@ -288,7 +297,6 @@ risk_b2 = one_risk_base.update_risk({"r1": {"id": 0, "events": events_base_2, "m
 # scen = base | {"№": 1} | three_years | (b_1.update(risk_b1 | repair_base | outage_jul)) | (b_2.update(risk_b2 | repair_base | outage_nov)) 
 
 
-scen = base_no_parallel | {"№": 1} | two_years | (b_1.update(risk_b1 | repair_base | outage_jul)) | (b_2.update(risk_b2 | repair_base | outage_nov)) 
 
 
 
@@ -329,8 +337,8 @@ solution_processor.set_dumps_folder("./dumps")
 # solution_processor.set_restore_mode(file_number="06") 
 # solution_processor.set_restore_mode(file_number="09") 
 
-# solution_processor.set_restore_mode(file_number="34") 
-solution_processor.set_restore_mode(file_number="191") 
+# solution_processor.set_restore_mode(file_number="191") 
+solution_processor.set_restore_mode(file_number="47") 
 
 solution_processor.apply()
 
@@ -383,22 +391,23 @@ excel_writer = Excel_writer(block_grouper)
 control_block_viewer = Control_block_viewer(block_grouper)
 
 
-image_simple = result_viewer.plot_single_block_graph(b_1, dpi=180)
-image_simple = result_viewer.plot_single_block_graph(b_2, dpi=180)
+# image_simple = result_viewer.plot_single_block_graph(b_1, dpi=180)
+# image_simple = result_viewer.plot_single_block_graph(b_2, dpi=180)
 # image_simple = result_viewer.plot_single_block_graph(b_3, dpi=180)
 
 image_all_block_with_risks = result_viewer.plot_all_blocks_with_risks_graph(outages_graph=True, cost_balance_graph=False, dpi=180)
-image_all_block_with_risks = result_viewer.plot_all_blocks_with_risks_graph(outages_graph=True, cost_balance_graph=True, dpi=140)
-image_all_block_with_risks = result_viewer.plot_all_blocks_with_risks_graph(outages_graph=False, cost_balance_graph=True, dpi=180)
+# image_all_block_with_risks = result_viewer.plot_all_blocks_with_risks_graph(outages_graph=True, cost_balance_graph=True, dpi=140)
+# image_all_block_with_risks = result_viewer.plot_all_blocks_with_risks_graph(outages_graph=False, cost_balance_graph=True, dpi=180)
 
 
 image_all_block_with_cost = result_viewer.plot_all_blocks_with_cost_graph(outages_graph=True, risk_graph=True, dpi=180)
-image_all_block_with_cost = result_viewer.plot_all_blocks_with_cost_graph(outages_graph=True, risk_graph=False, dpi=140)
-image_all_block_with_cost = result_viewer.plot_all_blocks_with_cost_graph(outages_graph=False, risk_graph=True, dpi=180)
+# image_all_block_with_cost = result_viewer.plot_all_blocks_with_cost_graph(outages_graph=True, risk_graph=False, dpi=140)
+# image_all_block_with_cost = result_viewer.plot_all_blocks_with_cost_graph(outages_graph=False, risk_graph=True, dpi=180)
 
 
 
-
+image_all_block_with_risks.save("./images","jpg", 1500)
+image_all_block_with_cost.save("./images","jpg", 1500)
 
 
 # control_block_viewer.plot_control_stop_block(bel_npp_block_1)
@@ -422,7 +431,8 @@ print("done")
 
 
 
-
+# флаги на одновременность
+# отображение одновременных ремонтов
 # простое переключение сценариев
 # проверить min_downtime на мал блоках
 # события для второго и третьего блока

@@ -2,6 +2,7 @@ import datetime
 import itertools
 import os
 from collections import Counter
+from pathlib import Path
 
 import matplotlib
 import numpy as np
@@ -70,15 +71,14 @@ def get_number(number):
     
     
 def get_next_number_file_name(folder):
-    files = os.listdir(folder)
-    files = [file for file in files if file.endswith(".oemof")]
+    files = list(Path(folder).glob("*.*"))
     if not files:
         return 0
-    number_files = [int(file.split("_")[0]) for file in files]
+    number_files = [int(file.stem.split("_")[0]) for file in files]
     res = max(number_files) + 1
     return res
 
-def get_dumps_file_name(scenario):
+def get_file_name_by_scenario(scenario):
     scen_number = str(scenario["№"])
     scen_name = scenario["name"]
     start_year, end_year = scenario["years"][0], scenario["years"][-1]
@@ -115,9 +115,11 @@ def get_repair_conf_str(scenario):
 
 
 
-def get_file_name_with_auto_number(dumps_folder, scenario, ext):
-    next_number = get_number(get_next_number_file_name(dumps_folder))
-    file_name = f"{get_dumps_file_name(scenario)}.{ext}"
+def get_file_name_with_auto_number(folder, file_name, ext):
+    next_number = get_next_number_file_name(folder)
+    next_number = str(get_number(next_number))
+
+    file_name = f"{file_name}.{ext}"
     res = [next_number, file_name]
     res = "_".join(res)
     return res
