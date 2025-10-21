@@ -28,7 +28,8 @@ base_repair_options = {
         "risk_reducing": {"r1": 0.2},
         "min": 0,
         "npp_stop": False,
-        "parallel": True,
+        "no_parallel_tag_for_npp": False,
+        "no_parallel_tag_for_model": False,
         "forced_in_period": False,
     },
     "maintence-2": {
@@ -43,7 +44,8 @@ base_repair_options = {
         "min": 1,
         "start_day": {"status": True, "days": [1,]},
         "npp_stop": False,
-        "parallel": True,
+        "no_parallel_tag_for_npp": False,
+        "no_parallel_tag_for_model": False,
         "forced_in_period": False,
     },
     
@@ -61,7 +63,8 @@ base_repair_options = {
         "min": 0,
         "start_day": {"status": True, "days": [1,]},
         "npp_stop": True,
-        "parallel": True,
+        "no_parallel_tag_for_npp": False,
+        "no_parallel_tag_for_model": False,
         "forced_in_period": False,
     },
     "current-2": {
@@ -76,7 +79,8 @@ base_repair_options = {
         "min": 0,
         "start_day": {"status": True, "days": [1,]},
         "npp_stop": True,
-        "parallel": True,
+        "no_parallel_tag_for_npp": False,
+        "no_parallel_tag_for_model": False,
         "forced_in_period": False,
     },
     "medium-1": {
@@ -90,7 +94,8 @@ base_repair_options = {
         "risk_reducing": {"r1": 0.9},
         "min": 0,
         "npp_stop": True,
-        "parallel": True,
+        "no_parallel_tag_for_npp": False,
+        "no_parallel_tag_for_model": False,
         "forced_in_period": False,
     },
     "medium-2": {
@@ -104,7 +109,8 @@ base_repair_options = {
         "risk_reducing": {},
         "min": 0,
         "npp_stop": True,
-        "parallel": True,
+        "no_parallel_tag_for_npp": False,
+        "no_parallel_tag_for_model": False,
         "forced_in_period": False,
     },
     "capital": {
@@ -118,7 +124,8 @@ base_repair_options = {
         "risk_reducing": {"r1": 0.9},
         "min": 0,
         "npp_stop": True,
-        "parallel": True,
+        "no_parallel_tag_for_npp": False,
+        "no_parallel_tag_for_model": False,
         "forced_in_period": False,
     },
     
@@ -153,8 +160,6 @@ base = {
         "name": "test",
         "years": [2025],
         "freq": "D",
-        "allow_parallel_repairs_npp_stop_for_model_level": False,
-        "allow_parallel_repairs_npp_no_stop_model_level": False,
         "bel_npp_block_1": {"status": False},
         "bel_npp_block_2": {"status": False},
         "new_npp_block_1": {"status": False},
@@ -187,7 +192,6 @@ one_risk_base = Scenario_builder(
 repair_base = Scenario_builder({
     "repair_options": {
         "status": False,
-        "allow_parallel_repairs_npp_stop_npp_level": False,
         "options": base_repair_options,
         }})
 
@@ -221,14 +225,13 @@ events_base_3 = {
 
 
 
-base_parallel = base | {"allow_parallel_repairs_npp_stop_for_model_level": False, "allow_parallel_repairs_npp_no_stop_model_level": True}
-base_no_parallel = base | {"allow_parallel_repairs_npp_stop_for_model_level": False, "allow_parallel_repairs_npp_no_stop_model_level": False}
 
 
-
-# repair_reset = repair_base.update_repair({"maintence-2": {}, "current-1": {}, "current-2": {}, "medium-1": {}})
-repair_base = repair_base.update_repair({"maintence-2": {}, "current-1": {}})
-# repair_base = repair_base.update_repair({"capital": {"forced_in_period": True, "duration": 40}})
+repair_base = repair_base.update_repair({
+    "maintence-2": {"no_parallel_tag_for_model": 1, "no_parallel_tag_for_npp": 0},
+    "current-1":   {"no_parallel_tag_for_model": 0, "no_parallel_tag_for_npp": 1},
+    "capital":     {"no_parallel_tag_for_model": 0, "no_parallel_tag_for_npp": 1, "forced_in_period": True, "duration": 40},
+    })
 
 
 outage_jul = outage_base.update_outage({"start_of_month": True, "allow_months": {"Jul"}, "min_duration": 30, "max_duration": 40})
@@ -237,11 +240,7 @@ outage_nov = outage_base.update_outage({"start_of_month": True, "allow_months": 
 
 risk_b1 = one_risk_base.update_risk({"r1": {"id": 0, "events": events_base_1, "max": 1, "value": 0.12, "start_risk_rel": 0.2}})
 risk_b2 = one_risk_base.update_risk({"r1": {"id": 0, "events": events_base_2, "max": 1, "value": 0.12, "start_risk_rel": 0.3}})
-# outage = outage_jul 
-# outage = outage_multiply
-# outage = outage_multiply_all
-# 
-# one_risk = one_risk_base.update_risk({"r1": {"events": None}})
+
 
 # one_risk_events_1 = one_risk_base.update_risk({"r1": {"events": events_1}})
 # one_risk_events_2 = one_risk_base.update_risk({"r1": {"events": events_2}})
@@ -276,12 +275,16 @@ risk_b2 = one_risk_base.update_risk({"r1": {"id": 0, "events": events_base_2, "m
 ###############################################################################
 # дать представление о возможностях модели
 
-# 1 - год - 1 блок - 1 риск с событиями
-# 1 - год - 2 блока - 1 риск с событиями  
+# 1 - год - 1 блок - 1 риск 
+# 1 - год - 1 блок - 2 риска 
+# 2 - года - 2 блока - 1 риск с событиями  (показать min_downtime) или добавить альт ремонтв но-2
+# 2 - года - 2 блока - 1 риск с событиями  (разный последовательный состав работ на остановке, запретить одновременные ремонты НО)  
+# 3 - года - 2 блока - 1 риск с событиями ( разный паралельный состав работ на остановке, запретить одновременные ремонты) (обязательыый капремонт)
+# 3 - года - 3 блока - 1 риск с событиями (обязательный капитальный ремонт)
 
 
-scen = base_no_parallel | {"№": 1} | two_years | (b_1.update(risk_b1 | repair_base | outage_jul)) | (b_2.update(risk_b2 | repair_base | outage_nov)) 
-# scen = base_parallel | {"№": 2} | two_years | (b_1.update(risk_b1 | repair_base | outage_jul)) | (b_2.update(risk_b2 | repair_base | outage_nov)) 
+scen = base | {"№": 1} | two_years | (b_1.update(risk_b1 | repair_base | outage_jul)) | (b_2.update(risk_b2 | repair_base | outage_nov)) 
+# scen = base | {"№": 2} | two_years | (b_1.update(risk_b1 | repair_base | outage_jul)) | (b_2.update(risk_b2 | repair_base | outage_nov)) 
 
 
 
@@ -338,7 +341,7 @@ solution_processor.set_dumps_folder("./dumps")
 # solution_processor.set_restore_mode(file_number="09") 
 
 # solution_processor.set_restore_mode(file_number="191") 
-solution_processor.set_restore_mode(file_number="47") 
+# solution_processor.set_restore_mode(file_number="47") 
 
 solution_processor.apply()
 
@@ -406,8 +409,8 @@ image_all_block_with_cost = result_viewer.plot_all_blocks_with_cost_graph(outage
 
 
 
-image_all_block_with_risks.save("./images","jpg", 1500)
-image_all_block_with_cost.save("./images","jpg", 1500)
+# image_all_block_with_risks.save("./images","jpg", 1500)
+# image_all_block_with_cost.save("./images","jpg", 1500)
 
 
 # control_block_viewer.plot_control_stop_block(bel_npp_block_1)
@@ -431,7 +434,6 @@ print("done")
 
 
 
-# флаги на одновременность
 # отображение одновременных ремонтов
 # простое переключение сценариев
 # проверить min_downtime на мал блоках

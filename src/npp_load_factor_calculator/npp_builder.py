@@ -176,7 +176,7 @@ class NPP_builder:
         bufer_bus = npp_block_builder.get_info("bufer_bus")
         control_npp_stop_source = npp_block_builder.get_info("control_npp_stop_source")
         # allow_months = npp_block_builder.get_info("allow_months")
-        allow_parallel_repairs_npp_level = repair_options["allow_parallel_repairs_npp_stop_npp_level"]
+        # allow_parallel_repairs_npp_level = repair_options["allow_parallel_repairs_npp_stop_npp_level"]
         
         
             
@@ -187,7 +187,6 @@ class NPP_builder:
         repair_blocks = {}
             
         if repairs_npp_stop:
-                        
             if repairs_npp_stop_reset:
                 for name, options in repairs_npp_stop_reset.items():
                     repair_risks_dict = dict.fromkeys(options["risk_reset"])
@@ -209,15 +208,14 @@ class NPP_builder:
                     
                     
                     control_npp_stop_source.add_base_block_for(repair_converter_builder)
-                    if allow_parallel_repairs_npp_level:
-                        control_npp_stop_source.add_group_equal_or_greater_1(repair_converter_builder)
-                    else:
-                        control_npp_stop_source.add_group_equal_1(repair_converter_builder)
+                    control_npp_stop_source.add_group_equal_or_greater_1(repair_converter_builder)
                     
                     
                     repair_converter_builder.set_info("forced_in_period", options.get("forced_in_period"))
                     repair_converter_builder.set_info("startup_cost", options["startup_cost"])
                     repair_converter_builder.set_info("npp_stop_required", True)
+                    repair_converter_builder.set_info("no_parallel_tag_for_npp", options.get("no_parallel_tag_for_npp"))
+                    repair_converter_builder.set_info("no_parallel_tag_for_model", options.get("no_parallel_tag_for_model"))
                     self._add_start_days_if_required(repair_converter_builder, options.get("start_day"))
                     self._add_forced_active_if_required(repair_converter_builder, options.get("forced_in_period"))
                     repair_converter_builder.repair_id = options["id"]
@@ -256,17 +254,15 @@ class NPP_builder:
                     
                     
                     control_npp_stop_source.add_base_block_for(repair_converter_builder)
-                    
-                    if allow_parallel_repairs_npp_level:
-                        control_npp_stop_source.add_group_equal_or_greater_1(repair_converter_builder)
-                    else:
-                        control_npp_stop_source.add_group_equal_1(repair_converter_builder)
+                    control_npp_stop_source.add_group_equal_or_greater_1(repair_converter_builder)
                     
 
 
                     repair_converter_builder.set_info("forced_in_period", options.get("forced_in_period"))
                     repair_converter_builder.set_info("startup_cost", options["startup_cost"])
                     repair_converter_builder.set_info("npp_stop_required", True)
+                    repair_converter_builder.set_info("no_parallel_tag_for_npp", options.get("no_parallel_tag_for_npp"))
+                    repair_converter_builder.set_info("no_parallel_tag_for_model", options.get("no_parallel_tag_for_model"))
                     self._add_start_days_if_required(repair_converter_builder, options.get("start_day"))
                     self._add_forced_active_if_required(repair_converter_builder, options.get("forced_in_period"))
                     repair_blocks[options["id"]] = repair_converter_builder
@@ -320,6 +316,8 @@ class NPP_builder:
                     self._add_forced_active_if_required(repair_converter_builder, options.get("forced_in_period"))
                     repair_converter_builder.set_info("startup_cost", options["startup_cost"])
                     repair_converter_builder.set_info("npp_stop_required", False)
+                    repair_converter_builder.set_info("no_parallel_tag_for_npp", options.get("no_parallel_tag_for_npp"))
+                    repair_converter_builder.set_info("no_parallel_tag_for_model", options.get("no_parallel_tag_for_model"))
                     repair_blocks[options["id"]] = repair_converter_builder
 
                     sinks = {}
@@ -357,6 +355,8 @@ class NPP_builder:
                     repair_converter_builder.set_info("forced_in_period", options.get("forced_in_period"))
                     repair_converter_builder.set_info("startup_cost", options["startup_cost"])
                     repair_converter_builder.set_info("npp_stop_required", False)
+                    repair_converter_builder.set_info("no_parallel_tag_for_npp", options.get("no_parallel_tag_for_npp"))
+                    repair_converter_builder.set_info("no_parallel_tag_for_model", options.get("no_parallel_tag_for_model"))
                     self._add_start_days_if_required(repair_converter_builder, options.get("start_day"))
                     self._add_forced_active_if_required(repair_converter_builder, options.get("forced_in_period"))
                     repair_blocks[options["id"]] = repair_converter_builder
@@ -376,12 +376,8 @@ class NPP_builder:
                     repair_converter_builder.sinks = sinks
         
         
-        repair_blocks_npp_stop = [block for block in repair_blocks.values() if block.info["npp_stop_required"]]
-        repair_blocks_npp_no_stop = [block for block in repair_blocks.values() if not block.info["npp_stop_required"]]
         
         npp_block_builder.set_info("repairs_blocks", repair_blocks)
-        npp_block_builder.set_info("repairs_blocks_npp_stop", repair_blocks_npp_stop)
-        npp_block_builder.set_info("repairs_blocks_npp_no_stop", repair_blocks_npp_no_stop)
         
         
     def _add_start_days_if_required(self, repair_source_builder, start_day):

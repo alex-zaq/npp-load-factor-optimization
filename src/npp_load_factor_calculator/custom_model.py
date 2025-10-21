@@ -1,5 +1,6 @@
 
 
+from itertools import groupby
 from src.npp_load_factor_calculator.block_db import Block_db
 from src.npp_load_factor_calculator.constraint_grouper import Constraint_grouper
 from src.npp_load_factor_calculator.generic_models.generic_bus import Generic_bus
@@ -31,27 +32,64 @@ class Custom_model:
         [block.build() for block in self.oemof_es.block_build_lst]
         
         
+    # def add_model_level_constraints(self):
+        
+    #     allow_npp_stop_for_model_level = self.scenario["allow_parallel_repairs_npp_stop_for_model_level"]
+    #     allow_npp_no_stop_model_level = self.scenario["allow_parallel_repairs_npp_no_stop_model_level"]
+        
+        
+    #     b_1 = self.block_db.get_bel_npp_block_1()
+    #     b_2 = self.block_db.get_bel_npp_block_2()
+    #     b_3 = self.block_db.get_new_npp_block_1()
+    #     blocks = [b_1, b_2, b_3]
+    #     active_blocks = [b for b in blocks if b]
+    
+    #     if not allow_npp_stop_for_model_level:
+    #         all_npp_stop_repair_blocks = [repair for active_b in active_blocks for repair in active_b.get_info("repairs_blocks_npp_stop")]
+    #         self.oemof_es.constraint_grouper.group_no_equal_status_lower_0(all_npp_stop_repair_blocks)
+            
+    #     if not allow_npp_no_stop_model_level:
+    #         all_no_npp_stop_repair_blocks = [repair for active_b in active_blocks for repair in active_b.get_info("repairs_blocks_npp_no_stop")]
+    #         self.oemof_es.constraint_grouper.group_no_equal_status_lower_0(all_no_npp_stop_repair_blocks)
+        
+    def get_groupes_npp_level(self, block):
+        repairs_blocks = block.get_info("repairs_blocks")
+        repair_blocks_with_tag = [repair_block for repair_block in repairs_blocks.values() if repair_block.get_info("no_parallel_tag_for_npp")]
+        repair_blocks_with_tag.sort(key=lambda x: x.get_info("no_parallel_tag_for_npp"))    
+        groups_by_npp_level_with_tag = groupby(
+            repair_blocks_with_tag,
+            key=lambda x: x.get_info("no_parallel_tag_for_npp")) if repair_blocks_with_tag else []
+        return groups_by_npp_level_with_tag
+
+    
+    def get_groupes_model_level(self, active_blocks):
+        all_repair_blocks = []
+        for block in active_blocks:
+            all_repair_blocks+= [*block.get_info("repairs_blocks").values()]
+        repair_blocks_with_tag = [repair_block for repair_block in all_repair_blocks if repair_block.get_info("no_parallel_tag_for_model")]
+        repair_blocks_with_tag.sort(key=lambda x: x.get_info("no_parallel_tag_for_model"))
+        groups_by_model_lelvel_with_tag = groupby(repair_blocks_with_tag, key=lambda x: x.info["no_parallel_tag_for_model"]) if repair_blocks_with_tag else []
+        return groups_by_model_lelvel_with_tag
+             
+                
     def add_model_level_constraints(self):
-        
-        allow_npp_stop_for_model_level = self.scenario["allow_parallel_repairs_npp_stop_for_model_level"]
-        allow_npp_no_stop_model_level = self.scenario["allow_parallel_repairs_npp_no_stop_model_level"]
-        
-        # if not (allow_npp_stop_for_model_level or allow_npp_no_stop_model_level):
-        #     return
-        
         b_1 = self.block_db.get_bel_npp_block_1()
         b_2 = self.block_db.get_bel_npp_block_2()
         b_3 = self.block_db.get_new_npp_block_1()
         blocks = [b_1, b_2, b_3]
         active_blocks = [b for b in blocks if b]
-    
-        if not allow_npp_stop_for_model_level:
-            all_npp_stop_repair_blocks = [repair for active_b in active_blocks for repair in active_b.get_info("repairs_blocks_npp_stop")]
-            self.oemof_es.constraint_grouper.group_no_equal_status_lower_0(all_npp_stop_repair_blocks)
-            
-        if not allow_npp_no_stop_model_level:
-            all_no_npp_stop_repair_blocks = [repair for active_b in active_blocks for repair in active_b.get_info("repairs_blocks_npp_no_stop")]
-            self.oemof_es.constraint_grouper.group_no_equal_status_lower_0(all_no_npp_stop_repair_blocks)
+        
+        for block in active_blocks:
+            groups_by_npp_level_with_tag = self.get_groupes_npp_level(block)
+            if groups_by_npp_level_with_tag:
+                for _, repair_blocks in groups_by_npp_level_with_tag:
+                    repair_blocks = list(repair_blocks)
+                    self.oemof_es.constraint_grouper.group_no_equal_status_lower_0(repair_blocks)
+        
+        groups_model_level = self.get_groupes_model_level(active_blocks)
+        for _, repair_blocks in groups_model_level:
+            repair_blocks = list(repair_blocks)
+            self.oemof_es.constraint_grouper.group_no_equal_status_lower_0(repair_blocks)
         
         
     def add_bel_npp(self):
