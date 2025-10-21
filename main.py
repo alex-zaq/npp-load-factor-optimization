@@ -267,6 +267,17 @@ risk_b2 = one_risk_base.update_risk({"r1": {"id": 0, "events": events_base_2, "m
 
 # scenarios
 ###############################################################################
+# дать представление о возможностях модели
+
+# 1 - год - 1 блок - 1 риск с событиями
+
+# 1 - год - 2 блока - 1 риск с событиями  
+
+
+
+
+
+
 # scen = base | {"№": 1} | one_year | (b_1.update(risk_b1 | repair_reset | outage)) 
 # scen = base | {"№": 1} | two_years | (b_1.update(risk_b1 | repair_reset | outage)) 
 # scen = base | {"№": 1} | three_years | (b_1.update(risk_b1 | repair_reset | outage)) 
@@ -278,7 +289,6 @@ risk_b2 = one_risk_base.update_risk({"r1": {"id": 0, "events": events_base_2, "m
 
 
 scen = base_no_parallel | {"№": 1} | two_years | (b_1.update(risk_b1 | repair_base | outage_jul)) | (b_2.update(risk_b2 | repair_base | outage_nov)) 
-
 
 
 
@@ -320,7 +330,7 @@ solution_processor.set_dumps_folder("./dumps")
 # solution_processor.set_restore_mode(file_number="09") 
 
 # solution_processor.set_restore_mode(file_number="34") 
-solution_processor.set_restore_mode(file_number="189") 
+solution_processor.set_restore_mode(file_number="191") 
 
 solution_processor.apply()
 
@@ -413,9 +423,6 @@ print("done")
 
 
 
-# увеление на повышение в легенды
-# добавить название блока в накопленный риск
-# включить логгер
 # простое переключение сценариев
 # проверить min_downtime на мал блоках
 # события для второго и третьего блока

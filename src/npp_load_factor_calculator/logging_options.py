@@ -4,7 +4,7 @@ from loguru import logger
 
 logger.configure(handlers=[{"sink": sys.stderr, "level": "INFO"}])
 
-# logger.info("info")
+logger.info("info")
 # logger.debug("debug")
 # logger.warning("warning")
 # logger.error("error")

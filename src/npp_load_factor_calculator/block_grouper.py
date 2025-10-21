@@ -170,7 +170,7 @@ class Custom_block:
         for risk_name, storage in risks.items():
             input_bus, block = storage.inputs_pair[0]
             block_results = solph.views.node(self.results, storage.label)["sequences"].dropna()
-            res_df[f"увеличение риска {risk_name} ({self.wrapper_block.label})"] = block_results[((input_bus.label, block.label), "flow")]
+            res_df[f"повышение риска {risk_name} ({self.wrapper_block.label})"] = block_results[((input_bus.label, block.label), "flow")]
             res_df = res_df.clip(lower=0)
             res = pd.concat([res, res_df], axis=1)
         return res_df
@@ -267,13 +267,22 @@ class Block_grouper:
  
     
     def get_risks_profile_by_block(self, block):
+        res_dict = {}
         custom_block = [custom_block for custom_block in self.electr_groups if custom_block.wrapper_block is block][0]
-        res = custom_block.get_risks_profile()
-        colors = res.colors
-        res = res[:-1]
-        res.clip(lower=0)
-        res.colors = colors
-        return res
+        risk_df = custom_block.get_risks_profile()
+        risk_df = risk_df[:-1]
+        max_risk_dict = custom_block.get_max_risk_dict()
+        block_label = custom_block.wrapper_block.label
+        risks = max_risk_dict.keys()
+        for risk in risks:
+            risk_block_label = f"{risk} ({block_label})"
+            max_risk = max_risk_dict[risk]
+            risk_line_col = risk_df[risk]
+            res_dict[risk_block_label] = {
+                "max_risk": max_risk,
+                "risk_line_col": risk_line_col,
+                "color": custom_block.color}
+            return res_dict
     
     def get_risks_profile_by_all_blocks_dict(self):
         res_dict = {}
@@ -284,13 +293,12 @@ class Block_grouper:
             block_label = custom_block.wrapper_block.label
             risks = max_risk_dict.keys()
             for risk in risks:
-                risk_label = f"{risk} ({block_label})"
+                risk_block_label = f"{risk} ({block_label})"
                 max_risk = max_risk_dict[risk]
                 risk_line_col = risk_df[risk]
-                res_dict[risk_label] = {
+                res_dict[risk_block_label] = {
                     "max_risk": max_risk,
                     "risk_line_col": risk_line_col,
-                    # "color": custom_block.risks_plot_dict[risk]["color"]}
                     "color": custom_block.color}
         return res_dict
     

@@ -43,9 +43,12 @@ class Result_viewer:
     def plot_single_block_graph(self, block, dpi, font_size = 10):
                 
         el_gen_df = self.block_grouper.get_electricity_profile_by_block(block)
-        risks_df = self.block_grouper.get_risks_profile_by_block(block)
         repairs_df = self.block_grouper.get_repairs_profile_by_block(block, part=1)
         risk_increase_df = self.block_grouper.get_increase_by_block_df(block)
+
+        risks_dict = self.block_grouper.get_risks_profile_by_block(block)
+        risk_data_dict = {k: v["risk_line_col"] for k, v in risks_dict.items()}
+        risks_df = pd.DataFrame(risk_data_dict)
 
         max_y = 3 * el_gen_df.max().max()
 
@@ -85,7 +88,7 @@ class Result_viewer:
                 style="--",
                 ylim=(0, max_risk_val * 1.5),
                 legend="reverse",
-                color=risks_df.colors,
+                color="#000000",
                 linewidth=0.5,
                 fontsize=font_size,
                 ax=ax_base.twinx()
