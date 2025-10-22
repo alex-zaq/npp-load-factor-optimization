@@ -26,7 +26,8 @@ class Result_viewer:
         folder = Path(folder)
         if not folder.exists():
             folder.mkdir(parents=True)
-        name = get_file_name_with_auto_number(folder, self.scenario, "png")
+        file_name = get_file_name_by_scenario(self.scenario)
+        name = get_file_name_with_auto_number(folder, file_name, "png")
         folder = folder / name
         oemof_es = self.block_grouper.custom_es.oemof_es
         
@@ -177,11 +178,15 @@ class Result_viewer:
         
     
             max_y = el_gen_df.sum(axis=1).max() * 2
+
+            el_gen_colors = el_gen_df.colors
+            # el_gen_df = el_gen_df.where(el_gen_df<= 0, 0)
+
             ax_el_gen_df = el_gen_df.plot(
                 kind="area",
                 ylim=(0, max_y),
                 legend="reverse",
-                color=el_gen_df.colors,
+                color=el_gen_colors,
                 linewidth=0.01,
                 alpha=1,
                 fontsize=font_size,
@@ -341,11 +346,14 @@ class Result_viewer:
 
         if outages_graph:
             max_y = el_gen_df.sum(axis=1).max() * 2
+            
+            el_gen_colors = el_gen_df.colors
+            # el_gen_df = el_gen_df.where(el_gen_df<= 0, 0)
             ax_el_gen_df = el_gen_df.plot(
                 kind="area",
                 ylim=(0, max_y),
                 legend="reverse",
-                color=el_gen_df.colors,
+                color=el_gen_colors,
                 linewidth=0.01,
                 alpha=1,
                 fontsize=font_size,

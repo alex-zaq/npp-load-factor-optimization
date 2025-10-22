@@ -53,6 +53,9 @@ class Solution_processor:
         self.oemof_model.init_custom_model()
         self.oemof_model.add_model_level_constraints()
         self.oemof_model.build_blocks()
+
+        # self.oemof_model.create_scheme("./schemes")
+        
         self.oemof_model.launch_solver()
         self.custom_es = self.oemof_model.get_custom_es()
         self.oemof_es = self.oemof_model.get_oemof_es()

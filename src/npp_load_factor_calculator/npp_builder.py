@@ -55,18 +55,20 @@ class NPP_builder:
             
             
         allow_months = outage_options["allow_months"]
+            
+            
+        # grad_old = self.resolution_strategy.get_grad_mask_old(allow_months, min_outage_duration)
+        # grad_new = self.resolution_strategy.get_grad_mask_new(allow_months, min_outage_duration)
+            
+        # assert np.array_equal(grad_new, grad_old)
+            
         avail_months_mask = self.resolution_strategy.get_mask_from_first_day_of_months(allow_months, max_outage_duration)
-        # plot_array(avail_months_mask, self.resolution_strategy.timeindex)
-        grad_mask_min_outage = self.resolution_strategy.get_grad_mask(allow_months, min_outage_duration)
-        grad_mask_max_outage = self.resolution_strategy.get_grad_mask(allow_months, max_outage_duration)
-        
-        # plot_array(grad_mask_min_outage, self.resolution_strategy.timeindex)
-        # plot_array(grad_mask_max_outage, self.resolution_strategy.timeindex)
-        
-        mask = grad_mask_max_outage | grad_mask_min_outage
+        grad_mask_min_outage = self.resolution_strategy.get_grad_mask_new(allow_months, min_outage_duration)
+        grad_mask_max_outage = self.resolution_strategy.get_grad_mask_new(allow_months, max_outage_duration)
+        # 
+        mask = np.logical_or(grad_mask_max_outage, grad_mask_min_outage)
         
         
-        # plot_array(mask, self.resolution_strategy.timeindex)
         
         npp_block_builder.update_options({
             "positive_gradient_limit": mask,
@@ -197,7 +199,7 @@ class NPP_builder:
                         "nominal_power": 1,
                         "min": 1,
                         "min_uptime": self.resolution_strategy.convert_time(options["duration"]),
-                        "min_downtime": self.resolution_strategy.convert_time(options["duration"]),
+                        "min_downtime": self.resolution_strategy.convert_time(options["min_downtime"]),
                         "startup_cost": options["startup_cost"],
                         "max_startup": options["max_startup"],
                         "initial_status": 0,
@@ -243,7 +245,7 @@ class NPP_builder:
                         "nominal_power": 1,
                         "min": 1,
                         "min_uptime": self.resolution_strategy.convert_time(options["duration"]),
-                        "min_downtime": self.resolution_strategy.convert_time(options["duration"]),
+                        "min_downtime": self.resolution_strategy.convert_time(options["min_downtime"]),
                         "startup_cost": options["startup_cost"],
                         "max_startup": options["max_startup"],
                         "initial_status": 0,
@@ -301,7 +303,7 @@ class NPP_builder:
                         "nominal_power": 1,
                         "min": 1,
                         "min_uptime": self.resolution_strategy.convert_time(options["duration"]),
-                        "min_downtime": self.resolution_strategy.convert_time(options["duration"]),
+                        "min_downtime": self.resolution_strategy.convert_time(options["min_downtime"]),
                         "startup_cost": options["startup_cost"],
                         "max_startup": options["max_startup"],
                         "initial_status": 0,
@@ -341,7 +343,7 @@ class NPP_builder:
                         "nominal_power": 1,
                         "min": 1,
                         "min_uptime": self.resolution_strategy.convert_time(options["duration"]),
-                        "min_downtime": self.resolution_strategy.convert_time(options["duration"]),
+                        "min_downtime": self.resolution_strategy.convert_time(options["min_downtime"]),
                         "startup_cost": options["startup_cost"],
                         "max_startup": options["max_startup"],
                         "initial_status": 0,
@@ -350,7 +352,7 @@ class NPP_builder:
                     coeff = self.resolution_strategy.coeff
                     repair_converter_builder.add_max_uptime(duration, coeff)
                     
-                    control_npp_stop_source.create_pair_no_equal_status_lower_0(repair_converter_builder)
+                    # control_npp_stop_source.create_pair_no_equal_status_lower_0(repair_converter_builder)
                     
                     repair_converter_builder.set_info("forced_in_period", options.get("forced_in_period"))
                     repair_converter_builder.set_info("startup_cost", options["startup_cost"])

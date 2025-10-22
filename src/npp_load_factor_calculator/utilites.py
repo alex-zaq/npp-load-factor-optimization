@@ -485,6 +485,9 @@ def zero_inner_ones(arr):
             i += 1
     return result
 
+# print(zero_inner_ones([0,0,0,1,1,1,1,0,0]))
+
+
 
 def get_repair_costs_by_capital(capital_cost):
         maintence_cost = capital_cost * 0.20
@@ -513,7 +516,11 @@ def get_months_name_by_date_range(date_range):
 def get_years_by_date_range(date_range):
     return [date.year for date in date_range]
 
-
+def next_generator(start):
+    while True:
+        yield start
+        start += 1
+    
 
 def get_colors_by_repair_name(repair_dict):
     colors = []

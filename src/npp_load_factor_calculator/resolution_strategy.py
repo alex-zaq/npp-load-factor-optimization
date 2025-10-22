@@ -169,30 +169,44 @@ class Daily_resolution_strategy(Resolution_strategy):
         indexes = np.where(res == 1)[0]
         for index in indexes:
             res[index:index + duration] = 1
+        return res    
+    
+    
+    def get_bound_from_first_day_of_months(self, months, duration):
+        month_nums = [pd.to_datetime(month, format='%b').month for month in months]
+        res = np.zeros(len(self.timeindex))
+        mask = np.logical_or.reduce([(self.timeindex.day == 1) & (self.timeindex.month == month_num) for month_num in month_nums])
+        indexes = np.where(mask)[0]
+        for index in indexes:
+            res[index] = 1
+            if index + duration < len(res):
+                res[index + duration] = 1
         return res
     
         
-    def get_grad_mask(self, months, duration):
-        res = self.get_mask_from_first_day_of_months(months, duration)
-        # plot_array(res, self.timeindex)
-        res = zero_inner_ones(res)
-        # print(np.sum(res))
-        # plot_array(res, self.timeindex)
+    def get_grad_mask_new(self, months, duration):
+        res = self.get_bound_from_first_day_of_months(months, duration)
         return np.array(res)
-    
-    
-    def get_grad_mask_repair(self, months, duration, divider):
-        res = self.get_mask_from_first_day_of_months(months, duration)
-        # plot_array(res, self.timeindex)
-        res = zero_inner_ones(res)
         
-        # print(np.sum(res))
-        # plot_array(res, self.timeindex)
+        
+    def get_grad_mask_old(self, months, duration):
+        res = self.get_mask_from_first_day_of_months(months, duration)
+        res = zero_inner_ones(res)
         return np.array(res)
+    
+    
+    # def get_grad_mask_repair(self, months, duration, divider):
+    #     res = self.get_mask_from_first_day_of_months(months, duration)
+    #     # plot_array(res, self.timeindex)
+    #     res = zero_inner_ones(res)
+        
+    #     # print(np.sum(res))
+    #     # plot_array(res, self.timeindex)
+    #     return np.array(res)
     
     def add_one_by_devider(self, months, duration, divider):
         
-        res = self.get_grad_mask(months, duration)
+        res = self.get_grad_mask_new(months, duration)
         # plot_array(res)
         one_indices = np.where(res == 1)[0]
         if len(one_indices) > 0:

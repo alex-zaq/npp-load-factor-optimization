@@ -1,10 +1,13 @@
 from datetime import datetime
+from pathlib import Path
 
 import oemof.solph as solph
 import pandas as pd
+from oemof.visio import ESGraphRenderer
 
 from src.npp_load_factor_calculator.constraint_processor import Constraint_processor
 from src.npp_load_factor_calculator.custom_model import Custom_model
+from src.npp_load_factor_calculator.utilites import get_file_name_by_scenario, get_file_name_with_auto_number
 
 
 class Oemof_model:
@@ -89,7 +92,29 @@ class Oemof_model:
         )
         self.results = solph.processing.results(model)
         self.meta_results = solph.processing.meta_results(model)
-        print("результаты извлечены")
+        print("результаты извлечены")\
+            
+            
+    def create_scheme(self, folder):
+        
+        folder = Path(folder)
+        if not folder.exists():
+            folder.mkdir(parents=True)
+            
+        file_name = get_file_name_by_scenario(self.scenario)
+        name = get_file_name_with_auto_number(folder, file_name, "png")
+        folder = folder / name
+        oemof_es = self.oemof_es
+        
+        gr = ESGraphRenderer(
+            energy_system=oemof_es,
+            filepath=folder,
+            img_format="png",
+            txt_fontsize=12,
+            txt_width=40,
+            legend=False,
+        )
+        gr.view()
     
 
     
