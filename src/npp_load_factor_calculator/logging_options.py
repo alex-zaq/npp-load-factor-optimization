@@ -1,10 +1,17 @@
-import sys
 
-from loguru import logger
 
-logger.configure(handlers=[{"sink": sys.stderr, "level": "INFO"}])
+import warnings
 
-logger.info("info")
+from oemof.tools import logger
+
+logger = logger.getLogger()
+    
+
+logger.setLevel("ERROR")
+warnings.filterwarnings('ignore')
+# logger.configure(handlers=[{"sink": sys.stderr, "level": "INFO"}])
+
+# logger.info("info")
 # logger.debug("debug")
 # logger.warning("warning")
 # logger.error("error")

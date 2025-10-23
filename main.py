@@ -4,12 +4,12 @@ from src.npp_load_factor_calculator.result_viewer import Control_block_viewer
 from src.npp_load_factor_calculator.scen_builder import Scenario_builder
 from src.npp_load_factor_calculator.solution_processor import Solution_processor
 from src.npp_load_factor_calculator.utilites import (
-    all_months,
     get_repair_costs_by_capital,
-    next_generator,
 )
 
 maintence_cost, current_cost ,medium_cost, capital_cost = get_repair_costs_by_capital(50e6)
+
+
 
 # maintence_duration = 10
 # medium_duration = 40
@@ -501,6 +501,7 @@ oemof_model = Oemof_model(
     solver_settings = {
         "solver": "cplex",
         "solver_verbose": True,
+        "logging": True,
         "mip_gap": 0.005
     } 
 )

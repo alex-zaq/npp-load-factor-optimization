@@ -291,6 +291,5 @@ class Constraint_processor:
         pass
     
     
-    def apply_forced_shut_down_for_group(self):
-        pass
+
 

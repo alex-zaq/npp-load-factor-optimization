@@ -83,7 +83,11 @@ class Oemof_model:
         model.solve(
             solver=self.solver,
             cmdline_options={"mipgap": self.mip_gap},
-            solve_kwargs={"tee": self.solver_verbose},
+            solve_kwargs={
+                "tee": self.solver_verbose,
+                'logfile': self.get_logging_path(),  
+                'keepfiles': False, 
+                },
         )
         elapsed_solver_time = (datetime.now() - start_time).total_seconds()
         print(
@@ -94,6 +98,21 @@ class Oemof_model:
         self.results = solph.processing.results(model)
         self.meta_results = solph.processing.meta_results(model)
         print("результаты извлечены")\
+            
+            
+    def get_logging_path(self):
+        if not self.solver_settings["logging"]:
+            return False
+        
+        folder = Path("./logs")
+        if not folder.exists():
+            folder.mkdir(parents=True)
+          
+        file_name = get_file_name_by_scenario(self.scenario)
+        name = get_file_name_with_auto_number(folder, file_name, "log")
+        path = str(folder / name)  
+
+        return path
             
             
     def create_scheme(self, folder):
