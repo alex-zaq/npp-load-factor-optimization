@@ -190,7 +190,8 @@ class Result_viewer:
                 linewidth=0.01,
                 alpha=1,
                 fontsize=font_size,
-                ax=ax_left
+                ax=ax_left,
+                zorder=0
             )
             
             ax_repairs_df = repairs_df.plot(
@@ -200,9 +201,10 @@ class Result_viewer:
                 stacked=True,
                 color=repairs_df.colors,
                 linewidth=0.01,
-                alpha=0.6,
+                alpha=0.7,
                 fontsize=font_size,
-                ax=ax_left
+                ax=ax_left,
+                zorder=1
             )
             risk_increase_colors = ["#e41a1c",  "#0400ff", "#00ff00", "#ff0"]
             max_y_cost = risk_df.max().max() * 1.5
@@ -247,10 +249,13 @@ class Result_viewer:
             ax_risk_df.axhline(y=1, color='r', linestyle='--')
            
             
+            legend_empty_cols = [col for col in repairs_df.columns if (repairs_df[col] <= 0).all()]
+            
+            
             lines_1, labels_1 = ax_left.get_legend_handles_labels()
             lines_2, labels_2 = ax_risk_df.get_legend_handles_labels()
             main_legend_dict = dict(zip(labels_1, lines_1))
-            legend_dict_updated = {k:v for k,v in main_legend_dict.items() if "white" not in k}
+            legend_dict_updated = {k:v for k,v in main_legend_dict.items() if ("white" not in k) and (k not in legend_empty_cols)}
             updated_lines = list(legend_dict_updated.values()) + lines_2
             updated_labels = list(legend_dict_updated.keys()) + labels_2
             ax_left.legend(updated_lines, updated_labels, loc='upper left', fontsize=font_size - 2, ncol=2)
@@ -399,8 +404,10 @@ class Result_viewer:
             main_legend_dict = dict(zip(labels, lines))
             
             main_legend_dict.update(legen_cost_dict)
+
+            legend_empty_cols = [col for col in repairs_df.columns if (repairs_df[col] <= 0).all()]
             
-            legend_dict_updated = {k:v for k,v in main_legend_dict.items() if "white" not in k}
+            legend_dict_updated = {k:v for k,v in main_legend_dict.items() if ("white" not in k) and (k not in legend_empty_cols)}
             
             updated_lines = list(legend_dict_updated.values())
             updated_labels = list(legend_dict_updated.keys())

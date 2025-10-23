@@ -132,6 +132,126 @@ base_repair_options = {
         "forced_in_period": False,
     },
     
+    "repair-1": {
+        "id": 7,
+        "status": False,
+        "startup_cost": maintence_cost,
+        "duration": 10,
+        "min_downtime": 0,
+        "max_startup": 36,
+        "risk_reset": {},
+        "risk_reducing": {"r1": 0.2},
+        "min": 1,
+        "start_day": {"status": True, "days": [1,15]},
+        "npp_stop": True,
+        "no_parallel_tag_for_npp": False,
+        "no_parallel_tag_for_model": False,
+        "forced_in_period": False,
+    },
+    
+    "repair-2": {
+        "id": 8,
+        "status": False,
+        "startup_cost": maintence_cost,
+        "duration": 10,
+        "min_downtime": 0,
+        "max_startup": 36,
+        "risk_reset": {},
+        "risk_reducing": {"r1": 0.2},
+        "min": 1,
+        "start_day": {"status": True, "days": [1,15]},
+        "npp_stop": True,
+        "no_parallel_tag_for_npp": False,
+        "no_parallel_tag_for_model": False,
+        "forced_in_period": False,
+    },
+    
+    "repair-3": {
+        "id": 9,
+        "status": False,
+        "startup_cost": maintence_cost,
+        "duration": 10,
+        "min_downtime": 0,
+        "max_startup": 36,
+        "risk_reset": {},
+        "risk_reducing": {"r1": 0.2},
+        "min": 1,
+        "start_day": {"status": True, "days": [1,15]},
+        "npp_stop": True,
+        "no_parallel_tag_for_npp": False,
+        "no_parallel_tag_for_model": False,
+        "forced_in_period": False,
+    },
+    
+    "repair-4": {
+        "id": 10,
+        "status": False,
+        "startup_cost": maintence_cost,
+        "duration": 10,
+        "min_downtime": 0,
+        "max_startup": 36,
+        "risk_reset": {},
+        "risk_reducing": {"r1": 0.2},
+        "min": 1,
+        "start_day": {"status": True, "days": [1,15]},
+        "npp_stop": True,
+        "no_parallel_tag_for_npp": False,
+        "no_parallel_tag_for_model": False,
+        "forced_in_period": False,
+    },
+            
+    "repair-5": {
+        "id": 11,
+        "status": False,
+        "startup_cost": maintence_cost,
+        "duration": 10,
+        "min_downtime": 0,
+        "max_startup": 36,
+        "risk_reset": {},
+        "risk_reducing": {"r1": 0.2},
+        "min": 1,
+        "start_day": {"status": True, "days": [1,15]},
+        "npp_stop": True,
+        "no_parallel_tag_for_npp": False,
+        "no_parallel_tag_for_model": False,
+        "forced_in_period": False,
+    },
+    
+    "repair-6": {
+        "id": 12,
+        "status": False,
+        "startup_cost": maintence_cost,
+        "duration": 10,
+        "min_downtime": 0,
+        "max_startup": 36,
+        "risk_reset": {},
+        "risk_reducing": {"r1": 0.2},
+        "min": 1,
+        "start_day": {"status": True, "days": [1,15]},
+        "npp_stop": True,
+        "no_parallel_tag_for_npp": False,
+        "no_parallel_tag_for_model": False,
+        "forced_in_period": False,
+    },    
+    
+    "repair-7": {
+        "id": 13,
+        "status": False,
+        "startup_cost": maintence_cost,
+        "duration": 10,
+        "min_downtime": 0,
+        "max_startup": 36,
+        "risk_reset": {},
+        "risk_reducing": {"r1": 0.2},
+        "min": 1,
+        "start_day": {"status": True, "days": [1,15]},
+        "npp_stop": True,
+        "no_parallel_tag_for_npp": False,
+        "no_parallel_tag_for_model": False,
+        "forced_in_period": False,
+    },
+    
+    
 }
 
 
@@ -290,14 +410,14 @@ repair_one_risk_2 = repair_base.update_repair({
 
 
 risk_b1_2 = one_risk_base.update_risk({"r1": {"id": 0, "events": events_base_1, "max": 1, "value": 0.12, "start_risk_rel": 0.35}})
+
 repair_one_risk_2 = repair_base.update_repair({
-    "maintence-1": {"no_parallel_tag_for_model": 1, "no_parallel_tag_for_npp": 1, "risk_reducing": {"r1": 0.09}, "duration": 10, "min_downtime": 20, "max_startup": 36, "startup_cost": maintence_cost  - 2e6},
-    "maintence-2": {"no_parallel_tag_for_model": 1, "no_parallel_tag_for_npp": 1,"risk_reducing": {"r1": 0.11}, "duration": 10, "min_downtime": 20},
-    "current-1":   {"no_parallel_tag_for_model": 1, "no_parallel_tag_for_npp": 1,  "risk_reducing": {"r1": 0.15}, "duration": 5, "startup_cost": current_cost + 2e6},
-    "medium-1":   {"no_parallel_tag_for_model": 0, "no_parallel_tag_for_npp": 1,  "risk_reducing": {"r1": 0.2}, "duration": 10, "startup_cost": medium_cost + 1e6},
-    "current-2":   {"no_parallel_tag_for_model": 0, "no_parallel_tag_for_npp": 1,  "risk_reducing": {"r1": 0.2}, "duration": 15},
-    "medium-2":   {"no_parallel_tag_for_model": 0, "no_parallel_tag_for_npp": 1,  "risk_reducing": {"r1": 0.2}, "duration": 5},
-    "capital-1":   {"no_parallel_tag_for_model": 0, "no_parallel_tag_for_npp": 1,  "risk_reducing": {"r1": 0.1}, "duration": 5, "startup_cost": medium_cost - 10e6},
+    "maintence-1": {"no_parallel_tag_for_model": 1, "no_parallel_tag_for_npp": 1, "risk_reducing": {"r1": 0.09}, "duration": 10, "min_downtime": 20,  "startup_cost": maintence_cost  - 2e6},
+    "repair-1":   {"no_parallel_tag_for_model": 0, "no_parallel_tag_for_npp": 1,  "risk_reducing": {"r1": 0.15}, "duration": 5, "startup_cost": current_cost + 2e6},
+    "repair-2":   {"no_parallel_tag_for_model": 0, "no_parallel_tag_for_npp": 1,  "risk_reducing": {"r1": 0.2}, "duration": 10, "startup_cost": medium_cost + 1e6},
+    "repair-3":   {"no_parallel_tag_for_model": 0, "no_parallel_tag_for_npp": 1,  "risk_reducing": {"r1": 0.2}, "duration": 15},
+    "repair-4":   {"no_parallel_tag_for_model": 0, "no_parallel_tag_for_npp": 1,  "risk_reducing": {"r1": 0.2}, "duration": 5},
+    "repair-5":   {"no_parallel_tag_for_model": 0, "no_parallel_tag_for_npp": 1,  "risk_reducing": {"r1": 0.1}, "duration": 5, "startup_cost": medium_cost - 10e6},
     
     })
 
@@ -392,8 +512,8 @@ oemof_model = Oemof_model(
 
 
 solution_processor = Solution_processor(oemof_model)
-solution_processor.set_calc_mode(save_results=False)
-# solution_processor.set_calc_mode(save_results=True)
+# solution_processor.set_calc_mode(save_results=False)
+solution_processor.set_calc_mode(save_results=True)
 solution_processor.set_dumps_folder("./dumps")
 
 # solution_processor.set_restore_mode(file_number="00") 
@@ -404,7 +524,7 @@ solution_processor.set_dumps_folder("./dumps")
 # solution_processor.set_restore_mode(file_number="09") 
 
 # solution_processor.set_restore_mode(file_number="191") 
-# solution_processor.set_restore_mode(file_number="47") 
+solution_processor.set_restore_mode(file_number="55") 
 
 solution_processor.apply()
 
@@ -443,6 +563,15 @@ block_grouper.set_options(
         "средний ремонт-1": {"id": 4, "color": "#501d0c"},
         "средний ремонт-2": {"id": 5, "color": "#0c2450"},
         "капитальный ремонт-1": {"id": 6, "color": "#ff4000"},
+
+        "фаза ремонта-1": {"id": 7, "color": "#0b07fc"},
+        "фаза ремонта-2": {"id": 8, "color": "#ff00b3"},
+        "фаза ремонта-3": {"id": 9, "color": "#501d0c"},
+        "фаза ремонта-4": {"id": 10, "color": "#0c2450"},
+        # "фаза ремонта-4": {"id": 10, "color": "#FBFF00"},
+        "фаза ремонта-5": {"id": 11, "color": "#ff4000"},
+        "фаза ремонта-6": {"id": 12, "color": "#12741a"},
+        "фаза ремонта-7": {"id": 13, "color": "#275f66"},
     },
     repairs_cost_options={
         "БелАЭС (блок 1)-затраты": {"block": b_1, "style":"-", "color": "#18be2f"},
@@ -497,10 +626,8 @@ print("done")
 
 
 
-# отображение одновременных ремонтов
-# простое переключение сценариев
-# проверить min_downtime на мал блоках
-# события для второго и третьего блока
+
+# фазы ремонтов - название легенды
 # фото с ноутбука
 # сделать расчет с ноутбука
 # блок-схема

@@ -310,6 +310,7 @@ class Block_grouper:
         colors = res.colors
         res = res[:-1]
         res.clip(lower=0)
+        # res = res.drop(columns=[col for col in res.columns if (res[col] <= 0).all()])
         res.colors = colors
         return res
     
@@ -323,7 +324,6 @@ class Block_grouper:
             if part:
                 repair_df *= custom_block.wrapper_block.block.nominal_power * part
             repair_df = repair_df[:-1]
-            # repair_df = repair_df.clip(lower=0)
             repair_df[repair_df <=0] = 0
             repair_df.colors = colors
             repair_df.block_color = block_color
@@ -347,7 +347,6 @@ class Block_grouper:
             res[custom_block.wrapper_block.label] = custom_block.get_cost_profile()
         res = res.sum(axis=1).to_frame()
         res.columns = ["затраты на ремонты"]
-        # print(res.max().max())
         if cumulative:
             res = res.cumsum()
         res = res[:-1]

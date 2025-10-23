@@ -224,6 +224,7 @@ def add_white_spaces_and_colors_repairs(dict_value, value):
     
     new_df.clip(lower=0)
     new_df[new_df < 0] = 0
+    # new_df = new_df.drop(columns=[col for col in new_df.columns if (new_df[col] <= 0).all()])
     new_df.colors = new_colors
     return new_df
     
