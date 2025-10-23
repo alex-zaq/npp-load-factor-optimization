@@ -294,10 +294,6 @@ base = {
 outage_base = Scenario_builder({
     "outage_options": {
         "status": False,
-        # "start_of_month": True,
-        # "allow_months": all_months,
-        # "min_duration": 30,
-        # "max_duration": 40,
     }
 })
 
@@ -357,7 +353,7 @@ three_years = {"years": [2025, 2026, 2027]}
 
 max_duration = 40
 
-outage_jul = outage_base.update_outage({"start_of_month": True, "allow_months": {"Jul"}, "min_duration": 30, "max_duration": max_duration})
+outage_jul = outage_base.update_outage({"start_of_month": True, "allow_months": {"Jul"}, "min_duration": 30, "max_duration": max_duration, "min_work_after_stop": 20})
 outage_nov = outage_base.update_outage({"start_of_month": True, "allow_months": {"Nov"}, "min_duration": 30, "max_duration": max_duration})
 
 outage_jun_jul_aug = outage_base.update_outage({"start_of_month": True, "allow_months": {"Jun", "Jul", "Aug"}, "min_duration": 30, "max_duration": max_duration})
@@ -443,8 +439,8 @@ repair_one_risk_2_forced_capital = repair_one_risk_2.update_repair({
 # 3 - года - 2 блока - 1 риск с событиями (обязательный капитальный ремонт) + выбор месяца
 
 
-# scen = base | {"№": 1} | one_year | (b_1.update(risk_b1 | repair_one_risk_1_ver2 | outage_jul))
-scen = base | {"№": 2} | one_year | (b_1.update(risk_b1_2 | repair_one_risk_2 | outage_jul))
+scen = base | {"№": 1} | one_year | (b_1.update(risk_b1 | repair_one_risk_1_ver2 | outage_jul))
+# scen = base | {"№": 2} | one_year | (b_1.update(risk_b1_2 | repair_one_risk_2 | outage_jul))
 
 
 # scen = base | {"№": 3} | two_years | (b_1.update(risk_b1 | repair_one_risk_1 | outage_jul)) | (b_2.update(risk_b2 | repair_one_risk_1 | outage_nov)) 
@@ -524,7 +520,7 @@ solution_processor.set_dumps_folder("./dumps")
 # solution_processor.set_restore_mode(file_number="09") 
 
 # solution_processor.set_restore_mode(file_number="191") 
-solution_processor.set_restore_mode(file_number="55") 
+# solution_processor.set_restore_mode(file_number="55") 
 
 solution_processor.apply()
 

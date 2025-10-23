@@ -21,6 +21,16 @@ class Constraint_processor:
         return global_groups_lst
     
     
+    def _get_pairs_for_max_uptime(self, groups_dict):
+        result = []
+        for block, max_uptime in groups_dict.items():
+            local_group_lst = []
+            local_group_lst.append(  (*block.get_pair_after_building(), max_uptime))
+            result.append(local_group_lst)
+        return result
+    
+    
+    
     def _get_pairs_lst_cg(self, groups_lst):
         result = []
         for group_lst in groups_lst["group_lst"]:
@@ -139,7 +149,8 @@ class Constraint_processor:
                             rule(model, t, current_group)
                     )
                 )
-
+             
+             
                 
     def apply_strict_order(self):
         
@@ -253,6 +264,33 @@ class Constraint_processor:
                             rule(model, t, current_group)
                     ))
                 
+                
+    def apply_max_uptime(self):
+        model = self.model
+        contraints = self.constraints["max_uptime"]
+        items = self._get_pairs_for_max_uptime(contraints) or [] 
+        
+        def rule(m, t, block, bus, N):
+            if t < N:
+                return po.Constraint.Skip
+            else:
+                return po.quicksum(m.NonConvexFlowBlock.status[block, bus, k] for k in range(t - N, t + 1)) <= N
+
+        if items:
+            model.max_uptime_constraint = po.Constraint(
+                model.TIMESTEPS,
+                [item for item in items],
+                rule=rule)
 
 
+    def apply_forced_start_up(self):
+        pass
+    
+    
+    def apply_forced_shut_down(self):
+        pass
+    
+    
+    def apply_forced_shut_down_for_group(self):
+        pass
 

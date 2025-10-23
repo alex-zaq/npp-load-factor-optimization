@@ -68,6 +68,7 @@ class Oemof_model:
         constraints_processor.add_group_equal_1()
         constraints_processor.group_equal_or_greater_1()
         constraints_processor.cg_group_no_equal_lower_0()
+        constraints_processor.apply_max_uptime()
 
 
     def launch_solver(self):

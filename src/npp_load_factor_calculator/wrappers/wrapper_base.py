@@ -212,6 +212,9 @@ class Wrapper_base:
     def add_group_equal_or_greater_1(self, wrapper_block):
         self.es.constraints["group_equal_or_greater_1"][self].append(wrapper_block)
              
+             
+    def add_max_uptime_new(self, max_uptime):
+        self.es.constraints["max_uptime"][self] = max_uptime
                     
                     
     def _get_nonconvex_flow(self):

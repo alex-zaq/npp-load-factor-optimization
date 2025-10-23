@@ -42,6 +42,7 @@ class NPP_builder:
         npp_block_builder.set_info("bufer_bus", bufer_bus)
         npp_block_builder.set_info("control_npp_stop_source", control_npp_stop_source)
         npp_block_builder.set_info("allow_months", outage_options["allow_months"])
+        npp_block_builder.set_info("min_work_after_stop", outage_options["min_work_after_stop"])
         
         start_days_mask = None
         if outage_options["start_of_month"]:
@@ -56,11 +57,7 @@ class NPP_builder:
             
         allow_months = outage_options["allow_months"]
             
-            
-        # grad_old = self.resolution_strategy.get_grad_mask_old(allow_months, min_outage_duration)
-        # grad_new = self.resolution_strategy.get_grad_mask_new(allow_months, min_outage_duration)
-            
-        # assert np.array_equal(grad_new, grad_old)
+
             
         avail_months_mask = self.resolution_strategy.get_mask_from_first_day_of_months(allow_months, max_outage_duration)
         grad_mask_min_outage = self.resolution_strategy.get_grad_mask_new(allow_months, min_outage_duration)
@@ -177,10 +174,7 @@ class NPP_builder:
         risks = npp_block_builder.get_info("risks")
         bufer_bus = npp_block_builder.get_info("bufer_bus")
         control_npp_stop_source = npp_block_builder.get_info("control_npp_stop_source")
-        # allow_months = npp_block_builder.get_info("allow_months")
-        # allow_parallel_repairs_npp_level = repair_options["allow_parallel_repairs_npp_stop_npp_level"]
-        
-        
+      
             
             
             
@@ -378,8 +372,38 @@ class NPP_builder:
                     repair_converter_builder.sinks = sinks
         
         
-        
         npp_block_builder.set_info("repairs_blocks", repair_blocks)
+        
+        # self._add_min_work_after_stop_without_repair(npp_block_builder, repairs_npp_no_stop_reducing)
+        
+
+    # def _add_min_work_after_stop_without_repair(self, npp_block_builder, repairs_npp_no_stop_reducing):
+
+    #     min_work_after_stop = npp_block_builder.info["min_work_after_stop"]
+
+    #     if min_work_after_stop:
+            
+    #         control_npp_stop_source = npp_block_builder.get_info("control_npp_stop_source")
+    #         bufer_bus = npp_block_builder.get_info("bufer_bus")
+
+    #         link_source_builder = Wrapper_source(self.es, f"{npp_block_builder.label}_link_source" )
+    #         link_source_builder.update_options({
+    #                     "output_bus": bufer_bus,
+    #                     "nominal_power": 1,
+    #                     "min": 1,
+    #                     "min_downtime": self.resolution_strategy.convert_time(min_work_after_stop),
+    #                 })
+
+    #         # control_npp_stop_source.create_pair_equal_status(link_source_builder)
+            
+    #         link_source_builder.add_base_block_for(control_npp_stop_source)
+            
+    #         for repair_block_no_stop in repairs_npp_no_stop_reducing.values():
+    #             link_source_builder.add_base_block_for(repair_block_no_stop)
+        
+        
+        
+        
         
         
     def _add_start_days_if_required(self, repair_source_builder, start_day):

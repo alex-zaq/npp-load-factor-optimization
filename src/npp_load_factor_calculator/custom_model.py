@@ -30,27 +30,7 @@ class Custom_model:
         
     def build_blocks(self):
         [block.build() for block in self.oemof_es.block_build_lst]
-        
-        
-    # def add_model_level_constraints(self):
-        
-    #     allow_npp_stop_for_model_level = self.scenario["allow_parallel_repairs_npp_stop_for_model_level"]
-    #     allow_npp_no_stop_model_level = self.scenario["allow_parallel_repairs_npp_no_stop_model_level"]
-        
-        
-    #     b_1 = self.block_db.get_bel_npp_block_1()
-    #     b_2 = self.block_db.get_bel_npp_block_2()
-    #     b_3 = self.block_db.get_new_npp_block_1()
-    #     blocks = [b_1, b_2, b_3]
-    #     active_blocks = [b for b in blocks if b]
-    
-    #     if not allow_npp_stop_for_model_level:
-    #         all_npp_stop_repair_blocks = [repair for active_b in active_blocks for repair in active_b.get_info("repairs_blocks_npp_stop")]
-    #         self.oemof_es.constraint_grouper.group_no_equal_status_lower_0(all_npp_stop_repair_blocks)
-            
-    #     if not allow_npp_no_stop_model_level:
-    #         all_no_npp_stop_repair_blocks = [repair for active_b in active_blocks for repair in active_b.get_info("repairs_blocks_npp_no_stop")]
-    #         self.oemof_es.constraint_grouper.group_no_equal_status_lower_0(all_no_npp_stop_repair_blocks)
+
         
     def get_groupes_npp_level(self, block):
         repairs_blocks = block.get_info("repairs_blocks")
@@ -140,11 +120,7 @@ class Custom_model:
             )
             self.block_db.add_block("аэс", bel_npp_block_2)
             
-            
-        # npp_block_builder.set_info("repairs_blocks_npp_stop", repair_blocks_npp_stop)
-        # npp_block_builder.set_info("repairs_blocks_npp_no_stop", repair_blocks_npp_no_stop)
 
-       
     
     def add_new_npp(self):
         
