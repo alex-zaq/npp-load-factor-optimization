@@ -439,8 +439,8 @@ repair_one_risk_2_forced_capital = repair_one_risk_2.update_repair({
 # 3 - года - 2 блока - 1 риск с событиями (обязательный капитальный ремонт) + выбор месяца
 
 
-scen = base | {"№": 1} | one_year | (b_1.update(risk_b1 | repair_one_risk_1_ver2 | outage_jul))
-# scen = base | {"№": 2} | one_year | (b_1.update(risk_b1_2 | repair_one_risk_2 | outage_jul))
+# scen = base | {"№": 1} | one_year | (b_1.update(risk_b1 | repair_one_risk_1_ver2 | outage_jul))
+scen = base | {"№": 2} | one_year | (b_1.update(risk_b1_2 | repair_one_risk_2 | outage_jul))
 
 
 # scen = base | {"№": 3} | two_years | (b_1.update(risk_b1 | repair_one_risk_1 | outage_jul)) | (b_2.update(risk_b2 | repair_one_risk_1 | outage_nov)) 

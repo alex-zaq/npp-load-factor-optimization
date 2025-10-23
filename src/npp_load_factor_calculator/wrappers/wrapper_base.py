@@ -137,7 +137,7 @@ class Wrapper_base:
 
 
 
-    def add_max_uptime(self, max_uptime, coeff=1):
+    def add_max_uptime_old(self, max_uptime, coeff=1):
         
         bus_factory = Generic_bus(self.es)
     
