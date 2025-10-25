@@ -42,10 +42,9 @@ class Constraint_grouper:
         main_group,
         status,  # equal, not_equal, base_for
         dependence_group,
-        where,
+        main_group_mode, # one, all, any
+        dependence_group_mode, # one, all, any
         *,
-        lower = None,
-        upper = None,
         intervals = None,
         ):
         pass
