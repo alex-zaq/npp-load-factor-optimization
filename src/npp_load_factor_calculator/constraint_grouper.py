@@ -36,3 +36,18 @@ class Constraint_grouper:
         
     def add_forced_startup(self, group, intervals):
         self.oemof_es.constraints["forced_startup"]["group_lst"].append((group, intervals))
+        
+    def _generic_constraint(
+        self,
+        main_group,
+        status,  # equal, not_equal, base_for
+        dependence_group,
+        where,
+        *,
+        lower = None,
+        upper = None,
+        intervals = None,
+        ):
+        pass
+    
+    # Для опциональной (обязательной) работы блока (группы) нужен  группа (хотя бы один или только один блок,все блоки) включенных (выключенных) источников с учетом совпадающих (несовпадающих) временных интервалов 
