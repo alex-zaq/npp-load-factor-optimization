@@ -13,5 +13,26 @@ class Constraint_grouper:
         if not hasattr(self.oemof_es, "constraints"):
             self.oemof_es.constraints = defaultdict(lambda: defaultdict(list))
         
-    def group_no_equal_status_lower_0(self, wrapper_block_lst):
+    def add_group_no_equal_status_lower_0(self, wrapper_block_lst):
         self.oemof_es.constraints["cg_group_no_equal_status_lower_0"]["group_lst"].append(wrapper_block_lst)
+                
+    def add_group_no_equal_starus(self, first_group, second_group, lower = 0):
+        pass    
+        
+    def add_max_uptime(self, block, max_uptime):
+        self.oemof_es.constraints["max_uptime"][block] = max_uptime
+    
+    def add_strict_order(self, base_group, dependence_group):
+        self.oemof_es.constraints["strict_order"]["group_lst"].append((base_group, dependence_group))
+        
+    def add_sync_shutdown(self, main_group, dependence_group):
+        self.oemof_es.constraints["forced_shutdown"]["group_lst"].append((main_group, dependence_group))
+        
+    def add_sync_startup(self, main_group, dependence_group):
+        self.oemof_es.constraints["forced_startup"]["group_lst"].append((main_group, dependence_group))
+
+    def add_forced_shutdown(self, group, intervals):
+        self.oemof_es.constraints["forced_shutdown"]["group_lst"].append((group, intervals))
+        
+    def add_forced_startup(self, group, intervals):
+        self.oemof_es.constraints["forced_startup"]["group_lst"].append((group, intervals))
