@@ -18,6 +18,7 @@ class NPP_builder:
 
     def __init__(self, oemof_es, resolution_strategy):
         self.es = oemof_es
+        self.constraint_grouper = self.es.constraint_grouper
         self.resolution_strategy = resolution_strategy
         
                     
@@ -277,32 +278,35 @@ class NPP_builder:
         
         npp_block_builder.set_info("repairs_blocks", repair_blocks)
         
-        # self._add_min_work_after_stop_without_repair(npp_block_builder, repairs_npp_no_stop_reducing)
+        self._add_no_repair_after_stop(npp_block_builder, repairs_npp_no_stop_reducing)
         
 
-    # def _add_min_work_after_stop_without_repair(self, npp_block_builder, repairs_npp_no_stop_reducing):
+    def _add_no_repair_after_stop(self, npp_block_builder, repairs_npp_no_stop_reducing):
 
-    #     min_work_after_stop = npp_block_builder.info["min_work_after_stop"]
+        no_repair_after_stop = npp_block_builder.info["no_repair_after_stop"]
 
-    #     if min_work_after_stop:
+        if not no_repair_after_stop:
+            return
+
+        
             
-    #         control_npp_stop_source = npp_block_builder.get_info("control_npp_stop_source")
-    #         bufer_bus = npp_block_builder.get_info("bufer_bus")
+        control_npp_stop_source = npp_block_builder.get_info("control_npp_stop_source")
+        bufer_bus = npp_block_builder.get_info("bufer_bus")
 
-    #         link_source_builder = Wrapper_source(self.es, f"{npp_block_builder.label}_link_source" )
-    #         link_source_builder.update_options({
-    #                     "output_bus": bufer_bus,
-    #                     "nominal_power": 1,
-    #                     "min": 1,
-    #                     "min_downtime": self.resolution_strategy.convert_time(min_work_after_stop),
-    #                 })
+        link_source_builder = Wrapper_source(self.es, f"{npp_block_builder.label}_link_source" )
+        link_source_builder.update_options({
+                    "output_bus": bufer_bus,
+                    "nominal_power": 1,
+                    "min": 1,
+                    "min_downtime": self.resolution_strategy.convert_time(no_repair_after_stop),
+                })
 
-    #         # control_npp_stop_source.create_pair_equal_status(link_source_builder)
-            
-    #         link_source_builder.add_base_block_for(control_npp_stop_source)
-            
-    #         for repair_block_no_stop in repairs_npp_no_stop_reducing.values():
-    #             link_source_builder.add_base_block_for(repair_block_no_stop)
+        
+        link_source_builder.add_base_block_for(control_npp_stop_source)
+        self.constraint_grouper.add_sync_shutdown([control_npp_stop_source], [link_source_builder])
+        
+        for repair_block_no_stop in repairs_npp_no_stop_reducing.values():
+            link_source_builder.add_base_block_for(repair_block_no_stop)
         
         
         

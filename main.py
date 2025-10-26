@@ -353,8 +353,8 @@ three_years = {"years": [2025, 2026, 2027]}
 
 max_duration = 40
 
-outage_jul = outage_base.update_outage({"start_of_month": True, "allow_months": {"Jul"}, "min_duration": 30, "max_duration": max_duration, "min_work_after_stop": 20})
-outage_nov = outage_base.update_outage({"start_of_month": True, "allow_months": {"Nov"}, "min_duration": 30, "max_duration": max_duration})
+outage_jul = outage_base.update_outage({"start_of_month": True, "allow_months": {"Jul"}, "min_duration": 30, "max_duration": max_duration, "no_repair_after_stop": 0})
+outage_nov = outage_base.update_outage({"start_of_month": True, "allow_months": {"Nov"}, "min_duration": 30, "max_duration": max_duration,"no_repair_after_stop": 0})
 
 outage_jun_jul_aug = outage_base.update_outage({"start_of_month": True, "allow_months": {"Jun", "Jul", "Aug"}, "min_duration": 30, "max_duration": max_duration})
 

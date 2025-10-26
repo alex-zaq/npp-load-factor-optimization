@@ -291,5 +291,91 @@ class Constraint_processor:
         pass
     
     
-
+    # def delayed_startup_rule(m, t):
+    #     timesteps_list = list(m.TIMESTEPS)
+    #     t_idx = timesteps_list.index(t)
+        
+    #     # Пропускаем первый timestep
+    #     if t_idx == 0:
+    #         return Constraint.Skip
+        
+    #     status_b_curr = m.NonConvexFlowBlock.status[source_b, bus_b, t]
+    #     status_b_prev = m.NonConvexFlowBlock.status[source_b, bus_b, t-1]
+        
+    #     # startup_b в момент t
+    #     startup_b = status_b_curr - status_b_prev
+        
+    #     # Проверяем окно [t-delay, t-1]
+    #     start_idx = max(1, t_idx - delay)
+    #     check_window = timesteps_list[start_idx:t_idx]
+        
+    #     if len(check_window) == 0:
+    #         return Constraint.Skip
+        
+    #     # Считаем shutdown события A в окне
+    #     shutdown_events = []
+    #     for tau in check_window:
+    #         tau_idx = timesteps_list.index(tau)
+    #         if tau_idx > 0:
+    #             tau_prev = timesteps_list[tau_idx - 1]
+    #             status_a_prev = m.NonConvexFlowBlock.status[source_a, bus_a, tau_prev]
+    #             status_a_curr = m.NonConvexFlowBlock.status[source_a, bus_a, tau]
+    #             shutdown_events.append(status_a_prev - status_a_curr)
+        
+    #     if len(shutdown_events) > 0:
+    #         # Если был хотя бы один shutdown A, то startup B запрещен
+    #         return startup_b <= 1 - sum(shutdown_events)
+    #     else:
+    #         return Constraint.Skip
+    
+    # model.delayed_startup_constraint = Constraint(
+    #     model.TIMESTEPS,
+    #     rule=delayed_startup_rule
+    # )
+    
+    
+# def add_minimum_uptime_simple(model, source, bus, periods, min_uptime=30):
+#     """
+#     Упрощенная версия для непересекающихся периодов
+#     """
+#     timesteps_list = list(model.TIMESTEPS)
+    
+#     for period_idx, (start_t, end_t) in enumerate(periods):
+        
+#         def simple_uptime_rule(m, t):
+#             t_idx = timesteps_list.index(t)
+            
+#             # Пропускаем если слишком близко к концу периода
+#             if t_idx + min_uptime > end_t:
+#                 # Запрещаем включение если не хватает времени
+#                 if t_idx > start_t:
+#                     status_prev = m.NonConvexFlowBlock.status[source, bus, timesteps_list[t_idx-1]]
+#                     status_curr = m.NonConvexFlowBlock.status[source, bus, t]
+#                     startup = status_curr - status_prev
+#                     return startup <= 0
+#                 return Constraint.Skip
+            
+#             # Если включается в момент t, должен работать min_uptime периодов
+#             if t_idx > start_t:
+#                 status_prev = m.NonConvexFlowBlock.status[source, bus, timesteps_list[t_idx-1]]
+#             elif start_t > 0:
+#                 status_prev = m.NonConvexFlowBlock.status[source, bus, timesteps_list[start_t-1]]
+#             else:
+#                 status_prev = 0
+            
+#             status_curr = m.NonConvexFlowBlock.status[source, bus, t]
+#             startup = status_curr - status_prev
+            
+#             # Сумма status в следующих min_uptime периодах
+#             future_window = timesteps_list[t_idx:t_idx+min_uptime]
+#             status_sum = sum(m.NonConvexFlowBlock.status[source, bus, tau] 
+#                            for tau in future_window)
+            
+#             return status_sum >= min_uptime * startup
+        
+#         period_timesteps = timesteps_list[start_t:end_t]
+#         setattr(model, f'simple_uptime_period_{period_idx}',
+#                 Constraint(period_timesteps, rule=simple_uptime_rule))
+    
+#     return model
 
