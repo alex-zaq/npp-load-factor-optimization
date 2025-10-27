@@ -222,12 +222,28 @@ def add_white_spaces_and_colors_repairs(dict_value, value):
             # new_colors.insert(len(new_colors) - 1 + 1, (1,0,0,0)) 
             new_colors.insert(len(new_colors) - 1 + 1, df_item.block_color) 
     
+    new_df = pd.DataFrame(new_df)
     new_df.clip(lower=0)
     new_df[new_df < 0] = 0
     # new_df = new_df.drop(columns=[col for col in new_df.columns if (new_df[col] <= 0).all()])
     new_df.colors = new_colors
     return new_df
     
+
+def find_empty_columns(df: pd.DataFrame, threshold: float = 0):
+
+    empty_cols = []
+    
+    for col in df.columns:
+        try:
+            if pd.api.types.is_numeric_dtype(df[col]) and not (df[col].dropna() > threshold).any():
+                    empty_cols.append(col)
+        except Exception:
+            pass
+    
+    return empty_cols
+
+
 
 def get_all_block_repairs_df_by_dict(repair_dict):
     res = pd.DataFrame()
@@ -538,6 +554,22 @@ def get_colors_by_repair_name(repair_dict):
                 colors.append(color)
     
     return colors
+
+
+def find_ones_intervals(arr):
+    arr = np.asarray(arr)
+    ones_indices = np.where(arr == 1)[0]
+    if len(ones_indices) <= 1:
+        return []
+    intervals = []
+    for i in range(len(ones_indices) - 1):
+        start = int(ones_indices[i])
+        end = int(ones_indices[i + 1])
+        intervals.append((start, end))
+    
+    return intervals
+
+
 
 
 class Converter:

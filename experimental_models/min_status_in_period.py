@@ -51,15 +51,77 @@ model = solph.Model(energysystem)
 
 
 
-periods_data = {((10,50), (60,90)) : [(expense_source, el_bus), 10]}
+periods_data = {((0,10), (60,90)) : [(expense_source, el_bus), 10]}
    
         
 
+# def mandatory_single_run_simple(m, periods_data):
+#     """
+#     Максимально простая версия: только 2 ограничения на период
+#     1. Общее время работы = required_uptime
+#     2. Максимум один старт
+#     """
+    
+#     timesteps_list = list(m.TIMESTEPS)
+    
+#     for i, (start_finish_pairs_lst, data) in enumerate(periods_data.items()):
+#         if len(data) == 3:
+#             source_obj, bus_obj, required_uptime = data
+#             flow_tuple = (source_obj, bus_obj)
+#         elif len(data) == 2:
+#             flow_tuple, required_uptime = data
+#         else:
+#             raise ValueError(f"Invalid data format: {data}")
+        
+#         for j, (start_t, end_t) in enumerate(start_finish_pairs_lst):
+#             period_length = end_t - start_t
+            
+#             if period_length < required_uptime:
+#                 print(f"Warning: Period {i}_{j} too short")
+#                 continue
+            
+#             period_timesteps = timesteps_list[start_t:end_t]
+            
+#             # Ограничение 1: Общее время работы
+#             setattr(m, f'total_uptime_{i}_{j}',
+#                    po.Constraint(
+#                        expr=sum(m.NonConvexFlowBlock.status[flow_tuple, t] 
+#                                for t in period_timesteps) == required_uptime
+#                    ))
+            
+#             # Ограничение 2: Максимум один старт (переход 0->1)
+#             def max_one_startup_rule(model):
+#                 startups = []
+                
+#                 for idx in range(len(period_timesteps)):
+#                     t = period_timesteps[idx]
+                    
+#                     if idx == 0:
+#                         if start_t > 0:
+#                             prev_t = timesteps_list[start_t - 1]
+#                             startup = (model.NonConvexFlowBlock.status[flow_tuple, t] - 
+#                                      model.NonConvexFlowBlock.status[flow_tuple, prev_t])
+#                         else:
+#                             startup = model.NonConvexFlowBlock.status[flow_tuple, t]
+#                     else:
+#                         prev_t = period_timesteps[idx - 1]
+#                         startup = (model.NonConvexFlowBlock.status[flow_tuple, t] - 
+#                                  model.NonConvexFlowBlock.status[flow_tuple, prev_t])
+                    
+#                     startups.append(startup)
+                
+#                 # Сумма всех стартов <= 1 (но с учетом первого ограничения будет = 1)
+#                 return sum(startups) <= 1
+            
+#             setattr(m, f'max_one_startup_{i}_{j}',
+#                    po.Constraint(rule=max_one_startup_rule))
+
+
 def mandatory_single_run_simple(m, periods_data):
     """
-    Максимально простая версия: только 2 ограничения на период
-    1. Общее время работы = required_uptime
-    2. Максимум один старт
+    Простая версия с минимальным временем непрерывной работы:
+    1. Общее время работы >= required_uptime (может работать дольше)
+    2. Максимум один старт (гарантирует непрерывность)
     """
     
     timesteps_list = list(m.TIMESTEPS)
@@ -82,14 +144,20 @@ def mandatory_single_run_simple(m, periods_data):
             
             period_timesteps = timesteps_list[start_t:end_t]
             
-            # Ограничение 1: Общее время работы
-            setattr(m, f'total_uptime_{i}_{j}',
+            # ===================================================================
+            # Ограничение 1: Общее время работы >= required_uptime
+            # Источник МОЖЕТ работать дольше, если это выгодно
+            # ===================================================================
+            setattr(m, f'min_uptime_{i}_{j}',
                    po.Constraint(
                        expr=sum(m.NonConvexFlowBlock.status[flow_tuple, t] 
-                               for t in period_timesteps) == required_uptime
+                               for t in period_timesteps) >= required_uptime
                    ))
             
+            # ===================================================================
             # Ограничение 2: Максимум один старт (переход 0->1)
+            # Это гарантирует непрерывность работы
+            # ===================================================================
             def max_one_startup_rule(model):
                 startups = []
                 
@@ -97,11 +165,13 @@ def mandatory_single_run_simple(m, periods_data):
                     t = period_timesteps[idx]
                     
                     if idx == 0:
+                        # Первый момент периода
                         if start_t > 0:
                             prev_t = timesteps_list[start_t - 1]
                             startup = (model.NonConvexFlowBlock.status[flow_tuple, t] - 
                                      model.NonConvexFlowBlock.status[flow_tuple, prev_t])
                         else:
+                            # Самый первый момент симуляции
                             startup = model.NonConvexFlowBlock.status[flow_tuple, t]
                     else:
                         prev_t = period_timesteps[idx - 1]
@@ -110,21 +180,33 @@ def mandatory_single_run_simple(m, periods_data):
                     
                     startups.append(startup)
                 
-                # Сумма всех стартов <= 1 (но с учетом первого ограничения будет = 1)
+                # Максимум один старт в периоде
                 return sum(startups) <= 1
             
             setattr(m, f'max_one_startup_{i}_{j}',
                    po.Constraint(rule=max_one_startup_rule))
 
-# Использование
 mandatory_single_run_simple(model, periods_data)
-# timesteps_list = list(model.TIMESTEPS)
-# period_timesteps = timesteps_list[10:50]
-# setattr(model, f'total_uptime_{1}_{2}',
-#         po.Constraint(
-#             expr=sum(model.NonConvexFlowBlock.status[expense_source, el_bus, t] 
-#                     for t in period_timesteps) == 10
-#         ))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 model.solve(
     solver="cplex",

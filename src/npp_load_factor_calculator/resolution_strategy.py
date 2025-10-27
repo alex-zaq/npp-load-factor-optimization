@@ -51,14 +51,20 @@ class Resolution_strategy:
             res[self.timeindex.month == pd.to_datetime(month, format='%b').month] = 1
         return res
     
-    def get_every_year_first_step_mask(self):
+    def get_every_year_first_step_mask_old(self):
         raise NotImplementedError
     
     def get_start_points(self):
         raise NotImplementedError
     
-    def get_last_step_mask(self):
+    def get_last_step_mask_old(self):
         res = np.zeros(len(self.timeindex))
+        res[-1] = 1
+        return res
+    
+    def get_first_last_step_mask(self):
+        res = np.zeros(len(self.timeindex))
+        res[0] = 1
         res[-1] = 1
         return res
     
@@ -96,7 +102,7 @@ class Hourly_resolution_strategy(Resolution_strategy):
             profile[start_idx] += risk_per_hour
         return profile
 
-    def get_every_year_first_step_mask(self):
+    def get_every_year_first_step_mask_old(self):
         res = np.zeros(len(self.timeindex))
         res[(self.timeindex.hour == 0) & (self.timeindex.day == 1) & (self.timeindex.month == 1)] = 1
         res[0] = 0
@@ -155,11 +161,18 @@ class Daily_resolution_strategy(Resolution_strategy):
             profile[start_idx] += risk_per_hour / 24
         return profile
     
-    def get_every_year_first_step_mask(self):
+    def get_every_year_first_step_mask_old(self):
         res = np.zeros(len(self.timeindex))
         res[(self.timeindex.day == 1) & (self.timeindex.month == 1)] = 1
         res[0] = 0
         return res
+        
+    def get_every_year_first_step_mask_new(self):
+        res = np.zeros(len(self.timeindex))
+        res[(self.timeindex.day == 1) & (self.timeindex.month == 1)] = 1
+        return res
+    
+    
     
     def get_mask_from_first_day_of_months(self, months, duration):
         month_nums = [pd.to_datetime(month, format='%b').month for month in months]

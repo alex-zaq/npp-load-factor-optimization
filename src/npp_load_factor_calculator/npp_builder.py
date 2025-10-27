@@ -7,6 +7,7 @@ from src.npp_load_factor_calculator.generic_models.generic_storage import (
 from src.npp_load_factor_calculator.utilites import (
     filter_dates_dict_by_npp_stop,
     filter_dates_dict_by_year,
+    find_ones_intervals,
     plot_array,
 )
 from src.npp_load_factor_calculator.wrappers.wrapper_converter import Wrapper_converter
@@ -52,7 +53,12 @@ class NPP_builder:
         min_outage_duration = self.resolution_strategy.convert_time(outage_options["min_duration"])
         max_outage_duration = self.resolution_strategy.convert_time(outage_options["max_duration"])
         
-        mask_for_storage = self.resolution_strategy.get_every_year_first_step_mask()
+        mask_for_storage = self.resolution_strategy.get_every_year_first_step_mask_old()
+        mask_first_day_every_year = self.resolution_strategy.get_every_year_first_step_mask_new()
+        periods_pairs  = find_ones_intervals(mask_first_day_every_year)
+        
+        
+        
         coeff = self.resolution_strategy.coeff
             
             
@@ -78,17 +84,22 @@ class NPP_builder:
         
         
         
-        control_npp_stop_source.add_specific_status_duration_in_period_old(
-            mode="active",
-            min_duration=min_outage_duration,
+        # control_npp_stop_source.add_specific_status_duration_in_period_old(
+        #     mode="active",
+        #     avail_months_mask=avail_months_mask,
+        #     start_days_mask=start_days_mask,
+        #     mask=mask_for_storage,
+        #     coeff=coeff,
+        #     min_duration=min_outage_duration,
+        #     max_duration=max_outage_duration
+        #     )
+        
+        control_npp_stop_source.add_specific_status_duration_in_period_new(
             avail_months_mask=avail_months_mask,
             start_days_mask=start_days_mask,
-            mask=mask_for_storage,
-            coeff=coeff,
-            max_duration=max_outage_duration
-            )
-        
-
+            min_duration=min_outage_duration,
+            periods_pairs=periods_pairs
+        )
 
 
 
@@ -314,16 +325,26 @@ class NPP_builder:
         
     def _add_forced_active_if_required(self, repair_source_builder, forced_in_period):
         if forced_in_period:
-            last_step_mask = self.resolution_strategy.get_last_step_mask()
-            coeff = self.resolution_strategy.coeff
+            # last_step_mask = self.resolution_strategy.get_last_step_mask()
+            # coeff = self.resolution_strategy.coeff
+            # repair_duration = repair_source_builder.options["min_uptime"]
+            # repair_source_builder.add_specific_status_duration_in_period_old(
+            #     mode = "active",
+            #     min_duration = repair_duration,
+            #     avail_months_mask = 1,
+            #     start_days_mask = None,
+            #     mask = last_step_mask,
+            #     coeff = coeff
+            #     )
+
+            mask_first_day_every_year = self.resolution_strategy.get_first_last_step_mask()
             repair_duration = repair_source_builder.options["min_uptime"]
-            repair_source_builder.add_specific_status_duration_in_period(
-                mode = "active",
-                min_duration = repair_duration,
+            periods_pairs  = find_ones_intervals(mask_first_day_every_year)
+            repair_source_builder.add_specific_status_duration_in_period_new(
                 avail_months_mask = 1,
                 start_days_mask = None,
-                mask = last_step_mask,
-                coeff = coeff
+                min_duration = repair_duration,
+                periods_pairs = periods_pairs
                 )
             
 

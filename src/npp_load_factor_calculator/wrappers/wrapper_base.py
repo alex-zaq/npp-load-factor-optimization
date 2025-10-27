@@ -54,6 +54,7 @@ class Wrapper_base:
             self.es.block_build_lst = []
         self.es.block_build_lst.append(self)
  
+  
  
     def add_specific_status_duration_in_period_old(
         self,
@@ -65,11 +66,6 @@ class Wrapper_base:
         min_duration,
         max_duration = None,
         ):
-        
-        # plot_array(avail_months_mask)
-        # plot_array(start_days_mask)
-        # plot_array(mask)
-        
 
         if mode not in ("active", "non_active"):
             raise ValueError("mode must be active or non_active")
@@ -135,9 +131,28 @@ class Wrapper_base:
         elif mode == "non_active":
             self.create_pair_no_equal_status_lower_0(wrapper_charger_builder)
 
+    def add_specific_status_duration_in_period_new(
+        self,
+        avail_months_mask,
+        start_days_mask,
+        min_duration,
+        periods_pairs
+    ):
+        avail_months_mask = avail_months_mask if avail_months_mask is not None else 1
+        self.add_startup_cost_by_mask(start_days_mask)
+        self.update_options({"min_uptime": min_duration, "max": avail_months_mask, "min": 1})
+        self.add_min_status_in_period(periods_pairs, min_duration)
 
 
-            
+
+
+
+
+
+
+
+
+
     def add_startup_cost_by_mask(self, mask):
         mask = np.array(mask)
         startup_cost = self.options.get("startup_cost", 0)
@@ -187,6 +202,8 @@ class Wrapper_base:
         self.es.constraints["delayed_startup_by_shutdown"][self] = {"triggered_block": wrapper_block, "delay": delay}
                     
     
+    def add_min_status_in_period(self, periods, min_required_time):
+        self.es.constraints["min_status_in_period"][self] = {"periods": periods, "min_required_time": min_required_time}
                     
                     
     def _get_nonconvex_flow(self):

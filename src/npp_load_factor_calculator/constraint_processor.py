@@ -287,7 +287,14 @@ class Constraint_processor:
     
     
     def _get_pairs_for_min_status_in_period(self, contraints):
-        pass
+        items_main = []
+        for block, data in contraints.items():
+            item_loc = {"periods": data["periods"], "block": block.get_pair_after_building(), "min_required_time": data["min_required_time"]}
+            items_main.append(item_loc)        
+        return items_main
+                  
+              
+    
     
     def _get_pairs_for_delayed_max_uptime(self, contraints):
         items = []
@@ -306,12 +313,6 @@ class Constraint_processor:
         model = self.model
         contraints = self.constraints["delayed_startup_by_shutdown"]
         items = self._get_pairs_for_delayed_max_uptime(contraints) or []
-        
-        # items = [{
-        #    "triggered_pair": (expense_source_2, el_bus),
-        #    "delayed_pair": (cheap_source, el_bus),
-        #     "delay": 40,
-        # }] 
          
         def add_delayed_startup_efficient(m, items):
             timesteps_list = list(m.TIMESTEPS)
@@ -365,22 +366,18 @@ class Constraint_processor:
         contraints = self.constraints["min_status_in_period"]
         periods_data = self._get_pairs_for_min_status_in_period(contraints) or {}    
         
-        # periods_data = {((10,50), (60,90)) : [(expense_source, el_bus), 10]}
-          
+        # periods_data = {((10,50), (60,90)) : [(expense_source, el_bus), 10]}  - страый вариант
+        # periods_data = [{"periods": ((10,50), (60,90)), "block": (expense_source, el_bus), "min_required_time": 10},] - новый вариант          
 
         def mandatory_single_run_simple(m, periods_data):
             
             timesteps_list = list(m.TIMESTEPS)
             
-            for i, (start_finish_pairs_lst, data) in enumerate(periods_data.items()):
-                if len(data) == 3:
-                    source_obj, bus_obj, required_uptime = data
-                    flow_tuple = (source_obj, bus_obj)
-                elif len(data) == 2:
-                    flow_tuple, required_uptime = data
-                else:
-                    raise ValueError(f"Invalid data format: {data}")
-                
+            for i, data_dict in enumerate(periods_data):
+                required_uptime = data_dict["min_required_time"]
+                start_finish_pairs_lst = data_dict["periods"]
+                flow_tuple = data_dict["block"]
+
                 for j, (start_t, end_t) in enumerate(start_finish_pairs_lst):
                     period_length = end_t - start_t
                     
@@ -394,7 +391,7 @@ class Constraint_processor:
                     setattr(m, f'total_uptime_{i}_{j}',
                         po.Constraint(
                             expr=sum(m.NonConvexFlowBlock.status[flow_tuple, t] 
-                                    for t in period_timesteps) == required_uptime
+                                    for t in period_timesteps) >= required_uptime
                         ))
                     
                     # Ограничение 2: Максимум один старт (переход 0->1)
@@ -423,6 +420,9 @@ class Constraint_processor:
                     
                     setattr(m, f'max_one_startup_{i}_{j}',
                         po.Constraint(rule=max_one_startup_rule))
+
+
+
 
         mandatory_single_run_simple(model, periods_data)
             

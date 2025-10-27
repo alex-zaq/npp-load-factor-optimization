@@ -8,6 +8,7 @@ from src.npp_load_factor_calculator.utilites import (
     add_white_spaces_and_colors_el_gen,
     add_white_spaces_and_colors_repairs,
     center_matplotlib_figure,
+    find_empty_columns,
     get_colors_by_repair_name,
     get_file_name_by_scenario,
     get_file_name_with_auto_number,
@@ -249,7 +250,8 @@ class Result_viewer:
             ax_risk_df.axhline(y=1, color='r', linestyle='--')
            
             
-            legend_empty_cols = [col for col in repairs_df.columns if (repairs_df[col] <= 0).all()]
+            # legend_empty_cols = [col for col in repairs_df.columns if (repairs_df[col] <= 0).all()]
+            legend_empty_cols = find_empty_columns(repairs_df)
             
             
             lines_1, labels_1 = ax_left.get_legend_handles_labels()
@@ -405,7 +407,8 @@ class Result_viewer:
             
             main_legend_dict.update(legen_cost_dict)
 
-            legend_empty_cols = [col for col in repairs_df.columns if (repairs_df[col] <= 0).all()]
+            # legend_empty_cols = [col for col in repairs_df.columns if (repairs_df[col] <= 0).all()]
+            legend_empty_cols = find_empty_columns(repairs_df)
             
             legend_dict_updated = {k:v for k,v in main_legend_dict.items() if ("white" not in k) and (k not in legend_empty_cols)}
             

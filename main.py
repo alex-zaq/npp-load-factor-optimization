@@ -356,9 +356,9 @@ max_duration = 40
 outage_jul = outage_base.update_outage({"start_of_month": True, "allow_months": {"Jul"}, "min_duration": 30, "max_duration": max_duration, "min_work_after_stop": 0})
 outage_nov = outage_base.update_outage({"start_of_month": True, "allow_months": {"Nov"}, "min_duration": 30, "max_duration": max_duration,"min_work_after_stop": 0})
 
-outage_jun_jul_aug = outage_base.update_outage({"start_of_month": True, "allow_months": {"Jun", "Jul", "Aug"}, "min_duration": 30, "max_duration": max_duration})
+outage_jun_jul_aug = outage_base.update_outage({"start_of_month": True, "allow_months": {"Jun", "Jul", "Aug"}, "min_duration": 30, "max_duration": max_duration, "min_work_after_stop": 0})
 
-outage_oct_nov_dec = outage_base.update_outage({"start_of_month": True, "allow_months": { "Oct", "Nov", "Dec"}, "min_duration": 30, "max_duration": max_duration})
+outage_oct_nov_dec = outage_base.update_outage({"start_of_month": True, "allow_months": { "Oct", "Nov", "Dec"}, "min_duration": 30, "max_duration": max_duration, "min_work_after_stop": 0})
 
 risk_b1 = one_risk_base.update_risk({"r1": {"id": 0, "events": events_base_1, "max": 1, "value": 0.1, "start_risk_rel": 0.2}})
 risk_b2 = one_risk_base.update_risk({"r1": {"id": 0, "events": events_base_2, "max": 1, "value": 0.1, "start_risk_rel": 0.4}})
@@ -388,6 +388,12 @@ repair_one_risk_1_ver2 = repair_base.update_repair({
     "maintence-1": {"no_parallel_tag_for_model": 1, "no_parallel_tag_for_npp": 1,  "risk_reducing": {"r1": 0.1}, "min_downtime": 40},
     # "maintence-2": {"no_parallel_tag_for_model": 1, "no_parallel_tag_for_npp": 0,  "risk_reducing": {"r1": 0.2}, "duration": 15},
     "current-1":   {"no_parallel_tag_for_model": 1, "no_parallel_tag_for_npp": 1,  "risk_reducing": {"r1": 0.4}},
+})
+
+repair_one_risk_1_ver3 = repair_base.update_repair({
+    "maintence-1": {"no_parallel_tag_for_model": 1, "no_parallel_tag_for_npp": 1,  "risk_reducing": {"r1": 0.1}, "min_downtime": 40},
+    "current-1":   {"no_parallel_tag_for_model": 1, "no_parallel_tag_for_npp": 1,  "risk_reducing": {"r1": 0.4}},
+    "capital-1": {"no_parallel_tag_for_model": 1, "no_parallel_tag_for_npp": 1, "risk_reducing": {"r1": 0.70}, "duration": 40, "forced_in_period": True},
 })
 
 repair_one_risk_1_forced_capital = repair_base.update_repair({
@@ -439,8 +445,8 @@ repair_one_risk_2_forced_capital = repair_one_risk_2.update_repair({
 # 3 - года - 2 блока - 1 риск с событиями (обязательный капитальный ремонт) + выбор месяца
 
 
-scen = base | {"№": 1} | one_year | (b_1.update(risk_b1 | repair_one_risk_1_ver2 | outage_jul))
-# scen = base | {"№": 2} | one_year | (b_1.update(risk_b1_2 | repair_one_risk_2 | outage_jul))
+# scen = base | {"№": 1} | one_year | (b_1.update(risk_b1 | repair_one_risk_1_ver2 | outage_jul))
+scen = base | {"№": 2} | one_year | (b_1.update(risk_b1_2 | repair_one_risk_2 | outage_jul))
 
 
 # scen = base | {"№": 3} | two_years | (b_1.update(risk_b1 | repair_one_risk_1 | outage_jul)) | (b_2.update(risk_b2 | repair_one_risk_1 | outage_nov)) 
@@ -462,38 +468,6 @@ scen = base | {"№": 1} | one_year | (b_1.update(risk_b1 | repair_one_risk_1_ve
 
 
 
-# scen = base | {"№": 2} | two_years | (b_1.update(risk_b1 | repair_base | outage_jul)) | (b_2.update(risk_b2 | repair_base | outage_nov)) 
-
-
-
-
-
-# scen = base | {"№": 1} | one_year | (b_1.update(risk_b1 | repair_reset | outage)) 
-# scen = base | {"№": 1} | two_years | (b_1.update(risk_b1 | repair_reset | outage)) 
-# scen = base | {"№": 1} | three_years | (b_1.update(risk_b1 | repair_reset | outage)) 
-
-
-# scen = base_parallel | {"№": 1} | one_year | (b_1.update(risk_b1 | repair_base | outage_jul)) | (b_2.update(risk_b2 | repair_base | outage_nov)) 
-# scen = base_no_parallel | {"№": 1} | one_year | (b_1.update(risk_b1 | repair_base | outage_jul)) | (b_2.update(risk_b2 | repair_base | outage_nov)) 
-# scen = base | {"№": 1} | three_years | (b_1.update(risk_b1 | repair_base | outage_jul)) | (b_2.update(risk_b2 | repair_base | outage_nov)) 
-
-
-
-
-
-# scen = base | {"№": 2} | one_year | (b_1.update(one_risk_events_1 | repair_reset | outage_july))
-# scen = base | {"№": 3} | one_year | (b_1.update(two_risk_events_4 | repair_two_risk | outage_july))
-# scen = base | {"№": 4} | one_year | (b_1.update(one_risk_events_1 | repair_stop_conc_1 | repair_no_stop_conc_1 | outage_july_june))
-
-# scen = base | {"№": 5} | two_years | (b_1.update(one_risk_events_5 | repair_stop_conc_1 |repair_no_stop_conc_1 | outage_july_june)) 
-# scen = base | {"№": 6} | two_years | (b_1.update(two_risk_events_4 | repair_stop_conc_1 |repair_no_stop_conc_1 | outage_july_june)) 
-# scen = base | {"№": 7} | two_years | (b_1.update(one_risk_events_5 | repair_stop_conc_1 |repair_no_stop_conc_1 | outage_july_june)) 
-# scen = base | {"№": 8} | two_years | (b_1.update(one_risk_events_5 | repair_stop_conc_1 |repair_no_stop_conc_1 | outage_july_june)) 
-
-# scen = base | {"№": 9} | three_years | (b_1.update(one_risk_events_5 | repair_stop_conc_1 |repair_no_stop_conc_1 | outage_july_june)) 
-# scen = base | {"№": 10} | three_years | (b_1.update(one_risk_events_5 | repair_stop_conc_1 |repair_no_stop_conc_1 | outage_july_june)) 
-# scen = base | {"№": 11} | three_years | (b_1.update(one_risk_events_5 | repair_stop_conc_1 |repair_no_stop_conc_1 | outage_july_june)) 
-# scen = base | {"№": 12} | three_years | (b_1.update(one_risk_events_5 | repair_stop_conc_1 | repair_no_stop_conc_1 | outage_july_june)) 
 ###############################################################################
 
 oemof_model = Oemof_model(
@@ -502,7 +476,7 @@ oemof_model = Oemof_model(
         "solver": "cplex",
         "solver_verbose": True,
         "logging": True,
-        "mip_gap": 0.005
+        "mip_gap": 0.01
     } 
 )
 
@@ -561,14 +535,14 @@ block_grouper.set_options(
         "средний ремонт-2": {"id": 5, "color": "#0c2450"},
         "капитальный ремонт-1": {"id": 6, "color": "#ff4000"},
 
-        "фаза ремонта-1": {"id": 7, "color": "#0b07fc"},
-        "фаза ремонта-2": {"id": 8, "color": "#ff00b3"},
-        "фаза ремонта-3": {"id": 9, "color": "#501d0c"},
-        "фаза ремонта-4": {"id": 10, "color": "#0c2450"},
-        # "фаза ремонта-4": {"id": 10, "color": "#FBFF00"},
-        "фаза ремонта-5": {"id": 11, "color": "#ff4000"},
-        "фаза ремонта-6": {"id": 12, "color": "#12741a"},
-        "фаза ремонта-7": {"id": 13, "color": "#275f66"},
+        "тип ремонта-1": {"id": 7, "color": "#0b07fc"},
+        "тип ремонта-2": {"id": 8, "color": "#ff00b3"},
+        "тип ремонта-3": {"id": 9, "color": "#501d0c"},
+        "тип ремонта-4": {"id": 10, "color": "#0c2450"},
+        # "тип ремонта-4": {"id": 10, "color": "#FBFF00"},
+        "тип ремонта-5": {"id": 11, "color": "#ff4000"},
+        "тип ремонта-6": {"id": 12, "color": "#12741a"},
+        "тип ремонта-7": {"id": 13, "color": "#275f66"},
     },
     repairs_cost_options={
         "БелАЭС (блок 1)-затраты": {"block": b_1, "style":"-", "color": "#18be2f"},
@@ -623,7 +597,8 @@ print("done")
 
 
 
-
+# включиться один раз за период максимум для фаз ремнта
+# изменить имя фаз ремонта
 # фазы ремонтов - название легенды
 # фото с ноутбука
 # сделать расчет с ноутбука
