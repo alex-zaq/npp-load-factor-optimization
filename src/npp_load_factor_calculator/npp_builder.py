@@ -78,7 +78,7 @@ class NPP_builder:
         
         
         
-        control_npp_stop_source.add_specific_status_duration_in_period(
+        control_npp_stop_source.add_specific_status_duration_in_period_old(
             mode="active",
             min_duration=min_outage_duration,
             avail_months_mask=avail_months_mask,
@@ -278,35 +278,23 @@ class NPP_builder:
         
         npp_block_builder.set_info("repairs_blocks", repair_blocks)
         
-        self._add_no_repair_after_stop(npp_block_builder, repairs_npp_no_stop_reducing)
+        
+        repair_no_stop_reducing_blocks = [b for b in repair_blocks.values() if not b.info["npp_stop_required"]]
+        
+        self._add_no_repair_after_stop(npp_block_builder, repair_no_stop_reducing_blocks)
         
 
     def _add_no_repair_after_stop(self, npp_block_builder, repairs_npp_no_stop_reducing):
 
-        no_repair_after_stop = npp_block_builder.info["no_repair_after_stop"]
+        no_repair_after_stop = npp_block_builder.info["min_work_after_stop"]
 
         if not no_repair_after_stop:
             return
-
         
-            
         control_npp_stop_source = npp_block_builder.get_info("control_npp_stop_source")
-        bufer_bus = npp_block_builder.get_info("bufer_bus")
-
-        link_source_builder = Wrapper_source(self.es, f"{npp_block_builder.label}_link_source" )
-        link_source_builder.update_options({
-                    "output_bus": bufer_bus,
-                    "nominal_power": 1,
-                    "min": 1,
-                    "min_downtime": self.resolution_strategy.convert_time(no_repair_after_stop),
-                })
-
         
-        link_source_builder.add_base_block_for(control_npp_stop_source)
-        self.constraint_grouper.add_sync_shutdown([control_npp_stop_source], [link_source_builder])
-        
-        for repair_block_no_stop in repairs_npp_no_stop_reducing.values():
-            link_source_builder.add_base_block_for(repair_block_no_stop)
+        for repair_block_no_stop in repairs_npp_no_stop_reducing:
+            repair_block_no_stop.add_delayed_startup_by_shutdown(control_npp_stop_source, no_repair_after_stop)
         
         
         

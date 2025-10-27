@@ -290,12 +290,21 @@ class Constraint_processor:
         pass
     
     def _get_pairs_for_delayed_max_uptime(self, contraints):
-        pass
+        items = []
+        for delayed_block, data in contraints.items():
+            item = {
+                "triggered_pair": data["triggered_block"].get_pair_after_building(),
+                "delayed_pair": delayed_block.get_pair_after_building(),
+                "delay": data["delay"],
+            }
+            items.append(item)
+        return items
+
     
     def apply_delayed_max_uptime(self):
         
         model = self.model
-        contraints = self.constraints["delayed_max_uptime"]
+        contraints = self.constraints["delayed_startup_by_shutdown"]
         items = self._get_pairs_for_delayed_max_uptime(contraints) or []
         
         # items = [{
@@ -305,9 +314,6 @@ class Constraint_processor:
         # }] 
          
         def add_delayed_startup_efficient(m, items):
-            """
-            Эффективная версия: создает отдельное ограничение для каждой пары (t_shutdown, t_startup)
-            """
             timesteps_list = list(m.TIMESTEPS)
             
             for idx, item in enumerate(items):

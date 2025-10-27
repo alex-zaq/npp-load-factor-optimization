@@ -55,7 +55,7 @@ class Wrapper_base:
         self.es.block_build_lst.append(self)
  
  
-    def add_specific_status_duration_in_period(
+    def add_specific_status_duration_in_period_old(
         self,
         mode,
         avail_months_mask,
@@ -137,40 +137,6 @@ class Wrapper_base:
 
 
 
-    def add_max_uptime_old(self, max_uptime, coeff=1):
-        
-        bus_factory = Generic_bus(self.es)
-    
-        storage_in_bus = bus_factory.create_bus(f"{self.label}_max_up_time_storage_in_bus")
-        storage_out_bus = bus_factory.create_bus(f"{self.label}_max_up_time_storage_out_bus")
-
-        block_power = self.options["nominal_power"]
-
-        
-        storage_control = solph.components.GenericStorage(
-            label=f"{self.label}_max_up_time_storage",
-            initial_storage_level=0,
-            nominal_storage_capacity=max_uptime * block_power * coeff,
-            inputs={storage_in_bus: solph.Flow()},
-            outputs={storage_out_bus: solph.Flow()},
-            balanced=False
-        )
-        storage_control.inputs_pair = [(storage_in_bus, storage_control)]
-        storage_control.outputs_pair = [(storage_control, storage_out_bus)]
-        self.es.add(storage_control)
-        self.set_info("max_uptime_storage", storage_control)
-        
-        charger_builder = self.create_wrapper_source_builder(self.es, f"{self.label}_max_up_time_control_source")
-        charger_builder.update_options({
-            "nominal_power": 1e8,
-            "output_bus": storage_in_bus,
-            "min": 0,
-            })
-        
-        self.update_options({"second_input_bus": storage_out_bus})
-        charger_builder.create_pair_no_equal_status_lower_0(self)
-
-
             
     def add_startup_cost_by_mask(self, mask):
         mask = np.array(mask)
@@ -215,6 +181,12 @@ class Wrapper_base:
              
     def add_max_uptime_new(self, max_uptime):
         self.es.constraints["max_uptime"][self] = max_uptime
+                    
+                    
+    def add_delayed_startup_by_shutdown(self, wrapper_block, delay):
+        self.es.constraints["delayed_startup_by_shutdown"][self] = {"triggered_block": wrapper_block, "delay": delay}
+                    
+    
                     
                     
     def _get_nonconvex_flow(self):

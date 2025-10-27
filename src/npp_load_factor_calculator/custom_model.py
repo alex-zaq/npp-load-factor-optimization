@@ -64,12 +64,12 @@ class Custom_model:
             if groups_by_npp_level_with_tag:
                 for _, repair_blocks in groups_by_npp_level_with_tag:
                     repair_blocks = list(repair_blocks)
-                    self.oemof_es.constraint_grouper.group_no_equal_status_lower_0(repair_blocks)
+                    self.oemof_es.constraint_grouper.add_group_no_equal_status_lower_0(repair_blocks)
         
         groups_model_level = self.get_groupes_model_level(active_blocks)
         for _, repair_blocks in groups_model_level:
             repair_blocks = list(repair_blocks)
-            self.oemof_es.constraint_grouper.group_no_equal_status_lower_0(repair_blocks)
+            self.oemof_es.constraint_grouper.add_group_no_equal_status_lower_0(repair_blocks)
         
         
     def add_bel_npp(self):
