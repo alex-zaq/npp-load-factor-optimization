@@ -21,7 +21,7 @@ def get_avail_pattern(start_end_pairs, date_time_index):
 
     avail_pattern = [0] * len(date_time_index) 
     for start, end in start_end_pairs:
-        for i in range(start, end):
+        for i in range(start, end+1):
             avail_pattern[i] = 1
     return avail_pattern
 
@@ -77,23 +77,25 @@ items = [{
 }]
 
 def add_strict_status_by_pattern_constraint(model, items):
-    def shutdown_rule(m, t, source, bus, avail_pattern):
-         return m.NonConvexFlowBlock.status[source, bus, t] == avail_pattern[t]
+    def shutdown_rule(m, point , source, bus):
+         return m.NonConvexFlowBlock.status[source, bus, point] == 0
     for item in items:
         source, bus = item["block_pair"]
         avail_pattern = item["avail_pattern"]
+        points = set(point for point in range(len(avail_pattern)) if avail_pattern[point] == 0)
         setattr(model,
                 f"forced_shutdown_by_pattern_{source.label}_{bus.label}",
                 po.Constraint(
-                    model.TIMESTEPS,
-                    rule=lambda m, t, source=source, bus=bus, avail_pattern=avail_pattern: shutdown_rule(m, t, source, bus, avail_pattern),
+                    # model.TIMESTEPS,
+                    [point for point in points],
+                    rule=lambda m, point, source=source, bus=bus: shutdown_rule(m, point, source, bus),
                 ))
         
 add_strict_status_by_pattern_constraint(model, items)
 
 items = [{
            "block_pair": (cheap_source, el_bus),
-           "intervals_lst": [30]
+           "intervals_lst": [65]
 }]
 
 
@@ -110,7 +112,7 @@ def add_strict_status_by_points(model, items):
                     rule=lambda m, point, source=source, bus=bus: shutdown_rule(m, point, source, bus)
                 ))
         
-# add_strict_status_by_points(model, items)
+add_strict_status_by_points(model, items)
 
 
 
@@ -153,29 +155,42 @@ def add_switching_limits(om, items):
         
         # Ограничение на количество включений для каждого периода
         for period_idx, (start, end) in enumerate(periods):
-            def switching_limit_rule(m):
-                timesteps_list = list(m.TIMESTEPS)
-                
-                # Если период начинается не с нулевого шага, 
-                # проверяем включение на первом шаге периода отдельно
-                if start > 0:
-                    t_start = timesteps_list[start]
-                    t_before_start = timesteps_list[start - 1]
-                    
-                    # Включение на первом шаге периода
-                    first_step_switch = m.NonConvexFlowBlock.status[source, bus, t_start] - m.NonConvexFlowBlock.status[source, bus, t_before_start]
-                    
-                    # Включения внутри периода (со второго шага периода)
-                    period_times = timesteps_list[start+1:end+1]
-                    
-                    return first_step_switch + sum(switch_on[t] for t in period_times) <= max_switches
-                else:
-                    # Период начинается с нулевого шага
+            if max_switches == 0:
+                # Если max_switches = 0, просто запрещаем включение в этом периоде
+                def no_startup_rule(m):
+                    timesteps_list = list(m.TIMESTEPS)
                     period_times = timesteps_list[start:end+1]
-                    return sum(switch_on[t] for t in period_times) <= max_switches
-            
-            constraint_name_2 = f'switching_limit_{source.label}_{bus.label}_{idx}_period_{period_idx}'
-            setattr(om, constraint_name_2, Constraint(rule=switching_limit_rule))
+                    
+                    # Запрещаем статус = 1 на всех шагах периода
+                    return sum(m.NonConvexFlowBlock.status[source, bus, t] for t in period_times) == 0
+                
+                constraint_name_2 = f'no_startup_{source.label}_{bus.label}_{idx}_period_{period_idx}'
+                setattr(om, constraint_name_2, Constraint(rule=no_startup_rule))
+            else:
+                # Обычная логика для max_switches > 0
+                def switching_limit_rule(m):
+                    timesteps_list = list(m.TIMESTEPS)
+                    
+                    # Если период начинается не с нулевого шага, 
+                    # проверяем включение на первом шаге периода отдельно
+                    if start > 0:
+                        t_start = timesteps_list[start]
+                        t_before_start = timesteps_list[start - 1]
+                        
+                        # Включение на первом шаге периода
+                        first_step_switch = m.NonConvexFlowBlock.status[source, bus, t_start] - m.NonConvexFlowBlock.status[source, bus, t_before_start]
+                        
+                        # Включения внутри периода (со второго шага периода)
+                        period_times = timesteps_list[start+1:end+1]
+                        
+                        return first_step_switch + sum(switch_on[t] for t in period_times) <= max_switches
+                    else:
+                        # Период начинается с нулевого шага
+                        period_times = timesteps_list[start:end+1]
+                        return sum(switch_on[t] for t in period_times) <= max_switches
+                
+                constraint_name_2 = f'switching_limit_{source.label}_{bus.label}_{idx}_period_{period_idx}'
+                setattr(om, constraint_name_2, Constraint(rule=switching_limit_rule))
     
     return om
 
