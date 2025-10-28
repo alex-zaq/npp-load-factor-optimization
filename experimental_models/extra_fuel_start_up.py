@@ -1,8 +1,13 @@
-def add_startup_fuel_consumption(om, items, energysystem):
-    from pyomo.environ import Constraint, Var, Binary, NonNegativeReals
-    import oemof.solph as solph
-    
+
+import oemof.solph as solph
+import pandas as pd
+from matplotlib import pyplot as plt
+from pyomo.environ import Binary, Constraint, NonNegativeReals, Var
+
+
+def add_startup_fuel_consumption(om, items, sink_by_fuel_dict):
     # Группируем элементы по топливной шине для оптимизации
+
     items_by_fuel_bus = {}
     for item in items:
         fuel_bus = item["fuel_bus"]
@@ -13,15 +18,8 @@ def add_startup_fuel_consumption(om, items, energysystem):
     # Для каждой топливной шины создаем ОДИН общий виртуальный Sink
     for fuel_bus, bus_items in items_by_fuel_bus.items():
         # Создаем один Sink на всю топливную шину
-        startup_sink = solph.components.Sink(
-            label=f'startup_fuel_sink_{fuel_bus.label}',
-            inputs={fuel_bus: solph.Flow(
-                variable_costs=0  # Стоимость уже учтена в топливе
-            )}
-        )
-        
-        energysystem.add(startup_sink)
-        
+
+        startup_sink = sink_by_fuel_dict[fuel_bus]
         # Создаем переменные switch_on для всех источников на этой шине
         switch_vars = []
         
@@ -64,7 +62,7 @@ def add_startup_fuel_consumption(om, items, energysystem):
                 sw_info['var'][t] * sw_info['consumption']
                 for sw_info in switch_vars
             )
-            return m.SimpleFlowBlock[fuel_bus, startup_sink, t] == total_startup_consumption
+            return m.flow[fuel_bus, startup_sink, t] == total_startup_consumption
         
         constraint_name_flow = f'total_startup_fuel_flow_{fuel_bus.label}'
         setattr(om, constraint_name_flow, Constraint(om.TIMESTEPS, rule=total_startup_fuel_flow_rule))
@@ -72,125 +70,125 @@ def add_startup_fuel_consumption(om, items, energysystem):
     return om
 
 
-# Пример использования с МНОЖЕСТВОМ источников
-import pandas as pd
-import oemof.solph as solph
 
-timeindex = pd.date_range('2024-01-01', periods=100, freq='h')
-energysystem = solph.EnergySystem(timeindex=timeindex)
+timeindex = pd.date_range('2024-01-01', periods=10, freq='h')
+es = solph.EnergySystem(timeindex=timeindex)
 
 # Шины
 el_bus = solph.Bus(label='electricity')
+es.add(el_bus)
 fuel_bus = solph.Bus(label='fuel')
+es.add(fuel_bus)
 gas_bus = solph.Bus(label='gas')
+es.add(gas_bus)
 
-# Источники топлива
+fuel_types = [fuel_bus, gas_bus]
+
+sink_by_fuel_dict = {}
+for fuel_bus_type in fuel_types:
+    sink_fuel = solph.components.Sink(
+        label=f'sink_fuel_{fuel_bus_type.label}',
+        inputs={fuel_bus_type: solph.Flow()}
+    )
+    es.add(sink_fuel)
+    sink_by_fuel_dict[fuel_bus_type] = sink_fuel
+
+
+
 fuel_source = solph.components.Source(
     label='fuel_source',
     outputs={fuel_bus: solph.Flow(variable_costs=10)}
 )
+es.add(fuel_source)
 
 gas_source = solph.components.Source(
     label='gas_source',
     outputs={gas_bus: solph.Flow(variable_costs=15)}
 )
+es.add(gas_source)
 
-# Множество энергоблоков на разных топливах
-converters = []
+blocks = []
 
-# 5 блоков на жидком топливе
-for i in range(5):
-    conv = solph.components.Converter(
-        label=f'fuel_block_{i}',
+
+el_fuel_converter = solph.components.Converter(
+        label="el_fuel_converter",
         inputs={fuel_bus: solph.Flow()},
         outputs={el_bus: solph.Flow(
             nominal_value=100,
+            min=0.2,
             nonconvex=solph.NonConvex()
         )},
         conversion_factors={el_bus: 0.4}
     )
-    converters.append(conv)
-    energysystem.add(conv)
+es.add(el_fuel_converter)
 
-# 3 блока на газе
-for i in range(3):
-    conv = solph.components.Converter(
-        label=f'gas_block_{i}',
+
+el_gas_block = solph.components.Converter(
+        label="el_gas_block",
         inputs={gas_bus: solph.Flow()},
         outputs={el_bus: solph.Flow(
-            nominal_value=150,
+            nominal_value=100,
+            min=0.2,
             nonconvex=solph.NonConvex()
         )},
         conversion_factors={el_bus: 0.5}
     )
-    converters.append(conv)
-    energysystem.add(conv)
+es.add(el_gas_block)
 
-# Потребитель
-demand = solph.components.Sink(
-    label='demand',
+el_demand_sink = solph.components.Sink(
+    label='el_demand_sink',
     inputs={el_bus: solph.Flow(
-        fix=[500] * len(timeindex),
-        nominal_value=1
+        fix=1,
+        nominal_value=200
     )}
 )
+es.add(el_demand_sink)
 
-energysystem.add(el_bus, fuel_bus, gas_bus, fuel_source, gas_source, demand)
+model = solph.Model(es)
 
-# Создаем модель
-model = solph.Model(energysystem)
-
-# Формируем список элементов с перерасходом топлива
 items = []
 
-# Для блоков на жидком топливе
-for i in range(5):
-    items.append({
-        "block_pair": (converters[i], el_bus),
+items.append({
+        "block_pair": (el_fuel_converter, el_bus),
         "fuel_bus": fuel_bus,
-        "startup_fuel_consumption": 50 + i * 10,  # Разный расход для каждого
+        "startup_fuel_consumption": 400,  
     })
 
-# Для блоков на газе
-for i in range(3):
-    items.append({
-        "block_pair": (converters[5 + i], el_bus),
+items.append({
+        "block_pair": (el_gas_block, el_bus),
         "fuel_bus": gas_bus,
-        "startup_fuel_consumption": 80 + i * 15,
+        "startup_fuel_consumption": 300,
     })
 
-# Применяем функцию
-model = add_startup_fuel_consumption(model, items, energysystem)
+
+model = add_startup_fuel_consumption(model, items, sink_by_fuel_dict)
 
 # Решаем
-model.solve(solver='cbc', solve_kwargs={'tee': True})
+model.solve(solver='cplex', solve_kwargs={'tee': True})
 
 # Результаты
 results = solph.processing.results(model)
+blocks = [el_fuel_converter, el_gas_block]
 
-# Анализ запусков и расхода топлива
-print("\n=== АНАЛИЗ ЗАПУСКОВ ===")
-for i in range(5):
-    conv = converters[i]
-    switch_var = model.component(f'switch_on_{conv.label}_{el_bus.label}')
-    if switch_var:
-        startups = sum(switch_var[t].value for t in model.TIMESTEPS if switch_var[t].value > 0.5)
-        print(f"{conv.label}: {int(startups)} запусков")
+el_results = solph.views.node(results, el_bus.label)["sequences"].dropna()
+fuel_results = solph.views.node(results, fuel_bus.label)["sequences"].dropna()
+gas_results = solph.views.node(results, gas_bus.label)["sequences"].dropna()
 
-print("\n=== РАСХОД ТОПЛИВА ===")
-fuel_flow = results[(fuel_source, fuel_bus)]['sequences']['flow']
-print(f"Общий расход жидкого топлива: {fuel_flow.sum():.2f}")
+el_df = pd.DataFrame()
+for block in blocks:
+    el_df[block.label] = el_results[((block.label, el_bus.label), "flow")]
 
-gas_flow = results[(gas_source, gas_bus)]['sequences']['flow']
-print(f"Общий расход газа: {gas_flow.sum():.2f}")
+fuel_df = pd.DataFrame()
+fuel_df[el_fuel_converter.label] = fuel_results[((fuel_bus.label, el_fuel_converter.label), "flow")]
+fuel_df["extra_fuel"] = fuel_results[((fuel_bus.label, sink_by_fuel_dict[fuel_bus].label), "flow")]
 
-# Расход на запуск
-startup_fuel_sink = [comp for comp in energysystem.nodes 
-                     if comp.label == f'startup_fuel_sink_{fuel_bus.label}'][0]
-startup_fuel_flow = results[(fuel_bus, startup_fuel_sink)]['sequences']['flow']
-print(f"Расход топлива на запуски (жидкое): {startup_fuel_flow.sum():.2f}")
 
-startup_gas_sink = [comp for comp in energysystem.nodes 
-                    if comp.label == f'startup_fuel_sink_{gas_bus.label}'][0]
-startup_gas_flow = results[(gas_bus, startup_gas_sink)]['sequences']['flow']
-print(f"Расход топлива на запуски (газ): {startup_gas_flow.sum():.2f}")
+gas_df = pd.DataFrame()
+gas_df[el_gas_block.label] = gas_results[((gas_bus.label, el_gas_block.label), "flow")]
+gas_df["extra_gas"] = gas_results[((gas_bus.label, sink_by_fuel_dict[gas_bus].label), "flow")]
+
+ax_el = el_df.plot(kind="area", ylim=(0, 2000))
+ax_fuel = fuel_df.plot(kind="area", ylim=(0, 2000))
+ax_gas = gas_df.plot(kind="area", ylim=(0, 2000))
+
+plt.show(block=True)
