@@ -54,82 +54,6 @@ class Wrapper_base:
             self.es.block_build_lst = []
         self.es.block_build_lst.append(self)
  
-  
- 
-    def add_specific_status_duration_in_period_old(
-        self,
-        mode,
-        avail_months_mask,
-        start_days_mask,
-        mask,
-        coeff,
-        min_duration,
-        max_duration = None,
-        ):
-
-        if mode not in ("active", "non_active"):
-            raise ValueError("mode must be active or non_active")
-
-        charger_power = 1
-        storage_capacity = charger_power * min_duration
-        
-        if max_duration is not None:
-            storage_capacity = charger_power * max_duration
-            
-        fix_profile = np.array(mask) * charger_power * min_duration
-
-
-        bus_factory = Generic_bus(self.es)
-        sink_bus = bus_factory.create_bus(f"{self.label}_sink_bus")
-    
-        sink = solph.components.Sink(
-            label=f"{self.label}_min_inactive_sink",
-            inputs={sink_bus: solph.Flow(nominal_value=1, fix = fix_profile)},
-        )
-        sink.inputs_pair = [(sink_bus, sink)]
-        self.es.add(sink)
-        
-        
-        # print(np.sum(avail_months_mask))
-        avail_months_mask = avail_months_mask if avail_months_mask is not None else 1
-        storage_in_bus = bus_factory.create_bus(f"{self.label}_storage_in_bus")
-        storage = solph.components.GenericStorage(
-            label=f"{self.label}_min_inactive_storage",
-            initial_storage_level=0,
-            nominal_storage_capacity=storage_capacity * coeff,
-            inputs={storage_in_bus: solph.Flow(
-                nominal_value=1e10,
-                # max=1,
-                max=avail_months_mask,
-                min=0,
-                # bad
-                nonconvex=solph.NonConvex(),
-                )},
-            outputs={sink_bus: solph.Flow()},
-            balanced=False
-        )
-        storage.inputs_pair = [(storage_in_bus, storage)]
-        storage.outputs_pair = [(storage, sink_bus)]
-        self.set_info("specific_status_duration_storage", storage)
-        self.es.add(storage)
-        
-        
-        
-        wrapper_charger_builder = self.create_wrapper_source_builder(self.es, f"{self.label}_min_inactive_control_source")
-        wrapper_charger_builder.update_options({
-            "nominal_power": charger_power,
-            "output_bus": storage_in_bus,
-            "min_uptime": min_duration,
-            "min": 1,
-            })
-        
-        if start_days_mask is not None:
-            wrapper_charger_builder.add_startup_cost_by_mask(start_days_mask)
-        
-        if mode == "active":
-            self.create_pair_equal_status(wrapper_charger_builder)
-        elif mode == "non_active":
-            self.create_pair_no_equal_status_lower_0(wrapper_charger_builder)
 
     def add_specific_status_duration_in_period_new(
         self,
@@ -139,18 +63,10 @@ class Wrapper_base:
         periods_pairs
     ):
         avail_months_mask = avail_months_mask if avail_months_mask is not None else 1
-        self.add_startup_cost_by_mask(start_days_mask)
-        self.update_options({"min_uptime": min_duration, "max": avail_months_mask, "min": 1})
+        self.add_startup_cost_by_mask(start_days_mask) if start_days_mask is not None else None
         self.add_min_status_in_period(periods_pairs, min_duration)
-
-
-
-
-
-
-
-
-
+        self.add_strict_status_off_by_pattern(avail_months_mask)
+        self.update_options({"min_uptime": min_duration, "min": 1})
 
 
     def add_startup_cost_by_mask(self, mask):
@@ -204,6 +120,13 @@ class Wrapper_base:
     
     def add_min_status_in_period(self, periods, min_required_time):
         self.es.constraints["min_status_in_period"][self] = {"periods": periods, "min_required_time": min_required_time}
+              
+                    
+    def add_max_startup_by_periods(self, periods, max_startup_count_in_every_period):
+        self.es.constraints["max_startup_by_periods"][self] = {"periods": periods, "max_startup_count_in_every_period": max_startup_count_in_every_period}
+              
+    def add_strict_status_off_by_pattern(self, pattern):
+        self.es.constraints["strict_status_off_by_pattern"][self] = pattern
                     
                     
     def _get_nonconvex_flow(self):

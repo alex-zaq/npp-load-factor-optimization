@@ -120,7 +120,7 @@ base_repair_options = {
         "status": False,
         "startup_cost": capital_cost,
         "duration": 30,
-        "max_startup": 3,
+        "max_startup": 1,
         "min_downtime": 0,
         "risk_reset": {},
         "risk_reducing": {"r1": 0.9},
@@ -312,17 +312,20 @@ repair_base = Scenario_builder({
         "options": base_repair_options,
         }})
 
-events_base_1 = {
+events_base_2 = {
     "2025-02-01": 0.15,
     "2025-05-01": 0.2,
     "2025-09-01": 0.10,
-    "2026-02-10": 0.15,
+    # "2025-10-01": 0.1,
+    "2025-11-01": 0.1,
+    "2025-11-15": 0.15,
+    "2026-02-10": 0.1,
     "2026-09-10": 0.07,
     "2027-02-15": 0.12,
     "2027-09-15": 0.10,
 }
 
-events_base_2 = {
+events_base_1 = {
     "2025-01-20": 0.10,
     "2025-10-15": 0.12,
     "2026-03-01": 0.08,
@@ -381,7 +384,8 @@ risk_b1_two_risk = one_risk_base.update_risk({
 repair_one_risk_1 = repair_base.update_repair({
     "maintence-1": {"no_parallel_tag_for_model": 1, "no_parallel_tag_for_npp": 1,  "risk_reducing": {"r1": 0.15}, "min_downtime": 30},
     # "maintence-2": {"no_parallel_tag_for_model": 1, "no_parallel_tag_for_npp": 0,  "risk_reducing": {"r1": 0.2}, "duration": 15},
-    "current-1":   {"no_parallel_tag_for_model": 1, "no_parallel_tag_for_npp": 1,  "risk_reducing": {"r1": 0.60}},
+    "current-1":   {"no_parallel_tag_for_model": 1, "no_parallel_tag_for_npp": 1,  "risk_reducing": {"r1": 0.50}},
+    "medium-1":   {"no_parallel_tag_for_model": 1, "no_parallel_tag_for_npp": 1,  "risk_reducing": {"r1": 0.70}, "startup_cost": medium_cost},
     })
 
 repair_one_risk_1_ver2 = repair_base.update_repair({
@@ -411,15 +415,15 @@ repair_one_risk_2 = repair_base.update_repair({
     })
 
 
-risk_b1_2 = one_risk_base.update_risk({"r1": {"id": 0, "events": events_base_1, "max": 1, "value": 0.12, "start_risk_rel": 0.35}})
+risk_b1_2 = one_risk_base.update_risk({"r1": {"id": 0, "events": events_base_2, "max": 1, "value": 0.12, "start_risk_rel": 0.2}})
 
 repair_one_risk_2 = repair_base.update_repair({
-    "maintence-1": {"no_parallel_tag_for_model": 1, "no_parallel_tag_for_npp": 1, "risk_reducing": {"r1": 0.09}, "duration": 10, "min_downtime": 20,  "startup_cost": maintence_cost  - 2e6},
-    "repair-1":   {"no_parallel_tag_for_model": 0, "no_parallel_tag_for_npp": 1,  "risk_reducing": {"r1": 0.15}, "duration": 5, "startup_cost": current_cost + 2e6},
-    "repair-2":   {"no_parallel_tag_for_model": 0, "no_parallel_tag_for_npp": 1,  "risk_reducing": {"r1": 0.2}, "duration": 10, "startup_cost": medium_cost + 1e6},
-    "repair-3":   {"no_parallel_tag_for_model": 0, "no_parallel_tag_for_npp": 1,  "risk_reducing": {"r1": 0.2}, "duration": 15},
-    "repair-4":   {"no_parallel_tag_for_model": 0, "no_parallel_tag_for_npp": 1,  "risk_reducing": {"r1": 0.2}, "duration": 5},
-    "repair-5":   {"no_parallel_tag_for_model": 0, "no_parallel_tag_for_npp": 1,  "risk_reducing": {"r1": 0.1}, "duration": 5, "startup_cost": medium_cost - 10e6},
+    "maintence-1": {"no_parallel_tag_for_model": 1, "no_parallel_tag_for_npp": 1, "risk_reducing": {"r1": 0.10}, "duration": 10, "min_downtime": 40,  "startup_cost": maintence_cost  - 2e6},
+    "repair-1":   {"no_parallel_tag_for_model": 0, "no_parallel_tag_for_npp": 1,  "risk_reducing": {"r1": 0.25}, "duration": 5, "startup_cost": current_cost + 2e6},
+    "repair-2":   {"no_parallel_tag_for_model": 0, "no_parallel_tag_for_npp": 1,  "risk_reducing": {"r1": 0.3}, "duration": 10, "startup_cost": medium_cost + 1e6},
+    "repair-3":   {"no_parallel_tag_for_model": 0, "no_parallel_tag_for_npp": 1,  "risk_reducing": {"r1": 0.3}, "duration": 15},
+    "repair-4":   {"no_parallel_tag_for_model": 0, "no_parallel_tag_for_npp": 1,  "risk_reducing": {"r1": 0.3}, "duration": 5},
+    "repair-5":   {"no_parallel_tag_for_model": 0, "no_parallel_tag_for_npp": 1,  "risk_reducing": {"r1": 0.2}, "duration": 5, "startup_cost": medium_cost - 10e6},
     
     })
 
@@ -445,11 +449,11 @@ repair_one_risk_2_forced_capital = repair_one_risk_2.update_repair({
 # 3 - года - 2 блока - 1 риск с событиями (обязательный капитальный ремонт) + выбор месяца
 
 
-scen = base | {"№": 1} | one_year | (b_1.update(risk_b1 | repair_one_risk_1_ver2 | outage_jul))
+# scen = base | {"№": 1} | one_year | (b_1.update(risk_b1 | repair_one_risk_1_ver2 | outage_jul))
 # scen = base | {"№": 2} | one_year | (b_1.update(risk_b1_2 | repair_one_risk_2 | outage_jul))
 
 
-# scen = base | {"№": 3} | two_years | (b_1.update(risk_b1 | repair_one_risk_1 | outage_jul)) | (b_2.update(risk_b2 | repair_one_risk_1 | outage_nov)) 
+scen = base | {"№": 3} | two_years | (b_1.update(risk_b1 | repair_one_risk_1 | outage_jul)) | (b_2.update(risk_b2 | repair_one_risk_1 | outage_nov)) 
 # scen = base | {"№": 4} | two_years | (b_1.update(risk_b1 | repair_one_risk_1 | outage_jun_jul_aug)) | (b_2.update(risk_b2 | repair_one_risk_1 | outage_oct_nov_dec )) 
 # scen = base | {"№": 5} | two_years | (b_1.update(risk_b1 | repair_one_risk_2 | outage_jul)) | (b_2.update(risk_b2 | repair_one_risk_2 | outage_nov)) 
 # scen = base | {"№": 54} | two_years | (b_1.update(risk_b1 | repair_one_risk_2 | outage_jun_jul_aug)) | (b_2.update(risk_b2 | repair_one_risk_2 | outage_oct_nov_dec)) 
@@ -494,7 +498,7 @@ solution_processor.set_dumps_folder("./dumps")
 # solution_processor.set_restore_mode(file_number="09") 
 
 # solution_processor.set_restore_mode(file_number="101") 
-# solution_processor.set_restore_mode(file_number="102") 
+# solution_processor.set_restore_mode(file_number="145") 
 
 solution_processor.apply()
 
@@ -528,8 +532,8 @@ block_grouper.set_options(
     repairs_options={
         "легкий ремонт-1": {"id": 0, "color": "#fdec02"},
         "легкий ремонт-2": {"id": 1, "color": "#02e0fd"},
-        "текущий ремонт-1": {"id": 2, "color": "#0b07fc"},
-        "текущий ремонт-2": {"id": 3, "color": "#ff00b3"},
+        "текущий ремонт-1": {"id": 2, "color": "#0b07f3"},
+        "текущий ремонт-2": {"id": 3, "color": "#ff00ff"},
         "средний ремонт-1": {"id": 4, "color": "#501d0c"},
         "средний ремонт-2": {"id": 5, "color": "#0c2450"},
         "капитальный ремонт-1": {"id": 6, "color": "#ff4000"},
@@ -565,7 +569,7 @@ image_all_block_with_risks = result_viewer.plot_all_blocks_with_risks_graph(outa
 # image_all_block_with_risks = result_viewer.plot_all_blocks_with_risks_graph(outages_graph=False, cost_balance_graph=True, dpi=180)
 
 
-# image_all_block_with_cost = result_viewer.plot_all_blocks_with_cost_graph(outages_graph=True, risk_graph=True, dpi=180)
+image_all_block_with_cost = result_viewer.plot_all_blocks_with_cost_graph(outages_graph=True, risk_graph=True, dpi=180)
 # image_all_block_with_cost = result_viewer.plot_all_blocks_with_cost_graph(outages_graph=True, risk_graph=False, dpi=140)
 # image_all_block_with_cost = result_viewer.plot_all_blocks_with_cost_graph(outages_graph=False, risk_graph=True, dpi=180)
 
@@ -595,7 +599,6 @@ excel_writer.write("./excel_results")
 print("done")
 
 
-# заменить доступность мощности на доступность статуса
 # включиться один раз за период максимум для фаз ремнта
 # фото с ноутбука
 # сделать расчет с ноутбука

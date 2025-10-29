@@ -172,6 +172,11 @@ class Daily_resolution_strategy(Resolution_strategy):
         res[(self.timeindex.day == 1) & (self.timeindex.month == 1)] = 1
         return res
     
+    def get_start_finish_pairs_by_mask(self, mask):
+        one_indices = np.where(mask == 1)[0]
+        intervals = list(zip(one_indices[:-1], one_indices[1:]))
+        return intervals
+    
     
     
     def get_mask_from_first_day_of_months(self, months, duration):

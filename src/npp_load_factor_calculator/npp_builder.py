@@ -53,13 +53,13 @@ class NPP_builder:
         min_outage_duration = self.resolution_strategy.convert_time(outage_options["min_duration"])
         max_outage_duration = self.resolution_strategy.convert_time(outage_options["max_duration"])
         
-        mask_for_storage = self.resolution_strategy.get_every_year_first_step_mask_old()
+        # mask_for_storage = self.resolution_strategy.get_every_year_first_step_mask_old()
         mask_first_day_every_year = self.resolution_strategy.get_every_year_first_step_mask_new()
         periods_pairs  = find_ones_intervals(mask_first_day_every_year)
         
         
         
-        coeff = self.resolution_strategy.coeff
+        # coeff = self.resolution_strategy.coeff
             
             
         allow_months = outage_options["allow_months"]
@@ -73,27 +73,14 @@ class NPP_builder:
         mask = np.logical_or(grad_mask_max_outage, grad_mask_min_outage)
         
         
-        
+        npp_block_builder.set_info("avail_months_mask", avail_months_mask)
+                
         npp_block_builder.update_options({
             "positive_gradient_limit": mask,
             "negative_gradient_limit": mask,
             })
-        
-        # npp_block_builder.add_shutdown_cost_by_mask(mask)
-    
-        
-        
-        
-        # control_npp_stop_source.add_specific_status_duration_in_period_old(
-        #     mode="active",
-        #     avail_months_mask=avail_months_mask,
-        #     start_days_mask=start_days_mask,
-        #     mask=mask_for_storage,
-        #     coeff=coeff,
-        #     min_duration=min_outage_duration,
-        #     max_duration=max_outage_duration
-        #     )
-        
+
+
         control_npp_stop_source.add_specific_status_duration_in_period_new(
             avail_months_mask=avail_months_mask,
             start_days_mask=start_days_mask,
@@ -176,16 +163,18 @@ class NPP_builder:
         repairs_npp_stop = {k: v for k, v in repairs_active.items() if v["npp_stop"]}
         repairs_npp_no_stop = {k: v for k, v in repairs_active.items() if  not v["npp_stop"]}
     
-        # repairs_npp_stop_reset = {k: v for k, v in repairs_npp_stop.items() if v["risk_reset"]}
         repairs_npp_stop_reducing = {k: v for k, v in repairs_npp_stop.items() if v["risk_reducing"]}
-        # repairs_npp_no_stop_reset = {k: v for k, v in repairs_npp_no_stop.items() if v["risk_reset"]}
         repairs_npp_no_stop_reducing = {k: v for k, v in repairs_npp_no_stop.items() if v["risk_reducing"]}
     
     
         risk_out_bus_dict = npp_block_builder.get_info("risk_out_bus_dict")
-        # risks = npp_block_builder.get_info("risks")
         bufer_bus = npp_block_builder.get_info("bufer_bus")
         control_npp_stop_source = npp_block_builder.get_info("control_npp_stop_source")
+        avail_months_mask = npp_block_builder.get_info("avail_months_mask")
+        
+        mask_first_day_every_year = self.resolution_strategy.get_every_year_first_step_mask_new()
+        start_finish_periods = self.resolution_strategy.get_start_finish_pairs_by_mask(mask_first_day_every_year)
+            
             
         all_risk_set = set(risk_out_bus_dict.keys())
         
@@ -209,7 +198,7 @@ class NPP_builder:
                     coeff = self.resolution_strategy.coeff
                     # repair_converter_builder.add_max_uptime_old(duration, coeff)
                     repair_converter_builder.add_max_uptime_new(duration)
-                    
+                    repair_converter_builder.add_max_startup_by_periods(start_finish_periods, 1)
                     
                     control_npp_stop_source.add_base_block_for(repair_converter_builder)
                     control_npp_stop_source.add_group_equal_or_greater_1(repair_converter_builder)
@@ -221,7 +210,7 @@ class NPP_builder:
                     repair_converter_builder.set_info("no_parallel_tag_for_npp", options.get("no_parallel_tag_for_npp"))
                     repair_converter_builder.set_info("no_parallel_tag_for_model", options.get("no_parallel_tag_for_model"))
                     self._add_start_days_if_required(repair_converter_builder, options.get("start_day"))
-                    self._add_forced_active_if_required(repair_converter_builder, options.get("forced_in_period"))
+                    self._add_forced_active_if_required(repair_converter_builder, options.get("forced_in_period"), avail_months_mask)
                     repair_blocks[options["id"]] = repair_converter_builder
 
                     sinks = {}
@@ -270,7 +259,7 @@ class NPP_builder:
                     repair_converter_builder.set_info("no_parallel_tag_for_npp", options.get("no_parallel_tag_for_npp"))
                     repair_converter_builder.set_info("no_parallel_tag_for_model", options.get("no_parallel_tag_for_model"))
                     self._add_start_days_if_required(repair_converter_builder, options.get("start_day"))
-                    self._add_forced_active_if_required(repair_converter_builder, options.get("forced_in_period"))
+                    # self._add_forced_active_if_required(repair_converter_builder, options.get("forced_in_period"))
                     repair_blocks[options["id"]] = repair_converter_builder
 
                     sinks = {}
@@ -323,25 +312,14 @@ class NPP_builder:
           
         
         
-    def _add_forced_active_if_required(self, repair_source_builder, forced_in_period):
+    def _add_forced_active_if_required(self, repair_source_builder, forced_in_period, avail_mask):
         if forced_in_period:
-            # last_step_mask = self.resolution_strategy.get_last_step_mask()
-            # coeff = self.resolution_strategy.coeff
-            # repair_duration = repair_source_builder.options["min_uptime"]
-            # repair_source_builder.add_specific_status_duration_in_period_old(
-            #     mode = "active",
-            #     min_duration = repair_duration,
-            #     avail_months_mask = 1,
-            #     start_days_mask = None,
-            #     mask = last_step_mask,
-            #     coeff = coeff
-            #     )
-
-            mask_first_day_every_year = self.resolution_strategy.get_first_last_step_mask()
             repair_duration = repair_source_builder.options["min_uptime"]
-            periods_pairs  = find_ones_intervals(mask_first_day_every_year)
+            # mask_first_day_every_year = self.resolution_strategy.get_first_last_step_mask()
+            first_last_step_mask = self.resolution_strategy.get_first_last_step_mask()
+            periods_pairs  = find_ones_intervals(first_last_step_mask)
             repair_source_builder.add_specific_status_duration_in_period_new(
-                avail_months_mask = 1,
+                avail_months_mask = avail_mask,
                 start_days_mask = None,
                 min_duration = repair_duration,
                 periods_pairs = periods_pairs

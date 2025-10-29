@@ -71,6 +71,7 @@ class Oemof_model:
         constraints_processor.apply_max_uptime()
         constraints_processor.apply_delayed_max_uptime()
         constraints_processor.apply_min_status_in_period()
+        constraints_processor.apply_strict_status_off_by_pattern()
 
 
     def launch_solver(self):

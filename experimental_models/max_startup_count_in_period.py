@@ -68,7 +68,7 @@ model = solph.Model(energysystem)
 
 
 
-start_end_pairs = [(25, 75)]
+start_end_pairs = [(0, 50), (50, 99)]
 avail_pattern = get_avail_pattern(start_end_pairs, date_time_index)
 
 items = [{
@@ -112,7 +112,7 @@ def add_strict_status_by_points(model, items):
                     rule=lambda m, point, source=source, bus=bus: shutdown_rule(m, point, source, bus)
                 ))
         
-add_strict_status_by_points(model, items)
+# add_strict_status_by_points(model, items)
 
 
 
