@@ -1,21 +1,36 @@
 
+import json
 from pathlib import Path
 
 import pandas as pd
 
-from src.npp_load_factor_calculator.utilites import Converter, get_all_block_repairs_df_by_dict, get_file_name_with_auto_number, get_months_name_by_date_range, get_years_by_date_range
+from src.npp_load_factor_calculator.utilites import (
+    Converter,
+    dict_to_rows,
+    get_all_block_repairs_df_by_dict,
+    get_file_name_by_scenario,
+    get_file_name_with_auto_number,
+    get_months_name_by_date_range,
+    get_years_by_date_range,
+)
 
 
 class Excel_writer:
     
-    def __init__(self, block_grouper):
+    def __init__(self, block_grouper, solution_proccesor):
         self.block_grouper = block_grouper
-
+        self.solution_proccesor = solution_proccesor
+        self.solver_log = self.solution_proccesor.oemof_model.solver_log
+        
 
     def _write_scenario_options(self, writer, sheet_name):
         scenario_options = self.block_grouper.custom_es.scenario
-        scenario_options_df = pd.DataFrame.from_dict(scenario_options, orient='index')
-        scenario_options_df.to_excel(writer, sheet_name=sheet_name, index=True)
+        # scenario_options_df = pd.DataFrame.from_dict(scenario_options, orient='index')
+        # scenario_options_df.to_excel(writer, sheet_name=sheet_name, index=True)
+        
+        rows  = dict_to_rows(scenario_options)
+        df = pd.DataFrame(rows)
+        df.to_excel(writer, sheet_name=sheet_name, index=False)
 
     def _write_results_data(self, writer, sheet_name):
         
@@ -47,21 +62,29 @@ class Excel_writer:
         # выработка
         # увеличение риска
         # уменьшение риска
-        
-        
+                
         res.to_excel(writer, sheet_name=sheet_name, index=False)
 
+
+    def _write_log_info(self, writer, sheet_name):
+        solver = self.solution_proccesor.oemof_model.solver
+        log_df = pd.DataFrame({f'{solver}_log': self.solver_log.split('\n')})
+        log_df.to_excel(writer, sheet_name=sheet_name, index=False)
+    
     
     def write(self, folder):
         scen = self.block_grouper.custom_es.scenario
         folder = Path(folder)
         if not folder.exists():
             folder.mkdir(parents=True)
-        excel_file = get_file_name_with_auto_number(folder, scen, "xlsx")
+        excel_name = get_file_name_by_scenario(scen)
+        excel_file = get_file_name_with_auto_number(folder, excel_name, "xlsx")
         path = folder / excel_file
         writer = pd.ExcelWriter(path, engine="openpyxl")
         self._write_results_data(writer, sheet_name = "results")
         self._write_scenario_options(writer, sheet_name = "scenario_options")
+        solver_name = self.solution_proccesor.oemof_model.solver
+        self._write_log_info(writer, sheet_name = f"{solver_name}_log")
         writer._save()
         print("{}  ({})".format("excel файл создан", excel_file))
     

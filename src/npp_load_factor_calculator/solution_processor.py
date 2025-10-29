@@ -53,9 +53,6 @@ class Solution_processor:
         self.oemof_model.init_custom_model()
         self.oemof_model.add_model_level_constraints()
         self.oemof_model.build_blocks()
-
-        # self.oemof_model.create_scheme("./schemes")
-        
         self.oemof_model.launch_solver()
         self.custom_es = self.oemof_model.get_custom_es()
         self.oemof_es = self.oemof_model.get_oemof_es()
@@ -68,6 +65,8 @@ class Solution_processor:
         self.oemof_es.results["main"] = self.results
         self.oemof_es.results["meta"] = self.meta_results
         self.oemof_es.results["scenario"] = scenario
+        self.oemof_es.results["solver_log"] = self.oemof_model.solver_log
+        self.oemof_es.results["solver_name"] = self.oemof_model.solver_settings["solver"]
         file_name = get_file_name_by_scenario(scenario)
         file_name = get_file_name_with_auto_number(self.dumps_folder, file_name, "oemof")
         self.oemof_es.dump(dpath=self.dumps_folder, filename=file_name)
@@ -81,6 +80,8 @@ class Solution_processor:
         self.restored_scenario = self.oemof_es.results["scenario"]
         self.oemof_model.init_custom_model(self.restored_scenario, self.oemof_es)
         self.oemof_model.build_blocks()
+        self.oemof_model.solver_log = self.oemof_es.results["solver_log"]
+        self.oemof_model.solver = self.oemof_es.results["solver_name"]
         self.custom_es = self.oemof_model.get_custom_es()
 
 

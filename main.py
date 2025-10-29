@@ -445,8 +445,8 @@ repair_one_risk_2_forced_capital = repair_one_risk_2.update_repair({
 # 3 - года - 2 блока - 1 риск с событиями (обязательный капитальный ремонт) + выбор месяца
 
 
-# scen = base | {"№": 1} | one_year | (b_1.update(risk_b1 | repair_one_risk_1_ver2 | outage_jul))
-scen = base | {"№": 2} | one_year | (b_1.update(risk_b1_2 | repair_one_risk_2 | outage_jul))
+scen = base | {"№": 1} | one_year | (b_1.update(risk_b1 | repair_one_risk_1_ver2 | outage_jul))
+# scen = base | {"№": 2} | one_year | (b_1.update(risk_b1_2 | repair_one_risk_2 | outage_jul))
 
 
 # scen = base | {"№": 3} | two_years | (b_1.update(risk_b1 | repair_one_risk_1 | outage_jul)) | (b_2.update(risk_b2 | repair_one_risk_1 | outage_nov)) 
@@ -475,7 +475,6 @@ oemof_model = Oemof_model(
     solver_settings = {
         "solver": "cplex",
         "solver_verbose": True,
-        "logging": True,
         "mip_gap": 0.01
     } 
 )
@@ -494,8 +493,8 @@ solution_processor.set_dumps_folder("./dumps")
 # solution_processor.set_restore_mode(file_number="06") 
 # solution_processor.set_restore_mode(file_number="09") 
 
-# solution_processor.set_restore_mode(file_number="191") 
-# solution_processor.set_restore_mode(file_number="55") 
+# solution_processor.set_restore_mode(file_number="101") 
+# solution_processor.set_restore_mode(file_number="102") 
 
 solution_processor.apply()
 
@@ -553,7 +552,7 @@ block_grouper.set_options(
 
 
 result_viewer = Result_viewer(block_grouper)
-excel_writer = Excel_writer(block_grouper)
+excel_writer = Excel_writer(block_grouper, solution_processor)
 control_block_viewer = Control_block_viewer(block_grouper)
 
 
@@ -566,7 +565,7 @@ image_all_block_with_risks = result_viewer.plot_all_blocks_with_risks_graph(outa
 # image_all_block_with_risks = result_viewer.plot_all_blocks_with_risks_graph(outages_graph=False, cost_balance_graph=True, dpi=180)
 
 
-image_all_block_with_cost = result_viewer.plot_all_blocks_with_cost_graph(outages_graph=True, risk_graph=True, dpi=180)
+# image_all_block_with_cost = result_viewer.plot_all_blocks_with_cost_graph(outages_graph=True, risk_graph=True, dpi=180)
 # image_all_block_with_cost = result_viewer.plot_all_blocks_with_cost_graph(outages_graph=True, risk_graph=False, dpi=140)
 # image_all_block_with_cost = result_viewer.plot_all_blocks_with_cost_graph(outages_graph=False, risk_graph=True, dpi=180)
 
@@ -586,21 +585,18 @@ image_all_block_with_cost = result_viewer.plot_all_blocks_with_cost_graph(outage
 # control_block_viewer.plot_repair_storage_max_uptime(bel_npp_block_1, repair_id=5)
  
 
-result_viewer.create_scheme("./schemes")
+# result_viewer.create_scheme("./schemes")
 # image_all_block_with_risks.save("./images","jpg", 600)
 # image_all_block_with_cost.save("./images","jpg", 600)
 
 
-# excel_writer.write("./excel_results")
+excel_writer.write("./excel_results")
 
 print("done")
 
 
 # заменить доступность мощности на доступность статуса
 # включиться один раз за период максимум для фаз ремнта
-# cplex log to excel
-# изменить имя фаз ремонта
-# фазы ремонтов - название легенды
 # фото с ноутбука
 # сделать расчет с ноутбука
 # блок-схема

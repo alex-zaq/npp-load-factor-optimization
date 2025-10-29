@@ -81,16 +81,18 @@ class Oemof_model:
         self.solver = self.solver_settings["solver"]
         self.solver_verbose = self.solver_settings["solver_verbose"]
         self.mip_gap = self.solver_settings["mip_gap"]
+        self.solver_log_path = self._get_logging_path()
         start_time = datetime.now()
         model.solve(
             solver=self.solver,
             cmdline_options={"mipgap": self.mip_gap},
             solve_kwargs={
                 "tee": self.solver_verbose,
-                'logfile': self.get_logging_path(),  
+                'logfile': self.solver_log_path,  
                 'keepfiles': False, 
                 },
         )
+        self.solver_log = self._read_solver_log_file(self.solver_log_path)
         elapsed_solver_time = (datetime.now() - start_time).total_seconds()
         print(
             "работа " + self.solver + " завершена",
@@ -101,10 +103,14 @@ class Oemof_model:
         self.meta_results = solph.processing.meta_results(model)
         print("результаты извлечены")\
             
+    def _read_solver_log_file(self, solver_log_path):
+        with open(solver_log_path, encoding='utf-8') as f:
+            log_content = f.read()
+        return log_content
             
-    def get_logging_path(self):
-        if not self.solver_settings["logging"]:
-            return False
+    def _get_logging_path(self):
+        # if not self.solver_settings["logging"]:
+            # return False
         
         folder = Path("./logs")
         if not folder.exists():

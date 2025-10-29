@@ -70,6 +70,46 @@ def get_number(number):
         return str(number)
     
     
+def dict_to_rows(d, level=0, prefix=''):
+        """Рекурсивно преобразует словарь в строки"""
+        rows = []
+        items = list(d.items())
+        
+        for i, (key, value) in enumerate(items):
+            is_last = (i == len(items) - 1)
+            
+            # Символы для дерева
+            if level == 0:
+                connector = ''
+                indent = ''
+            else:
+                connector = '└─ ' if is_last else '├─ '
+                indent = prefix
+            
+            if isinstance(value, dict):
+                # Это узел с подузлами
+                rows.append({
+                    'Level': level,
+                    'Parameter': f"{indent}{connector}{key}",
+                    'Value': '',
+                    'Type': 'category'
+                })
+                
+                # Новый префикс для дочерних элементов
+                new_prefix = prefix + ('   ' if is_last else '│  ')
+                rows.extend(dict_to_rows(value, level + 1, new_prefix))
+            else:
+                # Это конечное значение
+                rows.append({
+                    'Level': level,
+                    'Parameter': f"{indent}{connector}{key}",
+                    'Value': value,
+                    'Type': 'value'
+                })
+        
+        return rows
+    
+    
 def get_next_number_file_name(folder):
     files = list(Path(folder).glob("*.*"))
     if not files:
