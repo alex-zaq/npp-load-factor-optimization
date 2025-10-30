@@ -33,6 +33,7 @@ class Oemof_model:
         self.oemof_es = solph.EnergySystem(timeindex=date_timeindex, infer_last_interval=True)
         self.oemof_es.custom_timeindex = date_timeindex
         self.oemof_es.years = self.scenario["years"]
+        self.oemof_es.periods_count = len(self.oemof_es.timeindex)
 
        
     def _get_periods_count(self, t_delta, freq):

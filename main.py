@@ -7,7 +7,9 @@ from src.npp_load_factor_calculator.utilites import (
     get_repair_costs_by_capital,
 )
 
-maintence_cost, current_cost ,medium_cost, capital_cost = get_repair_costs_by_capital(50e6)
+capital_cost = 50e6
+
+maintence_cost, current_cost ,medium_cost, capital_cost = get_repair_costs_by_capital(capital_cost)
 
 
 
@@ -312,28 +314,36 @@ repair_base = Scenario_builder({
         "options": base_repair_options,
         }})
 
+
+events_base_1 = {
+    "2025-01-20": 0.10,
+    "2025-10-15": 0.1,
+    "2026-01-01": 0.06,
+    "2026-03-01": 0.08,
+    "2026-07-20": 0.11,
+    "2026-11-20": 0.1,
+
+
+    "2027-08-15": 0.09,
+    "2027-10-01": 0.10,
+    "2027-11-20": 0.12,
+}
+
 events_base_2 = {
     "2025-02-01": 0.15,
     "2025-05-01": 0.2,
     "2025-09-01": 0.10,
     # "2025-10-01": 0.1,
     "2025-11-01": 0.1,
-    "2025-11-15": 0.15,
+    "2025-11-15": 0.05,
     "2026-02-10": 0.1,
     "2026-09-10": 0.07,
+
+
     "2027-02-15": 0.12,
     "2027-09-15": 0.10,
 }
 
-events_base_1 = {
-    "2025-01-20": 0.10,
-    "2025-10-15": 0.12,
-    "2026-03-01": 0.08,
-    "2026-07-20": 0.11,
-    "2027-08-15": 0.09,
-    "2027-10-01": 0.10,
-    "2027-11-20": 0.12,
-}
 
 events_base_3 = {
     "2025-01-15": 0.11,
@@ -356,21 +366,21 @@ three_years = {"years": [2025, 2026, 2027]}
 
 max_duration = 40
 
-outage_jul = outage_base.update_outage({"start_of_month": True, "allow_months": {"Jul"}, "min_duration": 30, "max_duration": max_duration, "min_work_after_stop": 0})
-outage_nov = outage_base.update_outage({"start_of_month": True, "allow_months": {"Nov"}, "min_duration": 30, "max_duration": max_duration,"min_work_after_stop": 0})
+outage_jul = outage_base.update_outage({"start_of_month": True, "allow_months": {"Jul"}, "min_duration": 30, "max_duration": max_duration, "min_work_after_stop": 20})
+outage_nov = outage_base.update_outage({"start_of_month": True, "allow_months": {"Nov"}, "min_duration": 30, "max_duration": max_duration,"min_work_after_stop": 20})
 
-outage_jun_jul_aug = outage_base.update_outage({"start_of_month": True, "allow_months": {"Jun", "Jul", "Aug"}, "min_duration": 30, "max_duration": max_duration, "min_work_after_stop": 0})
+outage_jun_jul_aug = outage_base.update_outage({"start_of_month": True, "allow_months": {"Jun", "Jul", "Aug"}, "min_duration": 30, "max_duration": max_duration, "min_work_after_stop": 20})
 
-outage_oct_nov_dec = outage_base.update_outage({"start_of_month": True, "allow_months": { "Oct", "Nov", "Dec"}, "min_duration": 30, "max_duration": max_duration, "min_work_after_stop": 0})
+outage_oct_nov_dec = outage_base.update_outage({"start_of_month": True, "allow_months": { "Oct", "Nov", "Dec"}, "min_duration": 30, "max_duration": max_duration, "min_work_after_stop": 20})
 
-risk_b1 = one_risk_base.update_risk({"r1": {"id": 0, "events": events_base_1, "max": 1, "value": 0.1, "start_risk_rel": 0.2}})
-risk_b2 = one_risk_base.update_risk({"r1": {"id": 0, "events": events_base_2, "max": 1, "value": 0.1, "start_risk_rel": 0.4}})
+risk_b1 = one_risk_base.update_risk({"r1": {"id": 0, "events": events_base_1, "max": 1, "value": 0.06, "start_risk_rel": 0.2, "max_last_step": 0.8}})
+risk_b2 = one_risk_base.update_risk({"r1": {"id": 0, "events": events_base_2, "max": 1, "value": 0.06, "start_risk_rel": 0.4, "max_last_step": 0.8}})
 
 
 
 risk_b1_two_risk = one_risk_base.update_risk({
-    "r1": {"id": 0, "events": events_base_1, "max": 1, "value": 0.12, "start_risk_rel": 0.4},
-    "r2": {"id": 1, "events": events_base_2, "max": 1, "value": 0.01, "start_risk_rel": 0.2}
+    "r1": {"id": 0, "events": events_base_1, "max": 1, "value": 0.12, "start_risk_rel": 0.2},
+    "r2": {"id": 1, "events": events_base_2, "max": 1, "value": 0.01, "start_risk_rel": 0.4}
     })
 
 # repair_b1_two_risk = repair_base.update_repair({
@@ -379,13 +389,32 @@ risk_b1_two_risk = one_risk_base.update_risk({
 #     "current-1":   {"no_parallel_tag_for_model": 1, "no_parallel_tag_for_npp": 1,  "risk_reducing": {"r1": 0.60, "r2": 0.50}},
 # })
 
+print(f"{maintence_cost=}")
+print(f"{current_cost=}")
+print(f"{medium_cost=}")
+print(f"{capital_cost=}")
 
+def get_r_for_repair(r_maintence, capital_cost):
+    maintence_cost, current_cost, medium_cost, capital_cost = get_repair_costs_by_capital(capital_cost)
+    r_maintence = r_maintence
+    r_current = current_cost / maintence_cost * r_maintence * 1.1
+    r_medium = medium_cost / maintence_cost * r_maintence * 1.2
+    r_capital = capital_cost / maintence_cost * r_maintence * 1.3
+    return r_maintence, r_current, r_medium, r_capital
+
+
+r_maintence, r_current, r_medium, r_capital = get_r_for_repair(r_maintence=0.1, capital_cost = capital_cost)
+
+print(f"{r_maintence=}")
+print(f"{r_current=}")
+print(f"{r_medium=}")
+print(f"{r_capital=}")
 
 repair_one_risk_1 = repair_base.update_repair({
-    "maintence-1": {"no_parallel_tag_for_model": 1, "no_parallel_tag_for_npp": 1,  "risk_reducing": {"r1": 0.15}, "min_downtime": 30},
+    "maintence-1": {"no_parallel_tag_for_model": 1, "no_parallel_tag_for_npp": 1,  "risk_reducing": {"r1": r_maintence}, "min_downtime": 30},
     # "maintence-2": {"no_parallel_tag_for_model": 1, "no_parallel_tag_for_npp": 0,  "risk_reducing": {"r1": 0.2}, "duration": 15},
-    "current-1":   {"no_parallel_tag_for_model": 1, "no_parallel_tag_for_npp": 1,  "risk_reducing": {"r1": 0.50}},
-    "medium-1":   {"no_parallel_tag_for_model": 1, "no_parallel_tag_for_npp": 1,  "risk_reducing": {"r1": 0.70}, "startup_cost": medium_cost},
+    "current-1":   {"no_parallel_tag_for_model": 1, "no_parallel_tag_for_npp": 1,  "risk_reducing": {"r1": r_current}, "startup_cost": current_cost, "min":0},
+    "medium-1":   {"no_parallel_tag_for_model": 1, "no_parallel_tag_for_npp": 1,  "risk_reducing": {"r1": r_medium}, "startup_cost": medium_cost, "min":0},
     })
 
 repair_one_risk_1_ver2 = repair_base.update_repair({
@@ -419,13 +448,15 @@ risk_b1_2 = one_risk_base.update_risk({"r1": {"id": 0, "events": events_base_2, 
 
 repair_one_risk_2 = repair_base.update_repair({
     "maintence-1": {"no_parallel_tag_for_model": 1, "no_parallel_tag_for_npp": 1, "risk_reducing": {"r1": 0.10}, "duration": 10, "min_downtime": 40,  "startup_cost": maintence_cost  - 2e6},
-    "repair-1":   {"no_parallel_tag_for_model": 0, "no_parallel_tag_for_npp": 1,  "risk_reducing": {"r1": 0.25}, "duration": 5, "startup_cost": current_cost + 2e6},
-    "repair-2":   {"no_parallel_tag_for_model": 0, "no_parallel_tag_for_npp": 1,  "risk_reducing": {"r1": 0.3}, "duration": 10, "startup_cost": medium_cost + 1e6},
-    "repair-3":   {"no_parallel_tag_for_model": 0, "no_parallel_tag_for_npp": 1,  "risk_reducing": {"r1": 0.3}, "duration": 15},
-    "repair-4":   {"no_parallel_tag_for_model": 0, "no_parallel_tag_for_npp": 1,  "risk_reducing": {"r1": 0.3}, "duration": 5},
-    "repair-5":   {"no_parallel_tag_for_model": 0, "no_parallel_tag_for_npp": 1,  "risk_reducing": {"r1": 0.2}, "duration": 5, "startup_cost": medium_cost - 10e6},
+    "repair-1":   {"no_parallel_tag_for_model": 1, "no_parallel_tag_for_npp": 1,  "risk_reducing": {"r1": 0.25}, "duration": 5, "startup_cost": current_cost + 2e6},
+    "repair-2":   {"no_parallel_tag_for_model": 1, "no_parallel_tag_for_npp": 1,  "risk_reducing": {"r1": 0.3}, "duration": 10, "startup_cost": medium_cost + 1e6},
+    "repair-3":   {"no_parallel_tag_for_model": 1, "no_parallel_tag_for_npp": 1,  "risk_reducing": {"r1": 0.3}, "duration": 15},
+    "repair-4":   {"no_parallel_tag_for_model": 1, "no_parallel_tag_for_npp": 1,  "risk_reducing": {"r1": 0.3}, "duration": 5},
+    "repair-5":   {"no_parallel_tag_for_model": 1, "no_parallel_tag_for_npp": 1,  "risk_reducing": {"r1": 0.2}, "duration": 5, "startup_cost": medium_cost - 10e6},
     
     })
+
+
 
 repair_one_risk_2_forced_capital = repair_one_risk_2.update_repair({
         "capital-1":   {"no_parallel_tag_for_model": 0, "no_parallel_tag_for_npp": 1,  "risk_reducing": {"r1": 0.7}, "duration": max_duration, "startup_cost": capital_cost, "forced_in_period": True},
@@ -436,26 +467,36 @@ repair_one_risk_2_forced_capital = repair_one_risk_2.update_repair({
 ###############################################################################
 # дать представление о возможностях модели
 
+
+# тест
 # 1 - год - 1 блок - 1 риск ++ c событиями
 # 1 - год - 1 блок - 1 риск ++ c событиями с разным составом работ во время остановки
 
-# 2 - года - 2 блока - 1 риск с событиями   запрет на одновременные ремонты и min_downtime
-# 2 - года - 2 блока - 1 риск с событиями   выбор месяца ремонта
-# 2 - года - 2 блока - 1 риск с событиями  (разный последовательный состав работ на остановке, запретить одновременные ремонты НО)  
+
+# запрет на одновременные ремонты и min_downtime
+# 2 - года - 2 блока - 1 риск с событиями   цельные ремонты 
+# 2 - года - 2 блока - 1 риск с событиями   цельные ремонты - выбор месяца года + алт maintence
+# 2 - года - 2 блока - 1 риск с событиями   последовательный ремонт
+# 2 - года - 2 блока - 1 риск с событиями   последовательный ремонт - выбор месяца ремонта + алт maintence
 
 
-# 3 - года - 2 блока - 1 риск с событиями ( запретить одновременные ремонты) (обязательыый капремонт)
-# 3 - года - 2 блока - 1 риск с событиями ( разные длины остановок запретить одновременные ремонты) (обязательыый капремонт)
-# 3 - года - 2 блока - 1 риск с событиями (обязательный капитальный ремонт) + выбор месяца
+# запрет на одновременные ремонты и min_downtime + обязательный капитальный ремонт
+# 3 - года - 2 блока - 1 риск с событиями цельные ремонты
+# 3 - года - 2 блока - 1 риск с событиями цельный ремонты + выбора месяца + альт maintence
+# 3 - года - 2 блока - 1 риск с событиями последовательный ремонт
+# 3 - года - 2 блока - 1 риск с событиями последовательный ремонт + выбор месяца + альт maintence
+
 
 
 # scen = base | {"№": 1} | one_year | (b_1.update(risk_b1 | repair_one_risk_1_ver2 | outage_jul))
 # scen = base | {"№": 2} | one_year | (b_1.update(risk_b1_2 | repair_one_risk_2 | outage_jul))
 
 
-scen = base | {"№": 3} | two_years | (b_1.update(risk_b1 | repair_one_risk_1 | outage_jul)) | (b_2.update(risk_b2 | repair_one_risk_1 | outage_nov)) 
+
+
+# scen = base | {"№": 3} | two_years | (b_1.update(risk_b1 | repair_one_risk_1 | outage_jul)) | (b_2.update(risk_b2 | repair_one_risk_1 | outage_nov)) 
 # scen = base | {"№": 4} | two_years | (b_1.update(risk_b1 | repair_one_risk_1 | outage_jun_jul_aug)) | (b_2.update(risk_b2 | repair_one_risk_1 | outage_oct_nov_dec )) 
-# scen = base | {"№": 5} | two_years | (b_1.update(risk_b1 | repair_one_risk_2 | outage_jul)) | (b_2.update(risk_b2 | repair_one_risk_2 | outage_nov)) 
+scen = base | {"№": 5} | two_years | (b_1.update(risk_b1 | repair_one_risk_2 | outage_jul)) | (b_2.update(risk_b2 | repair_one_risk_2 | outage_nov)) 
 # scen = base | {"№": 54} | two_years | (b_1.update(risk_b1 | repair_one_risk_2 | outage_jun_jul_aug)) | (b_2.update(risk_b2 | repair_one_risk_2 | outage_oct_nov_dec)) 
 
 
@@ -534,13 +575,13 @@ block_grouper.set_options(
         "легкий ремонт-2": {"id": 1, "color": "#02e0fd"},
         "текущий ремонт-1": {"id": 2, "color": "#0b07f3"},
         "текущий ремонт-2": {"id": 3, "color": "#ff00ff"},
-        "средний ремонт-1": {"id": 4, "color": "#501d0c"},
+        "средний ремонт-1": {"id": 4, "color": "#ffa600"},
         "средний ремонт-2": {"id": 5, "color": "#0c2450"},
         "капитальный ремонт-1": {"id": 6, "color": "#ff4000"},
 
         "тип ремонта-1": {"id": 7, "color": "#0b07fc"},
         "тип ремонта-2": {"id": 8, "color": "#ff00b3"},
-        "тип ремонта-3": {"id": 9, "color": "#501d0c"},
+        "тип ремонта-3": {"id": 9, "color": "#ffa600"},
         "тип ремонта-4": {"id": 10, "color": "#0c2450"},
         # "тип ремонта-4": {"id": 10, "color": "#FBFF00"},
         "тип ремонта-5": {"id": 11, "color": "#ff4000"},
@@ -599,7 +640,6 @@ excel_writer.write("./excel_results")
 print("done")
 
 
-# включиться один раз за период максимум для фаз ремнта
 # фото с ноутбука
 # сделать расчет с ноутбука
 # блок-схема

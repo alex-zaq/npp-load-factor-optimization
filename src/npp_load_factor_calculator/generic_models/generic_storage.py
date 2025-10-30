@@ -13,6 +13,7 @@ class Generic_storage:
         output_bus,
         capacity,
         initial_storage_level,
+        max_storage_level
     ):
               
         # initial_storage_level = initial_storage_level if initial_storage_level else None
@@ -24,7 +25,8 @@ class Generic_storage:
             initial_storage_level=initial_storage_level,
             inputs={input_bus: solph.Flow()},
             outputs={output_bus: solph.Flow()},
-            balanced=False
+            balanced=False,
+            max_storage_level=max_storage_level
         )
         
         storage.inputs_pair = [(input_bus, storage)]

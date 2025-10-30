@@ -117,15 +117,20 @@ class NPP_builder:
                 "min": 1,
             })
             npp_block_builder.create_pair_equal_status(risk_source_builder)
-            # risk_source_builder.build()
             risk_out_bus = bus_factory.create_bus(f"{npp_label}_{risk_name}_outbus")
             risk_out_bus_dict[risk_name] = risk_out_bus  
+
+            max_storage_level =  self.es.periods_count * [risk_data["max"]]
+            max_storage_level[-2:] = [risk_data["max_last_step"], risk_data["max_last_step"]]
+
             storage = storage_factory.create_storage(
                 label = f"{npp_label}_{risk_name}_storage",
                 input_bus = risk_bus,
                 output_bus = risk_out_bus,
                 capacity = risk_data["max"],
                 initial_storage_level=risk_data["start_risk_rel"],
+                max_storage_level=max_storage_level,
+                
             )
             risks[risk_name] = storage
             
