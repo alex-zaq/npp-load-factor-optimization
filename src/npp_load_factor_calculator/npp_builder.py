@@ -75,6 +75,9 @@ class NPP_builder:
         
         npp_block_builder.set_info("avail_months_mask", avail_months_mask)
                 
+        # plot_array(mask, date_time_index=self.es.timeindex[:-1])        
+                
+                
         npp_block_builder.update_options({
             "positive_gradient_limit": mask,
             "negative_gradient_limit": mask,
@@ -201,7 +204,6 @@ class NPP_builder:
                     })
                     duration = self.resolution_strategy.convert_time(options["duration"])
                     coeff = self.resolution_strategy.coeff
-                    # repair_converter_builder.add_max_uptime_old(duration, coeff)
                     repair_converter_builder.add_max_uptime_new(duration)
                     repair_converter_builder.add_max_startup_by_periods(start_finish_periods, 1)
                     

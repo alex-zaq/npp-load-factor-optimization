@@ -33,11 +33,11 @@ energysystem.add(source_expensed)
 
 source_1 = solph.components.experimental.PiecewiseLinearConverter( 
    label='piecewise',
-   inputs={gas_bus: solph.Flow(nominal_capacity=100)},
+   inputs={gas_bus: solph.Flow(nominal_capacity=100, nonconvex=solph.NonConvex(), min=0.1)},
    outputs={el_bus: solph.Flow()},
    in_breakpoints=[0,25,50,75,100],
    conversion_function=lambda x: x**0.5,
-   pw_repn='CC',
+   pw_repn='SOS2',
 )
 energysystem.add(source_1)
 

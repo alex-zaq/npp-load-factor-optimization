@@ -237,9 +237,9 @@ def add_white_spaces_and_colors_el_gen(df, value):
         if df.iloc[:, i].min() < value:
             new_df.insert(len(new_df.columns), f"{col}_white_spaces", value - df.iloc[:, i], True)
             new_colors.insert(len(new_colors) - 1 + 1, "white")
-    
+    new_df = new_df.drop(columns=[col for col in new_df.columns if (new_df[col] <= 0).all()])
+    new_df = new_df.applymap(lambda x: max(x, 0))
     new_df.colors = new_colors
-    new_df.clip(lower=0)
     return new_df
 
 def add_white_spaces_and_colors_repairs(dict_value, value):
