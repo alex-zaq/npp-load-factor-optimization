@@ -318,6 +318,7 @@ repair_base = Scenario_builder({
 events_base_1 = {
     "2025-01-20": 0.10,
     "2025-10-15": 0.1,
+
     "2026-01-01": 0.06,
     "2026-03-01": 0.08,
     "2026-07-20": 0.11,
@@ -333,9 +334,9 @@ events_base_2 = {
     "2025-02-01": 0.15,
     "2025-05-01": 0.2,
     "2025-09-01": 0.10,
-    # "2025-10-01": 0.1,
     "2025-11-01": 0.1,
     "2025-11-15": 0.05,
+
     "2026-02-10": 0.1,
     "2026-09-10": 0.07,
 
@@ -373,8 +374,8 @@ outage_jun_jul_aug = outage_base.update_outage({"start_of_month": True, "allow_m
 
 outage_oct_nov_dec = outage_base.update_outage({"start_of_month": True, "allow_months": { "Oct", "Nov", "Dec"}, "min_duration": 30, "max_duration": max_duration, "min_work_after_stop": 20})
 
-risk_b1 = one_risk_base.update_risk({"r1": {"id": 0, "events": events_base_1, "max": 1, "value": 0.06, "start_risk_rel": 0.2, "max_last_step": 0.8}})
-risk_b2 = one_risk_base.update_risk({"r1": {"id": 0, "events": events_base_2, "max": 1, "value": 0.06, "start_risk_rel": 0.4, "max_last_step": 0.8}})
+risk_b1 = one_risk_base.update_risk({"r1": {"id": 0, "events": events_base_1, "max": 1, "value": 0.06, "start_risk_rel": 0.2, "max_last_step": 0.9}})
+risk_b2 = one_risk_base.update_risk({"r1": {"id": 0, "events": events_base_2, "max": 1, "value": 0.06, "start_risk_rel": 0.4, "max_last_step": 0.9}})
 
 
 
@@ -398,8 +399,8 @@ def get_r_for_repair(r_maintence, capital_cost):
     maintence_cost, current_cost, medium_cost, capital_cost = get_repair_costs_by_capital(capital_cost)
     r_maintence = r_maintence
     r_current = current_cost / maintence_cost * r_maintence * 1.1
-    r_medium = medium_cost / maintence_cost * r_maintence * 1.2
-    r_capital = capital_cost / maintence_cost * r_maintence * 1.3
+    r_medium = medium_cost / maintence_cost * r_maintence * 1.130
+    r_capital = capital_cost / maintence_cost * r_maintence * 1.2
     return r_maintence, r_current, r_medium, r_capital
 
 
@@ -492,11 +493,12 @@ repair_one_risk_2_forced_capital = repair_one_risk_2.update_repair({
 # scen = base | {"№": 2} | one_year | (b_1.update(risk_b1_2 | repair_one_risk_2 | outage_jul))
 
 
+mip_gap = 0.001
 
 
 # scen = base | {"№": 3} | two_years | (b_1.update(risk_b1 | repair_one_risk_1 | outage_jul)) | (b_2.update(risk_b2 | repair_one_risk_1 | outage_nov)) 
-# scen = base | {"№": 4} | two_years | (b_1.update(risk_b1 | repair_one_risk_1 | outage_jun_jul_aug)) | (b_2.update(risk_b2 | repair_one_risk_1 | outage_oct_nov_dec )) 
-scen = base | {"№": 5} | two_years | (b_1.update(risk_b1 | repair_one_risk_2 | outage_jul)) | (b_2.update(risk_b2 | repair_one_risk_2 | outage_nov)) 
+scen = base | {"№": 4} | two_years | (b_1.update(risk_b1 | repair_one_risk_1 | outage_jun_jul_aug)) | (b_2.update(risk_b2 | repair_one_risk_1 | outage_oct_nov_dec )) 
+# scen = base | {"№": 5} | two_years | (b_1.update(risk_b1 | repair_one_risk_2 | outage_jul)) | (b_2.update(risk_b2 | repair_one_risk_2 | outage_nov)) 
 # scen = base | {"№": 54} | two_years | (b_1.update(risk_b1 | repair_one_risk_2 | outage_jun_jul_aug)) | (b_2.update(risk_b2 | repair_one_risk_2 | outage_oct_nov_dec)) 
 
 
@@ -520,7 +522,7 @@ oemof_model = Oemof_model(
     solver_settings = {
         "solver": "cplex",
         "solver_verbose": True,
-        "mip_gap": 0.01
+        "mip_gap": mip_gap
     } 
 )
 

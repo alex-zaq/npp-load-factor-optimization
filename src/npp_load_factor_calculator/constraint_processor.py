@@ -1,6 +1,9 @@
 import collections
+
 import pyomo.environ as po
 from pyomo.environ import Binary, Var
+
+from src.npp_load_factor_calculator.utilites import plot_array  # noqa: F401
 
 
 class Constraint_processor:
@@ -442,13 +445,7 @@ class Constraint_processor:
         constraints = self.constraints["strict_status_off_by_pattern"]
         items = self._get_pairs_for_strict_status_off_by_pattern(constraints) or []
         
-        # start_end_pairs = [(25, 75)]
-        # avail_pattern = get_avail_pattern(start_end_pairs, date_time_index)
 
-        # items = [{
-        #         "block_pair": (cheap_source, el_bus),
-        #         "avail_pattern": avail_pattern
-        # }]
 
         def add_strict_status_by_pattern_constraint(model, items):
             def shutdown_rule(m, point , source, bus):
@@ -456,7 +453,8 @@ class Constraint_processor:
             for item in items:
                 source, bus = item["block_pair"]
                 avail_pattern = item["avail_pattern"]
-                points = set(point for point in range(len(avail_pattern)) if avail_pattern[point] == 0)
+                # points = set(point for point in range(len(avail_pattern)) if avail_pattern[point] == 0)
+                points = [point for point in range(len(avail_pattern)) if avail_pattern[point] == 0]
                 setattr(model,
                         f"forced_shutdown_by_pattern_{source.label}_{bus.label}",
                         po.Constraint(
