@@ -562,13 +562,13 @@ repair_one_risk_2_forced_capital = repair_one_risk_2.update_repair({
 
 mip_gap = 0.01
 
-# scen = base | {"№": 1} | one_year | (b_1.update(risk_b1 | repair_one_risk_1_ver2 | outage_jul))
+scen = base | {"№": 1} | one_year | (b_1.update(risk_b1 | repair_one_risk_1_ver2 | outage_jul))
 # scen = base | {"№": 2} | one_year | (b_1.update(risk_b1_2 | repair_one_risk_2 | outage_jul))
 
 
 
 
-scen = base | {"№": 3} | two_years | (b_1.update(risk_b1 | repair_one_risk_1 | outage_jul)) | (b_2.update(risk_b2 | repair_one_risk_1 | outage_nov)) 
+# scen = base | {"№": 3} | two_years | (b_1.update(risk_b1 | repair_one_risk_1 | outage_jul)) | (b_2.update(risk_b2 | repair_one_risk_1 | outage_nov)) 
 # scen = base | {"№": 4} | two_years | (b_1.update(risk_b1 | repair_one_risk_1 | outage_jun_jul_aug)) | (b_2.update(risk_b2 | repair_one_risk_1 | outage_oct_nov_dec)) 
 # scen = base | {"№": 5} | two_years | (b_1.update(risk_b1 | repair_one_risk_2 | outage_jul)) | (b_2.update(risk_b2 | repair_one_risk_2 | outage_nov)) 
 # scen = base | {"№": 6} | two_years | (b_1.update(risk_b1 | repair_one_risk_2 | outage_jun_jul_aug)) | (b_2.update(risk_b2 | repair_one_risk_2 | outage_oct_nov_dec)) 
@@ -578,7 +578,7 @@ scen = base | {"№": 3} | two_years | (b_1.update(risk_b1 | repair_one_risk_1 |
 # scen = base | {"№": 7} | three_years | (b_1.update(risk_b1 | repair_one_risk_1_forced_capital | outage_jul_3)) | (b_2.update(risk_b2 | repair_one_risk_1_forced_capital | outage_nov_3)) 
 # scen = base | {"№": 8} | three_years | (b_1.update(risk_b1 | repair_one_risk_1_forced_capital | outage_jun_jul_aug_3)) | (b_2.update(risk_b2 | repair_one_risk_1_forced_capital | outage_oct_nov_dec_3)) 
 # scen = base | {"№": 9} | three_years | (b_1.update(risk_b1 | repair_one_risk_2_forced_capital | outage_jul_3)) | (b_2.update(risk_b2 | repair_one_risk_2_forced_capital | outage_nov_3)) 
-scen = base | {"№": 10} | three_years | (b_1.update(risk_b1 | repair_one_risk_2_forced_capital | outage_jun_jul_aug_3)) | (b_2.update(risk_b2 | repair_one_risk_2_forced_capital | outage_oct_nov_dec_3)) 
+# scen = base | {"№": 10} | three_years | (b_1.update(risk_b1 | repair_one_risk_2_forced_capital | outage_jun_jul_aug_3)) | (b_2.update(risk_b2 | repair_one_risk_2_forced_capital | outage_oct_nov_dec_3)) 
 
 
 
@@ -595,6 +595,7 @@ oemof_model = Oemof_model(
     solver_settings = {
         "solver": "cplex",
         "solver_verbose": True,
+        "save_logs": True,
         "mip_gap": mip_gap
     } 
 )
@@ -611,7 +612,6 @@ solution_processor.set_dumps_folder("./dumps")
 # solution_processor.set_restore_mode(file_number="102") 
 # solution_processor.set_restore_mode(file_number="103") 
 
-# solution_processor.set_restore_mode(file_number="104") 
 # solution_processor.set_restore_mode(file_number="105") 
 # solution_processor.set_restore_mode(file_number="106") 
 # solution_processor.set_restore_mode(file_number="107") 
@@ -698,29 +698,18 @@ image_all_block_with_cost = result_viewer.plot_all_blocks_with_cost_graph(outage
 # image_all_block_with_cost.save("./images","jpg", 1500)
 
 
-# control_block_viewer.plot_control_stop_block(bel_npp_block_1)
-# control_block_viewer.plot_npp_status(bel_npp_block_1)
-
-# control_block_viewer.plot_npp_storage_data(bel_npp_block_1)
-# control_block_viewer.plot_repair_storage_max_uptime(bel_npp_block_1, repair_id=1)
-# control_block_viewer.plot_repair_storage_max_uptime(bel_npp_block_1, repair_id=2)
-# control_block_viewer.plot_repair_storage_max_uptime(bel_npp_block_1, repair_id=3)
-# control_block_viewer.plot_repair_storage_max_uptime(bel_npp_block_1, repair_id=5)
- 
 
 # result_viewer.create_scheme("./schemes")
 # image_all_block_with_risks.save("./images","jpg", 600)
 # image_all_block_with_cost.save("./images","jpg", 600)
 
 
+excel_writer.add_images([image_all_block_with_cost], dpi=200)
 excel_writer.write("./excel_results")
 
 print("done")
 
 
-# фото с ноутбука
-# сделать расчет с ноутбука
-# блок-схема
 
 
 

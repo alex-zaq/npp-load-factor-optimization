@@ -83,6 +83,7 @@ class Oemof_model:
         self.solver = self.solver_settings["solver"]
         self.solver_verbose = self.solver_settings["solver_verbose"]
         self.mip_gap = self.solver_settings["mip_gap"]
+        self.save_logs_flag = self.solver_settings["save_logs"]
         self.solver_log_path = self._get_logging_path()
         start_time = datetime.now()
         model.solve(
@@ -95,6 +96,7 @@ class Oemof_model:
                 },
         )
         self.solver_log = self._read_solver_log_file(self.solver_log_path)
+        Path(self.solver_log_path).unlink() if not self.save_logs_flag else None
         elapsed_solver_time = (datetime.now() - start_time).total_seconds()
         print(
             "работа " + self.solver + " завершена",

@@ -310,19 +310,22 @@ class Result_viewer:
     
     
     
-
+        windows_name_items = []
+        windows_name_items.append("ППР с риском") if outages_graph else None
+        windows_name_items.append("структура затрат") if cost_balance_graph else None
         
         ax_left.tick_params(axis="both", which="major", labelsize=font_size - 2)
         ax_left.tick_params(axis="both", which="minor", labelsize=font_size - 2)
         fig = plt.gcf()
-        fig.canvas.manager.set_window_title("Расчет плановых остановок")
+        windows_title = "+".join(windows_name_items)
+        fig.canvas.manager.set_window_title(windows_title)
         fig.set_dpi(dpi)
   
         
         center_matplotlib_figure(fig, extra_y=-60, extra_x=40)
         plt.show(block=True)
         
-        image_builder = Image_builder(fig, self.scenario)
+        image_builder = Image_builder(fig, self.scenario, windows_title)
         return image_builder
               
                
@@ -534,19 +537,27 @@ class Result_viewer:
             ax_risk_df.axhline(y=1, color='r', linestyle='--', label='верхняя граница риска')
 
 
+        windows_name_items = []
+        windows_name_items.append("ППР c затратами") if outages_graph else None
+        windows_name_items.append("риск") if risk_graph else None
+
+
         fig.set_dpi(dpi)
         center_matplotlib_figure(fig, extra_y=-60, extra_x=40)
+        windows_title = "+".join(windows_name_items)
+        fig.canvas.manager.set_window_title(windows_title)
         plt.show(block=True)
         
-        image_builder = Image_builder(fig, self.scenario)
+        image_builder = Image_builder(fig, self.scenario, name = windows_title)
 
         return image_builder
 
 class Image_builder:
     
-    def __init__(self, fig, scenario):
+    def __init__(self, fig, scenario, name):
         self.fig = fig
         self.scenario = scenario
+        self.name = name
         
     def save(self, folder, format, dpi=100):
         
@@ -555,22 +566,26 @@ class Image_builder:
             folder.mkdir(parents=True)
             
             
-        scenario_folder  = folder / get_file_name_by_scenario(self.scenario)
-        if not scenario_folder.exists():
-            scenario_folder.mkdir(parents=True)
+        # scenario_folder  = folder / get_file_name_by_scenario(self.scenario)
+        # if not scenario_folder.exists():
+        #     scenario_folder.mkdir(parents=True)
             
         file_name = get_file_name_by_scenario(self.scenario)    
-        name = get_file_name_with_auto_number(scenario_folder, file_name, format)
+        name = get_file_name_with_auto_number(folder, file_name, format)
 
-        path = scenario_folder / name
+        self.path = folder / name
         
         self.fig.savefig(
-            path,
+            self.path,
             bbox_inches="tight",
             dpi=dpi,
             transparent=True,
         )
-        print(f"Saved to {path}")
+        print(f"Saved to {self.path}")
+
+    def delete_file(self):
+        if self.path.exists():
+            self.path.unlink()
             
 
 class Control_block_viewer:
