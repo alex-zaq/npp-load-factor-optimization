@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import matplotlib
 import pandas as pd
 from matplotlib import pyplot as plt
 from oemof.visio import ESGraphRenderer
@@ -15,6 +16,41 @@ from src.npp_load_factor_calculator.utilites import (
 )
 
 
+class Res_scheme_builder:
+
+    def __init__(self, oemof_es, folder):
+        self.oemof_es = oemof_es
+        self.folder = folder
+        
+    def create(self):
+        folder = Path(self.folder)
+        if not folder.exists():
+            folder.mkdir(parents=True)
+        scenario = self.oemof_es.results["scenario"]
+        file_name = get_file_name_by_scenario(scenario)
+        name = get_file_name_with_auto_number(folder, file_name, "png")
+        self.path = folder / name
+        
+        gr = ESGraphRenderer(
+            energy_system=self.oemof_es,
+            filepath=self.path.resolve(),
+            img_format="png",
+            txt_fontsize=12,
+            txt_width=40,
+            legend=False,
+        )
+        gr.render(cleanup=True)
+
+        
+    def delete_file(self):
+        path_sheme = Path(self.path)
+        # path_diagram = Path(self.path.resolve().parent / path_sheme.stem)
+        if path_sheme.exists():
+            path_sheme.unlink()
+        # if path_diagram.exists():
+        #     path_diagram.unlink()
+            
+
 class Result_viewer:
     
     def __init__(self, block_grouper):
@@ -22,25 +58,25 @@ class Result_viewer:
         self.scenario = block_grouper.custom_es.scenario
         self.save_image_flag = False
         
-    def create_scheme(self, folder):
+    # def create_scheme(self, folder):
         
-        folder = Path(folder)
-        if not folder.exists():
-            folder.mkdir(parents=True)
-        file_name = get_file_name_by_scenario(self.scenario)
-        name = get_file_name_with_auto_number(folder, file_name, "png")
-        folder = folder / name
-        oemof_es = self.block_grouper.custom_es.oemof_es
+        # folder = Path(folder)
+        # if not folder.exists():
+        #     folder.mkdir(parents=True)
+        # file_name = get_file_name_by_scenario(self.scenario)
+        # name = get_file_name_with_auto_number(folder, file_name, "png")
+        # folder = folder / name
+        # oemof_es = self.block_grouper.custom_es.oemof_es
         
-        gr = ESGraphRenderer(
-            energy_system=oemof_es,
-            filepath=folder,
-            img_format="png",
-            txt_fontsize=12,
-            txt_width=40,
-            legend=False,
-        )
-        gr.view()
+        # gr = ESGraphRenderer(
+        #     energy_system=oemof_es,
+        #     filepath=folder,
+        #     img_format="png",
+        #     txt_fontsize=12,
+        #     txt_width=40,
+        #     legend=False,
+        # )
+        # gr.view()
 
 
     def plot_single_block_graph(self, block, dpi, font_size = 10):
@@ -151,18 +187,21 @@ class Result_viewer:
         return image_builder
         
           
-    def plot_all_blocks_with_risks_graph(self, outages_graph, cost_balance_graph=False, dpi=120, font_size = 10):
+    def plot_blocks_with_risks(self, outages_graph, cost_graph=False, dpi=120, font_size = 10, show_images=True):
     
+        if show_images:
+            matplotlib.use('TkAgg')
+        else:
+            matplotlib.use('Agg')
     
-        if not (outages_graph or cost_balance_graph):
+        if not (outages_graph or cost_graph):
             raise ValueError("At least one of npp_graph or risk_graph must be True")
         
-        if (outages_graph and cost_balance_graph):
+        if (outages_graph and cost_graph):
             fig, (ax_left, ax_right) = plt.subplots(1, 2, figsize=(13, 6), gridspec_kw={'width_ratios': [1.7, 1]})
         else:
             fig, ax_left = plt.subplots()
-                
-        
+                       
     
     
         if outages_graph:
@@ -264,7 +303,7 @@ class Result_viewer:
             ax_left.set_ylabel('Мощность АЭС, МВт', fontsize=font_size - 2)
             ax_left.set_xlabel('Время, дни', fontsize=font_size - 2)
     
-        if cost_balance_graph:
+        if cost_graph:
                                 
                 ax_cost = ax_right if outages_graph else ax_left
                 
@@ -293,9 +332,10 @@ class Result_viewer:
                 for p in ax_cost_balance_df.patches:
                     width = p.get_width()
                     height = p.get_height()
-                    y_res += height
-                    x, y = p.get_x(), p.get_y()
-                    ax_cost_balance_df.text(x+width/2, y+height/2, f"{height:.0f}", ha='center', va='center', fontsize=font_size-2)
+                    if height != 0:
+                        y_res += height
+                        x, y = p.get_x(), p.get_y()
+                        ax_cost_balance_df.text(x+width/2, y+height/2, f"{height:.0f}", ha='center', va='center', fontsize=font_size-2)
                 
                 total = max_Y
                 ax_cost_balance_df.text(x_res, total*1.03, f"{total:.0f}", ha="center", va="center", fontsize=font_size-2, fontweight='bold')
@@ -312,7 +352,7 @@ class Result_viewer:
     
         windows_name_items = []
         windows_name_items.append("ППР с риском") if outages_graph else None
-        windows_name_items.append("структура затрат") if cost_balance_graph else None
+        windows_name_items.append("структура затрат") if cost_graph else None
         
         ax_left.tick_params(axis="both", which="major", labelsize=font_size - 2)
         ax_left.tick_params(axis="both", which="minor", labelsize=font_size - 2)
@@ -322,8 +362,10 @@ class Result_viewer:
         fig.set_dpi(dpi)
   
         
-        center_matplotlib_figure(fig, extra_y=-60, extra_x=40)
-        plt.show(block=True)
+        center_matplotlib_figure(fig, extra_y=-60, extra_x=40) if show_images else None
+        
+        if show_images:
+            plt.show(block=True)
         
         image_builder = Image_builder(fig, self.scenario, windows_title)
         return image_builder
@@ -332,8 +374,14 @@ class Result_viewer:
                
                 
    
-    def plot_all_blocks_with_cost_graph(self, outages_graph, risk_graph=False, dpi=120, font_size = 10):
+    def plot_blocks_with_cost(self, outages_graph, risk_graph=False, dpi=120, font_size = 10, show_images=True):
         
+        if show_images:
+            matplotlib.use('TkAgg')
+        else:
+            matplotlib.use('Agg')
+
+
         if not (outages_graph or risk_graph):
             raise ValueError("At least one of npp_graph or risk_graph must be True")
         
@@ -341,6 +389,7 @@ class Result_viewer:
             fig, (ax_left, ax_right) = plt.subplots(1, 2, figsize=(13, 5))
         else:
             fig, ax_left = plt.subplots()
+                
                 
                           
                        
@@ -543,10 +592,11 @@ class Result_viewer:
 
 
         fig.set_dpi(dpi)
-        center_matplotlib_figure(fig, extra_y=-60, extra_x=40)
+        center_matplotlib_figure(fig, extra_y=-60, extra_x=40) if show_images else None
         windows_title = "+".join(windows_name_items)
         fig.canvas.manager.set_window_title(windows_title)
-        plt.show(block=True)
+        if show_images:
+            plt.show(block=True)
         
         image_builder = Image_builder(fig, self.scenario, name = windows_title)
 

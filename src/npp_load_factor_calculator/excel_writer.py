@@ -72,14 +72,17 @@ class Excel_writer:
         self.image_dpi = dpi
         
     
-
+    def add_res_scheme(self, res_scheme):
+        self.res_scheme = res_scheme
         
         
     def _delete_images(self):
         if hasattr(self, "images"):
             [image.delete_file() for image in self.images]
                    
-        
+    def _delete_res_scheme(self):
+        if hasattr(self, "res_scheme"):
+            self.res_scheme.delete_file()
         
     def write(self, folder):
         scen = self.block_grouper.custom_es.scenario
@@ -99,11 +102,28 @@ class Excel_writer:
             self._write_log_info(writer, sheet_name=f"{solver_name}_log")
         
         # Этап 2: Добавляем изображения
-        if self.images:
+        if hasattr(self, "images"):
             self._add_images_to_existing_file(path)
+            
+        if hasattr(self, "res_scheme"):
+            self._add_res_scheme_to_existing_file(path)
         
         self._delete_images()
+        self._delete_res_scheme()
         print("{}  ({})".format("excel файл создан", excel_file))
+
+    def _add_res_scheme_to_existing_file(self, path):
+        from openpyxl import load_workbook
+        wb = load_workbook(path)
+        ws = wb.create_sheet("res_scheme")
+        self.res_scheme.create()
+        img = Image(self.res_scheme.path)
+        img.anchor = 'A2'
+        ws.add_image(img)
+        wb.save(path)
+        wb.close()
+
+
 
     def _add_images_to_existing_file(self, path):
         """Добавляет изображения в существующий файл Excel"""

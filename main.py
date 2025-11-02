@@ -1,6 +1,6 @@
 from src.npp_load_factor_calculator import Block_grouper, Oemof_model, Result_viewer
 from src.npp_load_factor_calculator.excel_writer import Excel_writer
-from src.npp_load_factor_calculator.result_viewer import Control_block_viewer
+from src.npp_load_factor_calculator.result_viewer import Control_block_viewer, Res_scheme_builder
 from src.npp_load_factor_calculator.scen_builder import Scenario_builder
 from src.npp_load_factor_calculator.solution_processor import Solution_processor
 from src.npp_load_factor_calculator.utilites import (
@@ -390,10 +390,10 @@ outage_oct_nov_dec_3 = outage_oct_nov_dec.update_outage({"max_duration": 40})
 #     "current-1":   {"no_parallel_tag_for_model": 1, "no_parallel_tag_for_npp": 1,  "risk_reducing": {"r1": 0.60, "r2": 0.50}},
 # })
 
-print(f"{maintence_cost=}")
-print(f"{current_cost=}")
-print(f"{medium_cost=}")
-print(f"{capital_cost=}")
+# print(f"{maintence_cost=}")
+# print(f"{current_cost=}")
+# print(f"{medium_cost=}")
+# print(f"{capital_cost=}")
 
 def get_r_for_repair(r_maintence, capital_cost):
     maintence_cost, current_cost, medium_cost, capital_cost = get_repair_costs_by_capital(capital_cost)
@@ -406,10 +406,6 @@ def get_r_for_repair(r_maintence, capital_cost):
 
 r_maintence, r_current, r_medium, r_capital = get_r_for_repair(r_maintence=0.1, capital_cost = capital_cost)
 
-print(f"{r_maintence=}")
-print(f"{r_current=}")
-print(f"{r_medium=}")
-print(f"{r_capital=}")
 
 repair_one_risk_1 = repair_base.update_repair({
     "maintence-1": {"no_parallel_tag_for_model": 1, "no_parallel_tag_for_npp": 1,  "risk_reducing": {"r1": r_maintence}, "min_downtime": 30},
@@ -676,35 +672,34 @@ block_grouper.set_options(
 
 result_viewer = Result_viewer(block_grouper)
 excel_writer = Excel_writer(block_grouper, solution_processor)
-control_block_viewer = Control_block_viewer(block_grouper)
+res_scheme = Res_scheme_builder(oemof_es, "./schemes")
 
-
-# image_simple = result_viewer.plot_single_block_graph(b_1, dpi=180)
-# image_simple = result_viewer.plot_single_block_graph(b_2, dpi=180)
-# image_simple = result_viewer.plot_single_block_graph(b_3, dpi=180)
-
-# image_all_block_with_risks = result_viewer.plot_all_blocks_with_risks_graph(outages_graph=True, cost_balance_graph=False, dpi=180)
-# image_all_block_with_risks = result_viewer.plot_all_blocks_with_risks_graph(outages_graph=True, cost_balance_graph=True, dpi=140)
-# image_all_block_with_risks = result_viewer.plot_all_blocks_with_risks_graph(outages_graph=False, cost_balance_graph=True, dpi=180)
-
-
-image_all_block_with_cost = result_viewer.plot_all_blocks_with_cost_graph(outages_graph=True, risk_graph=True, dpi=180)
-# image_all_block_with_cost = result_viewer.plot_all_blocks_with_cost_graph(outages_graph=True, risk_graph=False, dpi=140)
-# image_all_block_with_cost = result_viewer.plot_all_blocks_with_cost_graph(outages_graph=False, risk_graph=True, dpi=180)
+show_images = False
 
 
 
-# image_all_block_with_risks.save("./images","jpg", 1500)
-# image_all_block_with_cost.save("./images","jpg", 1500)
+image_1 = result_viewer.plot_blocks_with_risks(outages_graph=True, cost_graph=False, dpi=180, show_images=show_images)
+image_2 = result_viewer.plot_blocks_with_risks(outages_graph=True, cost_graph=True, dpi=140, show_images=show_images)
+image_3 = result_viewer.plot_blocks_with_risks(outages_graph=False, cost_graph=True, dpi=180, show_images=show_images)
+
+
+image_4 = result_viewer.plot_blocks_with_cost(outages_graph=True, risk_graph=True, dpi=180, show_images=show_images)
+image_5 = result_viewer.plot_blocks_with_cost(outages_graph=True, risk_graph=False, dpi=140, show_images=show_images)
+image_6 = result_viewer.plot_blocks_with_cost(outages_graph=False, risk_graph=True, dpi=180, show_images=show_images)
 
 
 
-# result_viewer.create_scheme("./schemes")
-# image_all_block_with_risks.save("./images","jpg", 600)
-# image_all_block_with_cost.save("./images","jpg", 600)
 
 
-excel_writer.add_images([image_all_block_with_cost], dpi=200)
+
+
+
+
+images = [image_1, image_2, image_3, image_4, image_5, image_6]
+
+
+excel_writer.add_res_scheme(res_scheme)
+excel_writer.add_images(images, dpi=200)
 excel_writer.write("./excel_results")
 
 print("done")
