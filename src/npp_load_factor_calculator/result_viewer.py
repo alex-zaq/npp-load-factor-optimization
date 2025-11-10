@@ -198,6 +198,7 @@ class Result_viewer:
             raise ValueError("At least one of npp_graph or risk_graph must be True")
         
         if (outages_graph and cost_graph):
+            # fig, (ax_left, ax_right) = plt.subplots(1, 2, figsize=(13, 6), gridspec_kw={'width_ratios': [1.7, 1]})
             fig, (ax_left, ax_right) = plt.subplots(1, 2, figsize=(13, 6), gridspec_kw={'width_ratios': [1.7, 1]})
         else:
             fig, ax_left = plt.subplots()
@@ -335,10 +336,10 @@ class Result_viewer:
                     if height != 0:
                         y_res += height
                         x, y = p.get_x(), p.get_y()
-                        ax_cost_balance_df.text(x+width/2, y+height/2, f"{height:.0f}", ha='center', va='center', fontsize=font_size-2)
+                        ax_cost_balance_df.text(x+width/2, y+height/2, f"{height:.2f}", ha='center', va='center', fontsize=font_size-2)
                 
                 total = max_Y
-                ax_cost_balance_df.text(x_res, total*1.03, f"{total:.0f}", ha="center", va="center", fontsize=font_size-2, fontweight='bold')
+                ax_cost_balance_df.text(x_res, total*1.03, f"{total:.2f}", ha="center", va="center", fontsize=font_size-2, fontweight='bold')
 
                 
                 ax_cost_balance_df.tick_params(axis='x', rotation=0)
@@ -386,7 +387,7 @@ class Result_viewer:
             raise ValueError("At least one of npp_graph or risk_graph must be True")
         
         if (outages_graph and risk_graph):
-            fig, (ax_left, ax_right) = plt.subplots(1, 2, figsize=(13, 5))
+            fig, (ax_left, ax_right) = plt.subplots(1, 2, figsize=(13, 6))
         else:
             fig, ax_left = plt.subplots()
                 

@@ -645,13 +645,13 @@ block_grouper.set_options(
         "накопленный риск r3": {"risk_name": "r3", "style":"-", "color": "#10c42e"},
     },
     repairs_options={
-        "легкий ремонт-1": {"id": 0, "color": "#fdec02"},
+        "легкий ремонт": {"id": 0, "color": "#fdec02"},
         "легкий ремонт-2": {"id": 1, "color": "#02e0fd"},
-        "текущий ремонт-1": {"id": 2, "color": "#0b07f3"},
+        "текущий ремонт": {"id": 2, "color": "#0b07f3"},
         "текущий ремонт-2": {"id": 3, "color": "#ff00ff"},
-        "средний ремонт-1": {"id": 4, "color": "#ffa600"},
+        "средний ремонт": {"id": 4, "color": "#ffa600"},
         "средний ремонт-2": {"id": 5, "color": "#0c2450"},
-        "капитальный ремонт-1": {"id": 6, "color": "#ff4000"},
+        "капитальный ремонт": {"id": 6, "color": "#ff4000"},
 
         "тип ремонта-1": {"id": 7, "color": "#0b07fc"},
         "тип ремонта-2": {"id": 8, "color": "#ff00b3"},
@@ -674,6 +674,7 @@ result_viewer = Result_viewer(block_grouper)
 excel_writer = Excel_writer(block_grouper, solution_processor)
 res_scheme = Res_scheme_builder(oemof_es, "./schemes")
 
+# show_images = True
 show_images = False
 
 
