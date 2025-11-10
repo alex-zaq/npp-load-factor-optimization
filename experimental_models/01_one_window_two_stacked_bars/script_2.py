@@ -21,8 +21,8 @@ right_df = right_df.drop(right_df.columns[-1], axis=1)
 
 
 
-left_df.index = ["2040 год\nбазовый сценарий\nдва блока АЭС"]
-right_df.index = ["2040 год\nбазовый сценарий\nтри блока АЭС"]
+left_df.index = ["подсценарий-1"]
+right_df.index = ["подсценарий-2"]
 
 
 line_df = pd.DataFrame()

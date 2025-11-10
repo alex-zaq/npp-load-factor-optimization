@@ -259,7 +259,7 @@ class Result_viewer:
                 fontsize=font_size-2,
                 ax=ax_left.twinx()
             )
-            ax_risk_df.set_ylabel('Условная величина риска', fontsize=font_size - 2)
+            ax_risk_df.set_ylabel('условная величина риска', fontsize=font_size - 2)
             ax_risk_df.legend(loc='upper left', fontsize=font_size - 2, ncol=1)
             ax_risk_df.legend_.remove()
             
@@ -520,7 +520,7 @@ class Result_viewer:
                 fontsize=font_size-2,
                 ax=ax_right
             )
-            ax_right.set_ylabel('Условная величина риска', fontsize=font_size - 2)
+            ax_right.set_ylabel('условная величина риска', fontsize=font_size - 2)
             ax_right.legend(loc='upper left', fontsize=font_size - 2, ncol=1)
             
 
@@ -531,7 +531,7 @@ class Result_viewer:
             ax_risk_df.text(
                 x_max,
                 1 * 1.03,
-                f"Условная граница риска = {max_risk_value:.1f}",
+                f"условная граница риска = {max_risk_value:.1f}",
                 fontsize=font_size - 2,
                 horizontalalignment="center",
                 verticalalignment="bottom",
